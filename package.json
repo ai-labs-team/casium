@@ -1,0 +1,12 @@
+{
+  "name": "architecture",
+  "version": "1.0.0",
+  "description": "Advisor Innovation Labs front-end application architecture",
+  "main": "src/index.js",
+  "repository": "https://github.com/ai-labs-team/architecture.git",
+  "author": "Nate Abele <natea@advisorinnovationlabs.com>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "deep-freeze-strict": "^1.1.1"
+  }
+}
