@@ -7,6 +7,11 @@
   "author": "Nate Abele <natea@advisorinnovationlabs.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "deep-freeze-strict": "^1.1.1"
+    "axios": "<=0.15.0",
+    "deep-freeze-strict": "<=1.1.0",
+    "history": "<=4.0.0",
+    "prop-types": "<=13.0.0",
+    "ramda": "<=0.23.0",
+    "react": "<=13.0.0"
   }
 }
