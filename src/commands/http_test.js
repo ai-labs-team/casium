@@ -1,5 +1,5 @@
 /* eslint-env node, mocha */
-import Message from 'architecture/message';
+import Message from '../message';
 import { Request } from './http';
 
 describe('http', () => {

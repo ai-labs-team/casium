@@ -105,7 +105,7 @@ export const cloneRecursive = (children, newProps) => Children.map(children, (ch
     const hasChildren = child.props && child.props.children;
     const mapper = hasChildren && is(Array, child.props.children) ? identity : nth(0);
     const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
-    return merge(props : {}, { children });
+    return merge(props || {}, { children });
   };
 
   return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;

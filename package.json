@@ -2,7 +2,7 @@
   "name": "architecture",
   "version": "1.0.0",
   "description": "Advisor Innovation Labs front-end application architecture",
-  "main": "src/index.js",
+  "module": "dist/index.js",
   "repository": "https://github.com/ai-labs-team/architecture.git",
   "author": "Nate Abele <natea@advisorinnovationlabs.com>",
   "license": "Apache-2.0",
@@ -13,5 +13,13 @@
     "prop-types": "<=13.0.0",
     "ramda": "<=0.23.0",
     "react": "<=13.0.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.0",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "webpack": "^3.6.0"
   }
 }

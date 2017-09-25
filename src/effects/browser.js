@@ -1,5 +1,5 @@
 import createHistory from 'history/createBrowserHistory';
-import { PushHistory, ReplaceHistory, Back } from 'architecture/commands/browser';
+import { PushHistory, ReplaceHistory, Back } from '../commands/browser';
 
 export const history = createHistory();
 

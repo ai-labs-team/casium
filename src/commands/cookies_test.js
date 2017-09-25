@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
-import { Cookies } from 'architecture/commands';
-import Message from 'architecture/message';
+import { Cookies } from '../commands';
+import Message from '../message';
 
 describe('cookies', () => {
   describe('Read.result', () => {

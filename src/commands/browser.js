@@ -1,5 +1,5 @@
 import { is } from 'ramda';
-import Message from 'architecture/message';
+import Message from '../message';
 
 export class ReplaceHistory extends Message {
   static expects = { path: is(String) }
