@@ -1,11 +1,17 @@
 var path = require('path');
+var webpack = require('webpack');
 
 module.exports = {
-  entry: './src/index.js',
-
+  entry: {
+    index: './src/index.js',
+    message: './src/message.js',
+    commands: './src/commands/index.js',
+    effects: './src/effects/index.js'
+  },
   output: {
     path: `${__dirname}/dist`,
-    filename: 'index.js',
+    filename: '[name].js',
+    chunkFilename: '[id].chunk.js',
     library: 'architecture',
     libraryTarget: 'umd',
   },
@@ -27,5 +33,11 @@ module.exports = {
   },
   resolve: {
     extensions: ['.js', '.jsx']
-  }
+  },
+  plugins: [
+    new webpack.optimize.CommonsChunkPlugin({
+      filename: "common.js",
+      name: "common"
+    })
+  ]
 };

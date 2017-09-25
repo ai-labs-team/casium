@@ -7,414 +7,16 @@
 		exports["architecture"] = factory(require("ramda"), require("react"), require("axios"), require("js-cookie"));
 	else
 		root["architecture"] = factory(root["ramda"], root["react"], root["axios"], root["js-cookie"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_4__, __WEBPACK_EXTERNAL_MODULE_17__, __WEBPACK_EXTERNAL_MODULE_26__) {
-return /******/ (function(modules) { // webpackBootstrap
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
-/******/
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId]) {
-/******/ 			return installedModules[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			i: moduleId,
-/******/ 			l: false,
-/******/ 			exports: {}
-/******/ 		};
-/******/
-/******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/
-/******/ 		// Flag the module as loaded
-/******/ 		module.l = true;
-/******/
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/
-/******/
-/******/ 	// expose the modules object (__webpack_modules__)
-/******/ 	__webpack_require__.m = modules;
-/******/
-/******/ 	// expose the module cache
-/******/ 	__webpack_require__.c = installedModules;
-/******/
-/******/ 	// define getter function for harmony exports
-/******/ 	__webpack_require__.d = function(exports, name, getter) {
-/******/ 		if(!__webpack_require__.o(exports, name)) {
-/******/ 			Object.defineProperty(exports, name, {
-/******/ 				configurable: false,
-/******/ 				enumerable: true,
-/******/ 				get: getter
-/******/ 			});
-/******/ 		}
-/******/ 	};
-/******/
-/******/ 	// getDefaultExport function for compatibility with non-harmony modules
-/******/ 	__webpack_require__.n = function(module) {
-/******/ 		var getter = module && module.__esModule ?
-/******/ 			function getDefault() { return module['default']; } :
-/******/ 			function getModuleExports() { return module; };
-/******/ 		__webpack_require__.d(getter, 'a', getter);
-/******/ 		return getter;
-/******/ 	};
-/******/
-/******/ 	// Object.prototype.hasOwnProperty.call
-/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-/******/
-/******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "";
-/******/
-/******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 13);
-/******/ })
-/************************************************************************/
-/******/ ([
+})(this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_5__, __WEBPACK_EXTERNAL_MODULE_13__, __WEBPACK_EXTERNAL_MODULE_22__) {
+return webpackJsonparchitecture([0,1,2,3],[
 /* 0 */
 /***/ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_0__;
 
 /***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.constructMessage = exports.toEmittable = exports.isEmittable = exports.isMessage = exports.safeParse = exports.safeStringify = exports.mergeMaps = exports.mergeMap = exports.toArray = exports.trap = exports.log = exports.suppressEvent = exports.clone = exports.cloneRecursive = exports.withProps = exports.getValidationFailures = exports.compareOffsets = exports.update = exports.merge = undefined;
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-var _ramda = __webpack_require__(0);
-
-var _react = __webpack_require__(4);
-
-var _react2 = _interopRequireDefault(_react);
-
-var _message = __webpack_require__(2);
-
-var _message2 = _interopRequireDefault(_message);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
-/**
- * Deep-merges two objects, overwriting left-hand keys with right-hand keys, unionizing arrays.
- *
- * @param  {Object} left
- * @param  {Object} right
- * @return {Object}
- */
-var merge = exports.merge = (0, _ramda.mergeDeepWith)(function (left, right) {
-  return (0, _ramda.all)((0, _ramda.is)(Array), [left, right]) ? (0, _ramda.union)(left, right) : right;
-});
-
-/**
- * Convenience function for handlers that only update state with fixed values,
- * i.e. `[FooMessage, state => merge(state, { bar: true })]` becomes
- * `[FooMessage, update({ bar: true })]`
- */
-var update = exports.update = (0, _ramda.flip)(_ramda.merge);
-
-/**
- * Returns the count of offsets that are equal between two arrays. Useful for determining
- * if one array is the prefix of another, i.e.:
- *
- * ```
- * compareOffsets([1,2,3], [1,2,3,4,5]) -> true
- * compareOffsets([1,2,3,5], [1,2,3,4,5]) -> false
- * ```
- *
- * @param  {Array} a 'Prefix' array
- * @param  {Array} b Array to compare against
- * @return {Boolean} Returns true if `a` is the prefix of `b`.
- */
-var compareOffsets = exports.compareOffsets = (0, _ramda.curry)(function (a, b) {
-  return (0, _ramda.all)((0, _ramda.equals)(true), (0, _ramda.zipWith)(_ramda.equals, a, b));
-});
-
-/**
- * Accepts a validator object where the values are functions that return boolean, and
- * returns a function that accepts an object to check against the validator.
- *
- * @example
- * ```
- * getValidationFailures({ foo: is(String), bar: is(Function) })({ foo: "Hello", bar: "not Func" }) -> ["bar"]
- * ```
- */
-var getValidationFailures = exports.getValidationFailures = function getValidationFailures(spec) {
-  return (0, _ramda.pipe)((0, _ramda.pickAll)((0, _ramda.keys)(spec)), (0, _ramda.evolve)(spec), (0, _ramda.filter)(_ramda.not), _ramda.keys);
-};
-
-var isFunctionWithNumArgs = function isFunctionWithNumArgs(numArgs) {
-  return (0, _ramda.both)((0, _ramda.is)(Function), (0, _ramda.propEq)('length', numArgs));
-};
-
-var isObjectAndAllValuesAreFunctions = (0, _ramda.both)((0, _ramda.is)(Object), (0, _ramda.pipe)(_ramda.values, (0, _ramda.all)((0, _ramda.is)(Function))));
-
-var assertValid = function assertValid(fnMap, component) {
-  var spec = { fnMap: isObjectAndAllValuesAreFunctions, component: isFunctionWithNumArgs(1) };
-  var failures = getValidationFailures(spec)({ fnMap: fnMap, component: component });
-
-  if (!(0, _ramda.isEmpty)(failures)) {
-    throw new TypeError('withProps failed on types: ' + failures.join(', '));
-  }
-};
-
-/**
- * Accepts an object of key/function pairs and a pure component function, and returns
- * a new pure component that will generate and inject new props into the pass component
- * function.
- * @param  {Object<Function>} An object hash of functions used to generate new props
- * @param  {Component} A pure function that returns React DOM
- * @params {Object} Accepts props passed from parent
- * @return {Component} Returns a new component that generates new props from passed props
- *
- * @example
- * ```
- * const FullName = (props) => (<span>{props.fullName}</span>);
- *
- * const Name = withProps(
- *   {
- *     fullName: (props) => `${props.first} ${props.last}`
- *   },
- *   FullName
- * );
- *
- * <Name first="Bob" last="Loblaw" />
- * ```
- */
-var withProps = exports.withProps = (0, _ramda.curry)(function (fnMap, component, props) {
-  assertValid(fnMap, component, props);
-  return component(merge(props, (0, _ramda.map)(function (fn) {
-    return fn(props);
-  }, fnMap)));
-});
-
-var cloneRecursive = exports.cloneRecursive = function cloneRecursive(children, newProps) {
-  return _react.Children.map(children, function (child) {
-    var mapProps = function mapProps(child) {
-      var props = (0, _ramda.is)(Function, newProps) ? newProps(child) : newProps;
-      var hasChildren = child.props && child.props.children;
-      var mapper = hasChildren && (0, _ramda.is)(Array, child.props.children) ? _ramda.identity : (0, _ramda.nth)(0);
-      var children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
-      return merge(props || {}, { children: children });
-    };
-
-    return _react2.default.isValidElement(child) ? _react2.default.cloneElement(child, mapProps(child)) : child;
-  });
-};
-
-var clone = exports.clone = function clone(children, newProps) {
-  return _react.Children.map(children, function (child) {
-    return _react2.default.cloneElement(child, merge(_react2.default.isValidElement(child) ? newProps : {}, {
-      children: child.props.children
-    }));
-  });
-};
-
-var suppressEvent = exports.suppressEvent = function suppressEvent(e) {
-  e.preventDefault();
-  return e;
-};
-
-/**
- * Logs a value with a message and returns the value. Good for inspecting complex
- * function pipelines.
- */
-var log = exports.log = (0, _ramda.curry)(function (msg, val) {
-  console.log(msg, val); // eslint-disable-line no-console
-  return val;
-});
-
-/**
- * Provides a functional interface for catching and handling errors.
- *
- * @param  {Function} handler A handler function to call when an error is thrown.
- * @param  {Function} fn A function to trap errors on.
- * @return {Function} Returns a function that, when called, passes its arguments to the
- *                    wrapped function. If the call succeeds, the it returns the result
- *                    of calling the wrapped function, otherwise returns the result of
- *                    passing the error (along with the arguments) to the handler.
- */
-var trap = exports.trap = (0, _ramda.curry)(function (handler, fn) {
-  return function () {
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
-
-    try {
-      return fn.apply(undefined, args);
-    } catch (e) {
-      return handler.apply(undefined, [e].concat(args));
-    }
-  };
-});
-
-/**
- * Converts a value to an array... unless it's already an array, then it just returns it.
- * @type {[type]}
- */
-var toArray = exports.toArray = (0, _ramda.ifElse)((0, _ramda.is)(Array), _ramda.identity, Array.of);
-
-/**
- * Helper functions for reducing effect Maps into a single Map.
- */
-var mergeMap = exports.mergeMap = function mergeMap(first, second) {
-  return new Map([].concat(_toConsumableArray(first), _toConsumableArray(second)));
-};
-var mergeMaps = exports.mergeMaps = (0, _ramda.reduce)(mergeMap, new Map([]));
-
-/**
- * Safely stringifies a JavaScript value to prevent error-ception in `app.result()`.
- */
-var safeStringify = exports.safeStringify = function safeStringify(val) {
-  try {
-    return JSON.stringify(val);
-  } catch (e) {
-    return '{ unrepresentable value }';
-  }
-};
-
-/**
- * Safely parses a JavaScript value to prevent error-ception.
- */
-var safeParse = exports.safeParse = function safeParse(val) {
-  try {
-    return JSON.parse(val);
-  } catch (e) {
-    return undefined;
-  }
-};
-
-/**
- * Checks that a value is a message constructor.
- */
-var isMessage = exports.isMessage = function isMessage(result) {
-  return result && result.prototype && result.prototype instanceof _message2.default;
-};
-
-/**
- * Checks that a value is emittable as a message constructor
- */
-var isEmittable = exports.isEmittable = (0, _ramda.either)(isMessage, (0, _ramda.both)((0, _ramda.is)(Array), (0, _ramda.pipe)((0, _ramda.nth)(0), isMessage)));
-
-var toEmittable = exports.toEmittable = (0, _ramda.ifElse)((0, _ramda.is)(Array), _ramda.identity, function (type) {
-  return [type, {}];
-});
-
-/**
- * Maps an emittable and message data to a message.
- */
-var constructMessage = exports.constructMessage = (0, _ramda.curry)(function (msgType, data) {
-  var _toEmittable = toEmittable(msgType),
-      _toEmittable2 = _slicedToArray(_toEmittable, 2),
-      type = _toEmittable2[0],
-      extra = _toEmittable2[1];
-
-  return new type(merge(data, extra));
-});
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Activate = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _ramda = __webpack_require__(0);
-
-var _deepFreezeStrict = __webpack_require__(6);
-
-var _deepFreezeStrict2 = _interopRequireDefault(_deepFreezeStrict);
-
-var _util = __webpack_require__(1);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Message = function () {
-  function Message() {
-    var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    _classCallCheck(this, Message);
-
-    var ctor = this.constructor;
-    this._check(data);
-    this.data = (0, _ramda.merge)(ctor.defaults, data);
-
-    var invalidTypes = (0, _util.getValidationFailures)(ctor.expects)(this.data);
-
-    if (!(0, _ramda.isEmpty)(invalidTypes)) {
-      throw new TypeError('Message data ' + (0, _util.safeStringify)(data) + ' failed expectations in ' + ctor.name + ': {' + (0, _ramda.join)(', ', invalidTypes) + '}');
-    }
-
-    if (opts && opts.shallow) {
-      Object.freeze(this);
-      Object.freeze(this.data);
-    } else {
-      (0, _deepFreezeStrict2.default)(this);
-    }
-  }
-
-  _createClass(Message, [{
-    key: '_check',
-    value: function _check(data) {
-      if ((0, _ramda.is)(Object, data)) {
-        return;
-      }
-      var msg = ['Message data must be an object in message', this.constructor.name, 'but is', (0, _util.safeStringify)(data)];
-      throw new Error(msg.join(' '));
-    }
-  }, {
-    key: 'map',
-    value: function map(data) {
-      return new this.constructor((0, _ramda.merge)(this.data, data));
-    }
-  }]);
-
-  return Message;
-}();
-
-Message.defaults = {};
-Message.expects = {};
-exports.default = Message;
-
-var Activate = exports.Activate = function (_Message) {
-  _inherits(Activate, _Message);
-
-  function Activate() {
-    _classCallCheck(this, Activate);
-
-    return _possibleConstructorReturn(this, (Activate.__proto__ || Object.getPrototypeOf(Activate)).apply(this, arguments));
-  }
-
-  return Activate;
-}(Message);
-
-/***/ }),
+/* 1 */,
+/* 2 */,
 /* 3 */
 /***/ (function(module, exports) {
 
@@ -606,12 +208,6 @@ process.umask = function() { return 0; };
 
 /***/ }),
 /* 4 */
-/***/ (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_4__;
-
-/***/ }),
-/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -679,31 +275,13 @@ module.exports = warning;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ }),
-/* 6 */
+/* 5 */
 /***/ (function(module, exports) {
 
-module.exports = function deepFreeze (o) {
-  Object.freeze(o);
-
-  var oIsFunction = typeof o === "function";
-  var hasOwnProp = Object.prototype.hasOwnProperty;
-
-  Object.getOwnPropertyNames(o).forEach(function (prop) {
-    if (hasOwnProp.call(o, prop)
-    && (oIsFunction ? prop !== 'caller' && prop !== 'callee' && prop !== 'arguments' : true )
-    && o[prop] !== null
-    && (typeof o[prop] === "object" || typeof o[prop] === "function")
-    && !Object.isFrozen(o[prop])) {
-      deepFreeze(o[prop]);
-    }
-  });
-  
-  return o;
-};
-
+module.exports = __WEBPACK_EXTERNAL_MODULE_5__;
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -857,65 +435,7 @@ var formData = exports.formData = function formData(data) {
 };
 
 /***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.__esModule = true;
-var addLeadingSlash = exports.addLeadingSlash = function addLeadingSlash(path) {
-  return path.charAt(0) === '/' ? path : '/' + path;
-};
-
-var stripLeadingSlash = exports.stripLeadingSlash = function stripLeadingSlash(path) {
-  return path.charAt(0) === '/' ? path.substr(1) : path;
-};
-
-var stripPrefix = exports.stripPrefix = function stripPrefix(path, prefix) {
-  return path.indexOf(prefix) === 0 ? path.substr(prefix.length) : path;
-};
-
-var parsePath = exports.parsePath = function parsePath(path) {
-  var pathname = path;
-  var search = '';
-  var hash = '';
-
-  var hashIndex = pathname.indexOf('#');
-  if (hashIndex !== -1) {
-    hash = pathname.substr(hashIndex);
-    pathname = pathname.substr(0, hashIndex);
-  }
-
-  var searchIndex = pathname.indexOf('?');
-  if (searchIndex !== -1) {
-    search = pathname.substr(searchIndex);
-    pathname = pathname.substr(0, searchIndex);
-  }
-
-  return {
-    pathname: pathname,
-    search: search === '?' ? '' : search,
-    hash: hash === '#' ? '' : hash
-  };
-};
-
-var createPath = exports.createPath = function createPath(location) {
-  var pathname = location.pathname;
-  var search = location.search;
-  var hash = location.hash;
-
-  var path = pathname || '/';
-
-  if (search && search !== '?') path += search.charAt(0) === '?' ? search : '?' + search;
-
-  if (hash && hash !== '#') path += hash.charAt(0) === '#' ? hash : '#' + hash;
-
-  return path;
-};
-
-/***/ }),
-/* 9 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -981,7 +501,7 @@ var Back = exports.Back = function (_Message3) {
 }(_message2.default);
 
 /***/ }),
-/* 10 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1056,7 +576,7 @@ var Delete = exports.Delete = function (_Message3) {
 Delete.expects = { key: (0, _ramda.is)(String) };
 
 /***/ }),
-/* 11 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1140,7 +660,885 @@ var Clear = exports.Clear = function (_Message4) {
 Clear.expects = {};
 
 /***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+var addLeadingSlash = exports.addLeadingSlash = function addLeadingSlash(path) {
+  return path.charAt(0) === '/' ? path : '/' + path;
+};
+
+var stripLeadingSlash = exports.stripLeadingSlash = function stripLeadingSlash(path) {
+  return path.charAt(0) === '/' ? path.substr(1) : path;
+};
+
+var stripPrefix = exports.stripPrefix = function stripPrefix(path, prefix) {
+  return path.indexOf(prefix) === 0 ? path.substr(prefix.length) : path;
+};
+
+var parsePath = exports.parsePath = function parsePath(path) {
+  var pathname = path;
+  var search = '';
+  var hash = '';
+
+  var hashIndex = pathname.indexOf('#');
+  if (hashIndex !== -1) {
+    hash = pathname.substr(hashIndex);
+    pathname = pathname.substr(0, hashIndex);
+  }
+
+  var searchIndex = pathname.indexOf('?');
+  if (searchIndex !== -1) {
+    search = pathname.substr(searchIndex);
+    pathname = pathname.substr(0, searchIndex);
+  }
+
+  return {
+    pathname: pathname,
+    search: search === '?' ? '' : search,
+    hash: hash === '#' ? '' : hash
+  };
+};
+
+var createPath = exports.createPath = function createPath(location) {
+  var pathname = location.pathname;
+  var search = location.search;
+  var hash = location.hash;
+
+  var path = pathname || '/';
+
+  if (search && search !== '?') path += search.charAt(0) === '?' ? search : '?' + search;
+
+  if (hash && hash !== '#') path += hash.charAt(0) === '#' ? hash : '#' + hash;
+
+  return path;
+};
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _util = __webpack_require__(1);
+
+var _http = __webpack_require__(12);
+
+var _http2 = _interopRequireDefault(_http);
+
+var _browser = __webpack_require__(14);
+
+var _browser2 = _interopRequireDefault(_browser);
+
+var _cookies = __webpack_require__(21);
+
+var _cookies2 = _interopRequireDefault(_cookies);
+
+var _local_storage = __webpack_require__(23);
+
+var _local_storage2 = _interopRequireDefault(_local_storage);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = (0, _util.mergeMaps)([_http2.default, _browser2.default, _cookies2.default, _local_storage2.default]);
+
+/***/ }),
 /* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _axios = __webpack_require__(13);
+
+var _axios2 = _interopRequireDefault(_axios);
+
+var _ramda = __webpack_require__(0);
+
+var _http = __webpack_require__(6);
+
+var _util = __webpack_require__(1);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = new Map([[_http.Request, function (_ref, dispatch) {
+  var method = _ref.method,
+      url = _ref.url,
+      data = _ref.data,
+      params = _ref.params,
+      headers = _ref.headers,
+      result = _ref.result,
+      error = _ref.error,
+      always = _ref.always;
+
+  (0, _axios2.default)({ method: method, url: url, data: data, params: params, headers: headers, withCredentials: true }).then((0, _ramda.pipe)((0, _util.constructMessage)(result), dispatch)).catch((0, _ramda.pipe)((0, _util.constructMessage)(error), dispatch)).then(always && (0, _ramda.pipe)((0, _util.constructMessage)(always), dispatch) || _ramda.identity);
+}]]);
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_13__;
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.history = undefined;
+
+var _createBrowserHistory = __webpack_require__(15);
+
+var _createBrowserHistory2 = _interopRequireDefault(_createBrowserHistory);
+
+var _browser = __webpack_require__(7);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var history = exports.history = (0, _createBrowserHistory2.default)();
+
+exports.default = new Map([[_browser.PushHistory, function (_ref) {
+  var path = _ref.path,
+      state = _ref.state;
+  return history.push(path, state || {});
+}], [_browser.ReplaceHistory, function (_ref2) {
+  var path = _ref2.path,
+      state = _ref2.state;
+  return history.replace(path, state || {});
+}], [_browser.Back, function (_ref3) {
+  var state = _ref3.state;
+  return history.goBack(state);
+}]]);
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process) {
+
+exports.__esModule = true;
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _warning = __webpack_require__(4);
+
+var _warning2 = _interopRequireDefault(_warning);
+
+var _invariant = __webpack_require__(16);
+
+var _invariant2 = _interopRequireDefault(_invariant);
+
+var _LocationUtils = __webpack_require__(17);
+
+var _PathUtils = __webpack_require__(10);
+
+var _createTransitionManager = __webpack_require__(18);
+
+var _createTransitionManager2 = _interopRequireDefault(_createTransitionManager);
+
+var _ExecutionEnvironment = __webpack_require__(19);
+
+var _DOMUtils = __webpack_require__(20);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var PopStateEvent = 'popstate';
+var HashChangeEvent = 'hashchange';
+
+var getHistoryState = function getHistoryState() {
+  try {
+    return window.history.state || {};
+  } catch (e) {
+    // IE 11 sometimes throws when accessing window.history.state
+    // See https://github.com/mjackson/history/pull/289
+    return {};
+  }
+};
+
+/**
+ * Creates a history object that uses the HTML5 history API including
+ * pushState, replaceState, and the popstate event.
+ */
+var createBrowserHistory = function createBrowserHistory() {
+  var props = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+  !_ExecutionEnvironment.canUseDOM ? process.env.NODE_ENV !== 'production' ? (0, _invariant2.default)(false, 'Browser history needs a DOM') : (0, _invariant2.default)(false) : void 0;
+
+  var globalHistory = window.history;
+  var canUseHistory = (0, _DOMUtils.supportsHistory)();
+  var needsHashChangeListener = !(0, _DOMUtils.supportsPopStateOnHashChange)();
+
+  var _props$basename = props.basename;
+  var basename = _props$basename === undefined ? '' : _props$basename;
+  var _props$forceRefresh = props.forceRefresh;
+  var forceRefresh = _props$forceRefresh === undefined ? false : _props$forceRefresh;
+  var _props$getUserConfirm = props.getUserConfirmation;
+  var getUserConfirmation = _props$getUserConfirm === undefined ? _DOMUtils.getConfirmation : _props$getUserConfirm;
+  var _props$keyLength = props.keyLength;
+  var keyLength = _props$keyLength === undefined ? 6 : _props$keyLength;
+
+
+  var getDOMLocation = function getDOMLocation(historyState) {
+    var _ref = historyState || {};
+
+    var key = _ref.key;
+    var state = _ref.state;
+    var _window$location = window.location;
+    var pathname = _window$location.pathname;
+    var search = _window$location.search;
+    var hash = _window$location.hash;
+
+
+    var path = pathname + search + hash;
+
+    if (basename) path = (0, _PathUtils.stripPrefix)(path, basename);
+
+    return _extends({}, (0, _PathUtils.parsePath)(path), {
+      state: state,
+      key: key
+    });
+  };
+
+  var createKey = function createKey() {
+    return Math.random().toString(36).substr(2, keyLength);
+  };
+
+  var transitionManager = (0, _createTransitionManager2.default)();
+
+  var setState = function setState(nextState) {
+    _extends(history, nextState);
+
+    history.length = globalHistory.length;
+
+    transitionManager.notifyListeners(history.location, history.action);
+  };
+
+  var handlePopState = function handlePopState(event) {
+    if (event.state === undefined) return; // Ignore extraneous popstate events in WebKit.
+
+    handlePop(getDOMLocation(event.state));
+  };
+
+  var handleHashChange = function handleHashChange() {
+    handlePop(getDOMLocation(getHistoryState()));
+  };
+
+  var forceNextPop = false;
+
+  var handlePop = function handlePop(location) {
+    if (forceNextPop) {
+      forceNextPop = false;
+      setState();
+    } else {
+      (function () {
+        var action = 'POP';
+
+        transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
+          if (ok) {
+            setState({ action: action, location: location });
+          } else {
+            revertPop(location);
+          }
+        });
+      })();
+    }
+  };
+
+  var revertPop = function revertPop(fromLocation) {
+    var toLocation = history.location;
+
+    // TODO: We could probably make this more reliable by
+    // keeping a list of keys we've seen in sessionStorage.
+    // Instead, we just default to 0 for keys we don't know.
+
+    var toIndex = allKeys.indexOf(toLocation.key);
+
+    if (toIndex === -1) toIndex = 0;
+
+    var fromIndex = allKeys.indexOf(fromLocation.key);
+
+    if (fromIndex === -1) fromIndex = 0;
+
+    var delta = toIndex - fromIndex;
+
+    if (delta) {
+      forceNextPop = true;
+      go(delta);
+    }
+  };
+
+  var initialLocation = getDOMLocation(getHistoryState());
+  var allKeys = [initialLocation.key];
+
+  // Public interface
+
+  var push = function push(path, state) {
+    var action = 'PUSH';
+    var location = (0, _LocationUtils.createLocation)(path, state, createKey());
+
+    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
+      if (!ok) return;
+
+      var url = basename + (0, _PathUtils.createPath)(location);
+      var key = location.key;
+      var state = location.state;
+
+
+      if (canUseHistory) {
+        globalHistory.pushState({ key: key, state: state }, null, url);
+
+        if (forceRefresh) {
+          window.location.href = url;
+        } else {
+          var prevIndex = allKeys.indexOf(history.location.key);
+          var nextKeys = allKeys.slice(0, prevIndex === -1 ? 0 : prevIndex + 1);
+
+          nextKeys.push(location.key);
+          allKeys = nextKeys;
+
+          setState({ action: action, location: location });
+        }
+      } else {
+        process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(state === undefined, 'Browser history cannot push state in browsers that do not support HTML5 history') : void 0;
+
+        window.location.href = url;
+      }
+    });
+  };
+
+  var replace = function replace(path, state) {
+    var action = 'REPLACE';
+    var location = (0, _LocationUtils.createLocation)(path, state, createKey());
+
+    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
+      if (!ok) return;
+
+      var url = basename + (0, _PathUtils.createPath)(location);
+      var key = location.key;
+      var state = location.state;
+
+
+      if (canUseHistory) {
+        globalHistory.replaceState({ key: key, state: state }, null, url);
+
+        if (forceRefresh) {
+          window.location.replace(url);
+        } else {
+          var prevIndex = allKeys.indexOf(history.location.key);
+
+          if (prevIndex !== -1) allKeys[prevIndex] = location.key;
+
+          setState({ action: action, location: location });
+        }
+      } else {
+        process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(state === undefined, 'Browser history cannot replace state in browsers that do not support HTML5 history') : void 0;
+
+        window.location.replace(url);
+      }
+    });
+  };
+
+  var go = function go(n) {
+    globalHistory.go(n);
+  };
+
+  var goBack = function goBack() {
+    return go(-1);
+  };
+
+  var goForward = function goForward() {
+    return go(1);
+  };
+
+  var listenerCount = 0;
+
+  var checkDOMListeners = function checkDOMListeners(delta) {
+    listenerCount += delta;
+
+    if (listenerCount === 1) {
+      (0, _DOMUtils.addEventListener)(window, PopStateEvent, handlePopState);
+
+      if (needsHashChangeListener) (0, _DOMUtils.addEventListener)(window, HashChangeEvent, handleHashChange);
+    } else if (listenerCount === 0) {
+      (0, _DOMUtils.removeEventListener)(window, PopStateEvent, handlePopState);
+
+      if (needsHashChangeListener) (0, _DOMUtils.removeEventListener)(window, HashChangeEvent, handleHashChange);
+    }
+  };
+
+  var isBlocked = false;
+
+  var block = function block() {
+    var prompt = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+
+    var unblock = transitionManager.setPrompt(prompt);
+
+    if (!isBlocked) {
+      checkDOMListeners(1);
+      isBlocked = true;
+    }
+
+    return function () {
+      if (isBlocked) {
+        isBlocked = false;
+        checkDOMListeners(-1);
+      }
+
+      return unblock();
+    };
+  };
+
+  var listen = function listen(listener) {
+    var unlisten = transitionManager.appendListener(listener);
+    checkDOMListeners(1);
+
+    return function () {
+      checkDOMListeners(-1);
+      return unlisten();
+    };
+  };
+
+  var history = {
+    length: globalHistory.length,
+    action: 'POP',
+    location: initialLocation,
+    push: push,
+    replace: replace,
+    go: go,
+    goBack: goBack,
+    goForward: goForward,
+    block: block,
+    listen: listen
+  };
+
+  return history;
+};
+
+exports.default = createBrowserHistory;
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process) {/**
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+
+
+/**
+ * Use invariant() to assert state which your program assumes to be true.
+ *
+ * Provide sprintf-style format (only %s is supported) and arguments
+ * to provide information about what broke and what you were
+ * expecting.
+ *
+ * The invariant message will be stripped in production, but the invariant
+ * will remain to ensure logic does not differ in production.
+ */
+
+var invariant = function(condition, format, a, b, c, d, e, f) {
+  if (process.env.NODE_ENV !== 'production') {
+    if (format === undefined) {
+      throw new Error('invariant requires an error message argument');
+    }
+  }
+
+  if (!condition) {
+    var error;
+    if (format === undefined) {
+      error = new Error(
+        'Minified exception occurred; use the non-minified dev environment ' +
+        'for the full error message and additional helpful warnings.'
+      );
+    } else {
+      var args = [a, b, c, d, e, f];
+      var argIndex = 0;
+      error = new Error(
+        format.replace(/%s/g, function() { return args[argIndex++]; })
+      );
+      error.name = 'Invariant Violation';
+    }
+
+    error.framesToPop = 1; // we don't care about invariant's own frame
+    throw error;
+  }
+};
+
+module.exports = invariant;
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
+
+/***/ }),
+/* 17 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process) {
+
+exports.__esModule = true;
+exports.locationsAreEqual = exports.createLocation = undefined;
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _warning = __webpack_require__(4);
+
+var _warning2 = _interopRequireDefault(_warning);
+
+var _PathUtils = __webpack_require__(10);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// A private helper function used to create location
+// objects from the args to push/replace.
+var createLocation = exports.createLocation = function createLocation(path, state, key) {
+  var location = void 0;
+  if (typeof path === 'string') {
+    // Two-arg form: push(path, state)
+    location = (0, _PathUtils.parsePath)(path);
+    location.state = state;
+  } else {
+    // One-arg form: push(location)
+    location = _extends({}, path);
+
+    if (state !== undefined) {
+      if (location.state === undefined) {
+        location.state = state;
+      } else {
+        process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(false, 'When providing a location-like object with state as the first argument to push/replace ' + 'you should avoid providing a second "state" argument; it is ignored') : void 0;
+      }
+    }
+  }
+
+  location.key = key;
+
+  return location;
+};
+
+var looseEqual = function looseEqual(a, b) {
+  if (a == null) return a == b;
+
+  var typeofA = typeof a === 'undefined' ? 'undefined' : _typeof(a);
+  var typeofB = typeof b === 'undefined' ? 'undefined' : _typeof(b);
+
+  if (typeofA !== typeofB) return false;
+
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+
+    return a.every(function (item, index) {
+      return looseEqual(item, b[index]);
+    });
+  } else if (typeofA === 'object') {
+    var keysOfA = Object.keys(a);
+    var keysOfB = Object.keys(b);
+
+    if (keysOfA.length !== keysOfB.length) return false;
+
+    return keysOfA.every(function (key) {
+      return looseEqual(a[key], b[key]);
+    });
+  }
+
+  return a === b;
+};
+
+var locationsAreEqual = exports.locationsAreEqual = function locationsAreEqual(a, b) {
+  return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.key === b.key && looseEqual(a.state, b.state);
+};
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
+
+/***/ }),
+/* 18 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process) {
+
+exports.__esModule = true;
+
+var _warning = __webpack_require__(4);
+
+var _warning2 = _interopRequireDefault(_warning);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var createTransitionManager = function createTransitionManager() {
+  var prompt = null;
+
+  var setPrompt = function setPrompt(nextPrompt) {
+    process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(prompt == null, 'A history supports only one prompt at a time') : void 0;
+
+    prompt = nextPrompt;
+
+    return function () {
+      if (prompt === nextPrompt) prompt = null;
+    };
+  };
+
+  var confirmTransitionTo = function confirmTransitionTo(location, action, getUserConfirmation, callback) {
+    // TODO: If another transition starts while we're still confirming
+    // the previous one, we may end up in a weird state. Figure out the
+    // best way to handle this.
+    if (prompt != null) {
+      var result = typeof prompt === 'function' ? prompt(location, action) : prompt;
+
+      if (typeof result === 'string') {
+        if (typeof getUserConfirmation === 'function') {
+          getUserConfirmation(result, callback);
+        } else {
+          process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(false, 'A history needs a getUserConfirmation function in order to use a prompt message') : void 0;
+
+          callback(true);
+        }
+      } else {
+        // Return false from a transition hook to cancel the transition.
+        callback(result !== false);
+      }
+    } else {
+      callback(true);
+    }
+  };
+
+  var listeners = [];
+
+  var appendListener = function appendListener(listener) {
+    listeners.push(listener);
+
+    return function () {
+      listeners = listeners.filter(function (item) {
+        return item !== listener;
+      });
+    };
+  };
+
+  var notifyListeners = function notifyListeners() {
+    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    return listeners.forEach(function (listener) {
+      return listener.apply(undefined, args);
+    });
+  };
+
+  return {
+    setPrompt: setPrompt,
+    confirmTransitionTo: confirmTransitionTo,
+    appendListener: appendListener,
+    notifyListeners: notifyListeners
+  };
+};
+
+exports.default = createTransitionManager;
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
+
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+var canUseDOM = exports.canUseDOM = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
+
+/***/ }),
+/* 20 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+var addEventListener = exports.addEventListener = function addEventListener(node, event, listener) {
+  return node.addEventListener ? node.addEventListener(event, listener, false) : node.attachEvent('on' + event, listener);
+};
+
+var removeEventListener = exports.removeEventListener = function removeEventListener(node, event, listener) {
+  return node.removeEventListener ? node.removeEventListener(event, listener, false) : node.detachEvent('on' + event, listener);
+};
+
+var getConfirmation = exports.getConfirmation = function getConfirmation(message, callback) {
+  return callback(window.confirm(message));
+}; // eslint-disable-line no-alert
+
+/**
+ * Returns true if the HTML5 history API is supported. Taken from Modernizr.
+ *
+ * https://github.com/Modernizr/Modernizr/blob/master/LICENSE
+ * https://github.com/Modernizr/Modernizr/blob/master/feature-detects/history.js
+ * changed to avoid false negatives for Windows Phones: https://github.com/reactjs/react-router/issues/586
+ */
+var supportsHistory = exports.supportsHistory = function supportsHistory() {
+  var ua = window.navigator.userAgent;
+
+  if ((ua.indexOf('Android 2.') !== -1 || ua.indexOf('Android 4.0') !== -1) && ua.indexOf('Mobile Safari') !== -1 && ua.indexOf('Chrome') === -1 && ua.indexOf('Windows Phone') === -1) return false;
+
+  return window.history && 'pushState' in window.history;
+};
+
+/**
+ * Returns true if browser fires popstate on hash change.
+ * IE10 and IE11 do not.
+ */
+var supportsPopStateOnHashChange = exports.supportsPopStateOnHashChange = function supportsPopStateOnHashChange() {
+  return window.navigator.userAgent.indexOf('Trident') === -1;
+};
+
+/**
+ * Returns false if using go(n) with hash history causes a full page reload.
+ */
+var supportsGoWithoutReloadUsingHash = exports.supportsGoWithoutReloadUsingHash = function supportsGoWithoutReloadUsingHash() {
+  return window.navigator.userAgent.indexOf('Firefox') === -1;
+};
+
+/***/ }),
+/* 21 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _ramda = __webpack_require__(0);
+
+var _jsCookie = __webpack_require__(22);
+
+var Cookies = _interopRequireWildcard(_jsCookie);
+
+var _cookies = __webpack_require__(8);
+
+var _util = __webpack_require__(1);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+exports.default = new Map([[_cookies.Read, function (_ref, dispatch) {
+  var key = _ref.key,
+      result = _ref.result;
+  return Promise.resolve(Cookies.getJSON(key)).then((0, _ramda.pipe)((0, _ramda.defaultTo)({}), (0, _util.constructMessage)(result), dispatch));
+}], [_cookies.Write, function (_ref2) {
+  var key = _ref2.key,
+      value = _ref2.value,
+      path = _ref2.path,
+      expires = _ref2.expires;
+  return Cookies.set(key, value, {
+    path: path || '/',
+    expires: expires || null
+  });
+}], [_cookies.Delete, function (_ref3) {
+  var key = _ref3.key;
+  return Cookies.remove(key);
+}]]);
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_22__;
+
+/***/ }),
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _ramda = __webpack_require__(0);
+
+var _local_storage = __webpack_require__(9);
+
+var _util = __webpack_require__(1);
+
+var get = window.localStorage.getItem.bind(window.localStorage);
+
+exports.default = new Map([[_local_storage.Read, function (_ref, dispatch) {
+  var key = _ref.key,
+      result = _ref.result;
+  return (0, _ramda.pipe)(get, _util.safeParse, (0, _ramda.objOf)('value'), (0, _ramda.merge)({ key: key }), (0, _util.constructMessage)(result), dispatch)(key);
+}], [_local_storage.Write, function (_ref2) {
+  var key = _ref2.key,
+      value = _ref2.value;
+  return window.localStorage.setItem(key, (0, _util.safeStringify)(value));
+}], [_local_storage.Delete, function (_ref3) {
+  var key = _ref3.key;
+  return window.localStorage.removeItem(key);
+}], [_local_storage.Clear, function () {
+  return window.localStorage.clear();
+}]]);
+
+/***/ }),
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.LocalStorage = exports.Http = exports.Cookies = exports.Browser = undefined;
+
+var _browser = __webpack_require__(7);
+
+var _Browser = _interopRequireWildcard(_browser);
+
+var _cookies = __webpack_require__(8);
+
+var _Cookies = _interopRequireWildcard(_cookies);
+
+var _http = __webpack_require__(6);
+
+var _Http = _interopRequireWildcard(_http);
+
+var _local_storage = __webpack_require__(9);
+
+var _LocalStorage = _interopRequireWildcard(_local_storage);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+exports.Browser = _Browser;
+exports.Cookies = _Cookies;
+exports.Http = _Http;
+exports.LocalStorage = _LocalStorage;
+
+/***/ }),
+/* 25 */,
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1158,13 +1556,13 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 var _ramda = __webpack_require__(0);
 
-var _deepFreezeStrict = __webpack_require__(6);
+var _deepFreezeStrict = __webpack_require__(25);
 
 var _deepFreezeStrict2 = _interopRequireDefault(_deepFreezeStrict);
 
 var _util = __webpack_require__(1);
 
-var _dev_tools = __webpack_require__(31);
+var _dev_tools = __webpack_require__(32);
 
 var _message = __webpack_require__(2);
 
@@ -1529,7 +1927,7 @@ var ExecContext = function () {
 exports.default = ExecContext;
 
 /***/ }),
-/* 13 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1539,7 +1937,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _app = __webpack_require__(14);
+var _app = __webpack_require__(28);
 
 Object.keys(_app).forEach(function (key) {
   if (key === "default" || key === "__esModule") return;
@@ -1603,7 +2001,7 @@ Object.defineProperty(exports, 'toArray', {
 });
 
 /***/ }),
-/* 14 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1618,19 +2016,19 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 var _ramda = __webpack_require__(0);
 
-var _react = __webpack_require__(4);
+var _react = __webpack_require__(5);
 
 var _react2 = _interopRequireDefault(_react);
 
-var _effects = __webpack_require__(15);
+var _effects = __webpack_require__(11);
 
 var _effects2 = _interopRequireDefault(_effects);
 
-var _dispatcher = __webpack_require__(28);
+var _dispatcher = __webpack_require__(29);
 
 var _dispatcher2 = _interopRequireDefault(_dispatcher);
 
-var _view_wrapper = __webpack_require__(29);
+var _view_wrapper = __webpack_require__(30);
 
 var _view_wrapper2 = _interopRequireDefault(_view_wrapper);
 
@@ -1638,7 +2036,7 @@ var _state_manager = __webpack_require__(33);
 
 var _state_manager2 = _interopRequireDefault(_state_manager);
 
-var _exec_context = __webpack_require__(12);
+var _exec_context = __webpack_require__(26);
 
 var _exec_context2 = _interopRequireDefault(_exec_context);
 
@@ -1865,791 +2263,7 @@ var commands = exports.commands = function commands() {
 };
 
 /***/ }),
-/* 15 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _util = __webpack_require__(1);
-
-var _http = __webpack_require__(16);
-
-var _http2 = _interopRequireDefault(_http);
-
-var _browser = __webpack_require__(18);
-
-var _browser2 = _interopRequireDefault(_browser);
-
-var _cookies = __webpack_require__(25);
-
-var _cookies2 = _interopRequireDefault(_cookies);
-
-var _local_storage = __webpack_require__(27);
-
-var _local_storage2 = _interopRequireDefault(_local_storage);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = (0, _util.mergeMaps)([_http2.default, _browser2.default, _cookies2.default, _local_storage2.default]);
-
-/***/ }),
-/* 16 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _axios = __webpack_require__(17);
-
-var _axios2 = _interopRequireDefault(_axios);
-
-var _ramda = __webpack_require__(0);
-
-var _http = __webpack_require__(7);
-
-var _util = __webpack_require__(1);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = new Map([[_http.Request, function (_ref, dispatch) {
-  var method = _ref.method,
-      url = _ref.url,
-      data = _ref.data,
-      params = _ref.params,
-      headers = _ref.headers,
-      result = _ref.result,
-      error = _ref.error,
-      always = _ref.always;
-
-  (0, _axios2.default)({ method: method, url: url, data: data, params: params, headers: headers, withCredentials: true }).then((0, _ramda.pipe)((0, _util.constructMessage)(result), dispatch)).catch((0, _ramda.pipe)((0, _util.constructMessage)(error), dispatch)).then(always && (0, _ramda.pipe)((0, _util.constructMessage)(always), dispatch) || _ramda.identity);
-}]]);
-
-/***/ }),
-/* 17 */
-/***/ (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_17__;
-
-/***/ }),
-/* 18 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.history = undefined;
-
-var _createBrowserHistory = __webpack_require__(19);
-
-var _createBrowserHistory2 = _interopRequireDefault(_createBrowserHistory);
-
-var _browser = __webpack_require__(9);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var history = exports.history = (0, _createBrowserHistory2.default)();
-
-exports.default = new Map([[_browser.PushHistory, function (_ref) {
-  var path = _ref.path,
-      state = _ref.state;
-  return history.push(path, state || {});
-}], [_browser.ReplaceHistory, function (_ref2) {
-  var path = _ref2.path,
-      state = _ref2.state;
-  return history.replace(path, state || {});
-}], [_browser.Back, function (_ref3) {
-  var state = _ref3.state;
-  return history.goBack(state);
-}]]);
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
-
-exports.__esModule = true;
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _warning = __webpack_require__(5);
-
-var _warning2 = _interopRequireDefault(_warning);
-
-var _invariant = __webpack_require__(20);
-
-var _invariant2 = _interopRequireDefault(_invariant);
-
-var _LocationUtils = __webpack_require__(21);
-
-var _PathUtils = __webpack_require__(8);
-
-var _createTransitionManager = __webpack_require__(22);
-
-var _createTransitionManager2 = _interopRequireDefault(_createTransitionManager);
-
-var _ExecutionEnvironment = __webpack_require__(23);
-
-var _DOMUtils = __webpack_require__(24);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var PopStateEvent = 'popstate';
-var HashChangeEvent = 'hashchange';
-
-var getHistoryState = function getHistoryState() {
-  try {
-    return window.history.state || {};
-  } catch (e) {
-    // IE 11 sometimes throws when accessing window.history.state
-    // See https://github.com/mjackson/history/pull/289
-    return {};
-  }
-};
-
-/**
- * Creates a history object that uses the HTML5 history API including
- * pushState, replaceState, and the popstate event.
- */
-var createBrowserHistory = function createBrowserHistory() {
-  var props = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-  !_ExecutionEnvironment.canUseDOM ? process.env.NODE_ENV !== 'production' ? (0, _invariant2.default)(false, 'Browser history needs a DOM') : (0, _invariant2.default)(false) : void 0;
-
-  var globalHistory = window.history;
-  var canUseHistory = (0, _DOMUtils.supportsHistory)();
-  var needsHashChangeListener = !(0, _DOMUtils.supportsPopStateOnHashChange)();
-
-  var _props$basename = props.basename;
-  var basename = _props$basename === undefined ? '' : _props$basename;
-  var _props$forceRefresh = props.forceRefresh;
-  var forceRefresh = _props$forceRefresh === undefined ? false : _props$forceRefresh;
-  var _props$getUserConfirm = props.getUserConfirmation;
-  var getUserConfirmation = _props$getUserConfirm === undefined ? _DOMUtils.getConfirmation : _props$getUserConfirm;
-  var _props$keyLength = props.keyLength;
-  var keyLength = _props$keyLength === undefined ? 6 : _props$keyLength;
-
-
-  var getDOMLocation = function getDOMLocation(historyState) {
-    var _ref = historyState || {};
-
-    var key = _ref.key;
-    var state = _ref.state;
-    var _window$location = window.location;
-    var pathname = _window$location.pathname;
-    var search = _window$location.search;
-    var hash = _window$location.hash;
-
-
-    var path = pathname + search + hash;
-
-    if (basename) path = (0, _PathUtils.stripPrefix)(path, basename);
-
-    return _extends({}, (0, _PathUtils.parsePath)(path), {
-      state: state,
-      key: key
-    });
-  };
-
-  var createKey = function createKey() {
-    return Math.random().toString(36).substr(2, keyLength);
-  };
-
-  var transitionManager = (0, _createTransitionManager2.default)();
-
-  var setState = function setState(nextState) {
-    _extends(history, nextState);
-
-    history.length = globalHistory.length;
-
-    transitionManager.notifyListeners(history.location, history.action);
-  };
-
-  var handlePopState = function handlePopState(event) {
-    if (event.state === undefined) return; // Ignore extraneous popstate events in WebKit.
-
-    handlePop(getDOMLocation(event.state));
-  };
-
-  var handleHashChange = function handleHashChange() {
-    handlePop(getDOMLocation(getHistoryState()));
-  };
-
-  var forceNextPop = false;
-
-  var handlePop = function handlePop(location) {
-    if (forceNextPop) {
-      forceNextPop = false;
-      setState();
-    } else {
-      (function () {
-        var action = 'POP';
-
-        transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-          if (ok) {
-            setState({ action: action, location: location });
-          } else {
-            revertPop(location);
-          }
-        });
-      })();
-    }
-  };
-
-  var revertPop = function revertPop(fromLocation) {
-    var toLocation = history.location;
-
-    // TODO: We could probably make this more reliable by
-    // keeping a list of keys we've seen in sessionStorage.
-    // Instead, we just default to 0 for keys we don't know.
-
-    var toIndex = allKeys.indexOf(toLocation.key);
-
-    if (toIndex === -1) toIndex = 0;
-
-    var fromIndex = allKeys.indexOf(fromLocation.key);
-
-    if (fromIndex === -1) fromIndex = 0;
-
-    var delta = toIndex - fromIndex;
-
-    if (delta) {
-      forceNextPop = true;
-      go(delta);
-    }
-  };
-
-  var initialLocation = getDOMLocation(getHistoryState());
-  var allKeys = [initialLocation.key];
-
-  // Public interface
-
-  var push = function push(path, state) {
-    var action = 'PUSH';
-    var location = (0, _LocationUtils.createLocation)(path, state, createKey());
-
-    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-      if (!ok) return;
-
-      var url = basename + (0, _PathUtils.createPath)(location);
-      var key = location.key;
-      var state = location.state;
-
-
-      if (canUseHistory) {
-        globalHistory.pushState({ key: key, state: state }, null, url);
-
-        if (forceRefresh) {
-          window.location.href = url;
-        } else {
-          var prevIndex = allKeys.indexOf(history.location.key);
-          var nextKeys = allKeys.slice(0, prevIndex === -1 ? 0 : prevIndex + 1);
-
-          nextKeys.push(location.key);
-          allKeys = nextKeys;
-
-          setState({ action: action, location: location });
-        }
-      } else {
-        process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(state === undefined, 'Browser history cannot push state in browsers that do not support HTML5 history') : void 0;
-
-        window.location.href = url;
-      }
-    });
-  };
-
-  var replace = function replace(path, state) {
-    var action = 'REPLACE';
-    var location = (0, _LocationUtils.createLocation)(path, state, createKey());
-
-    transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-      if (!ok) return;
-
-      var url = basename + (0, _PathUtils.createPath)(location);
-      var key = location.key;
-      var state = location.state;
-
-
-      if (canUseHistory) {
-        globalHistory.replaceState({ key: key, state: state }, null, url);
-
-        if (forceRefresh) {
-          window.location.replace(url);
-        } else {
-          var prevIndex = allKeys.indexOf(history.location.key);
-
-          if (prevIndex !== -1) allKeys[prevIndex] = location.key;
-
-          setState({ action: action, location: location });
-        }
-      } else {
-        process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(state === undefined, 'Browser history cannot replace state in browsers that do not support HTML5 history') : void 0;
-
-        window.location.replace(url);
-      }
-    });
-  };
-
-  var go = function go(n) {
-    globalHistory.go(n);
-  };
-
-  var goBack = function goBack() {
-    return go(-1);
-  };
-
-  var goForward = function goForward() {
-    return go(1);
-  };
-
-  var listenerCount = 0;
-
-  var checkDOMListeners = function checkDOMListeners(delta) {
-    listenerCount += delta;
-
-    if (listenerCount === 1) {
-      (0, _DOMUtils.addEventListener)(window, PopStateEvent, handlePopState);
-
-      if (needsHashChangeListener) (0, _DOMUtils.addEventListener)(window, HashChangeEvent, handleHashChange);
-    } else if (listenerCount === 0) {
-      (0, _DOMUtils.removeEventListener)(window, PopStateEvent, handlePopState);
-
-      if (needsHashChangeListener) (0, _DOMUtils.removeEventListener)(window, HashChangeEvent, handleHashChange);
-    }
-  };
-
-  var isBlocked = false;
-
-  var block = function block() {
-    var prompt = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
-
-    var unblock = transitionManager.setPrompt(prompt);
-
-    if (!isBlocked) {
-      checkDOMListeners(1);
-      isBlocked = true;
-    }
-
-    return function () {
-      if (isBlocked) {
-        isBlocked = false;
-        checkDOMListeners(-1);
-      }
-
-      return unblock();
-    };
-  };
-
-  var listen = function listen(listener) {
-    var unlisten = transitionManager.appendListener(listener);
-    checkDOMListeners(1);
-
-    return function () {
-      checkDOMListeners(-1);
-      return unlisten();
-    };
-  };
-
-  var history = {
-    length: globalHistory.length,
-    action: 'POP',
-    location: initialLocation,
-    push: push,
-    replace: replace,
-    go: go,
-    goBack: goBack,
-    goForward: goForward,
-    block: block,
-    listen: listen
-  };
-
-  return history;
-};
-
-exports.default = createBrowserHistory;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
-
-/***/ }),
-/* 20 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {/**
- * Copyright 2013-2015, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- */
-
-
-
-/**
- * Use invariant() to assert state which your program assumes to be true.
- *
- * Provide sprintf-style format (only %s is supported) and arguments
- * to provide information about what broke and what you were
- * expecting.
- *
- * The invariant message will be stripped in production, but the invariant
- * will remain to ensure logic does not differ in production.
- */
-
-var invariant = function(condition, format, a, b, c, d, e, f) {
-  if (process.env.NODE_ENV !== 'production') {
-    if (format === undefined) {
-      throw new Error('invariant requires an error message argument');
-    }
-  }
-
-  if (!condition) {
-    var error;
-    if (format === undefined) {
-      error = new Error(
-        'Minified exception occurred; use the non-minified dev environment ' +
-        'for the full error message and additional helpful warnings.'
-      );
-    } else {
-      var args = [a, b, c, d, e, f];
-      var argIndex = 0;
-      error = new Error(
-        format.replace(/%s/g, function() { return args[argIndex++]; })
-      );
-      error.name = 'Invariant Violation';
-    }
-
-    error.framesToPop = 1; // we don't care about invariant's own frame
-    throw error;
-  }
-};
-
-module.exports = invariant;
-
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
-
-/***/ }),
-/* 21 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
-
-exports.__esModule = true;
-exports.locationsAreEqual = exports.createLocation = undefined;
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _warning = __webpack_require__(5);
-
-var _warning2 = _interopRequireDefault(_warning);
-
-var _PathUtils = __webpack_require__(8);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// A private helper function used to create location
-// objects from the args to push/replace.
-var createLocation = exports.createLocation = function createLocation(path, state, key) {
-  var location = void 0;
-  if (typeof path === 'string') {
-    // Two-arg form: push(path, state)
-    location = (0, _PathUtils.parsePath)(path);
-    location.state = state;
-  } else {
-    // One-arg form: push(location)
-    location = _extends({}, path);
-
-    if (state !== undefined) {
-      if (location.state === undefined) {
-        location.state = state;
-      } else {
-        process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(false, 'When providing a location-like object with state as the first argument to push/replace ' + 'you should avoid providing a second "state" argument; it is ignored') : void 0;
-      }
-    }
-  }
-
-  location.key = key;
-
-  return location;
-};
-
-var looseEqual = function looseEqual(a, b) {
-  if (a == null) return a == b;
-
-  var typeofA = typeof a === 'undefined' ? 'undefined' : _typeof(a);
-  var typeofB = typeof b === 'undefined' ? 'undefined' : _typeof(b);
-
-  if (typeofA !== typeofB) return false;
-
-  if (Array.isArray(a)) {
-    if (!Array.isArray(b) || a.length !== b.length) return false;
-
-    return a.every(function (item, index) {
-      return looseEqual(item, b[index]);
-    });
-  } else if (typeofA === 'object') {
-    var keysOfA = Object.keys(a);
-    var keysOfB = Object.keys(b);
-
-    if (keysOfA.length !== keysOfB.length) return false;
-
-    return keysOfA.every(function (key) {
-      return looseEqual(a[key], b[key]);
-    });
-  }
-
-  return a === b;
-};
-
-var locationsAreEqual = exports.locationsAreEqual = function locationsAreEqual(a, b) {
-  return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.key === b.key && looseEqual(a.state, b.state);
-};
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
-
-/***/ }),
-/* 22 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
-
-exports.__esModule = true;
-
-var _warning = __webpack_require__(5);
-
-var _warning2 = _interopRequireDefault(_warning);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var createTransitionManager = function createTransitionManager() {
-  var prompt = null;
-
-  var setPrompt = function setPrompt(nextPrompt) {
-    process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(prompt == null, 'A history supports only one prompt at a time') : void 0;
-
-    prompt = nextPrompt;
-
-    return function () {
-      if (prompt === nextPrompt) prompt = null;
-    };
-  };
-
-  var confirmTransitionTo = function confirmTransitionTo(location, action, getUserConfirmation, callback) {
-    // TODO: If another transition starts while we're still confirming
-    // the previous one, we may end up in a weird state. Figure out the
-    // best way to handle this.
-    if (prompt != null) {
-      var result = typeof prompt === 'function' ? prompt(location, action) : prompt;
-
-      if (typeof result === 'string') {
-        if (typeof getUserConfirmation === 'function') {
-          getUserConfirmation(result, callback);
-        } else {
-          process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(false, 'A history needs a getUserConfirmation function in order to use a prompt message') : void 0;
-
-          callback(true);
-        }
-      } else {
-        // Return false from a transition hook to cancel the transition.
-        callback(result !== false);
-      }
-    } else {
-      callback(true);
-    }
-  };
-
-  var listeners = [];
-
-  var appendListener = function appendListener(listener) {
-    listeners.push(listener);
-
-    return function () {
-      listeners = listeners.filter(function (item) {
-        return item !== listener;
-      });
-    };
-  };
-
-  var notifyListeners = function notifyListeners() {
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
-
-    return listeners.forEach(function (listener) {
-      return listener.apply(undefined, args);
-    });
-  };
-
-  return {
-    setPrompt: setPrompt,
-    confirmTransitionTo: confirmTransitionTo,
-    appendListener: appendListener,
-    notifyListeners: notifyListeners
-  };
-};
-
-exports.default = createTransitionManager;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
-
-/***/ }),
-/* 23 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.__esModule = true;
-var canUseDOM = exports.canUseDOM = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
-
-/***/ }),
-/* 24 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.__esModule = true;
-var addEventListener = exports.addEventListener = function addEventListener(node, event, listener) {
-  return node.addEventListener ? node.addEventListener(event, listener, false) : node.attachEvent('on' + event, listener);
-};
-
-var removeEventListener = exports.removeEventListener = function removeEventListener(node, event, listener) {
-  return node.removeEventListener ? node.removeEventListener(event, listener, false) : node.detachEvent('on' + event, listener);
-};
-
-var getConfirmation = exports.getConfirmation = function getConfirmation(message, callback) {
-  return callback(window.confirm(message));
-}; // eslint-disable-line no-alert
-
-/**
- * Returns true if the HTML5 history API is supported. Taken from Modernizr.
- *
- * https://github.com/Modernizr/Modernizr/blob/master/LICENSE
- * https://github.com/Modernizr/Modernizr/blob/master/feature-detects/history.js
- * changed to avoid false negatives for Windows Phones: https://github.com/reactjs/react-router/issues/586
- */
-var supportsHistory = exports.supportsHistory = function supportsHistory() {
-  var ua = window.navigator.userAgent;
-
-  if ((ua.indexOf('Android 2.') !== -1 || ua.indexOf('Android 4.0') !== -1) && ua.indexOf('Mobile Safari') !== -1 && ua.indexOf('Chrome') === -1 && ua.indexOf('Windows Phone') === -1) return false;
-
-  return window.history && 'pushState' in window.history;
-};
-
-/**
- * Returns true if browser fires popstate on hash change.
- * IE10 and IE11 do not.
- */
-var supportsPopStateOnHashChange = exports.supportsPopStateOnHashChange = function supportsPopStateOnHashChange() {
-  return window.navigator.userAgent.indexOf('Trident') === -1;
-};
-
-/**
- * Returns false if using go(n) with hash history causes a full page reload.
- */
-var supportsGoWithoutReloadUsingHash = exports.supportsGoWithoutReloadUsingHash = function supportsGoWithoutReloadUsingHash() {
-  return window.navigator.userAgent.indexOf('Firefox') === -1;
-};
-
-/***/ }),
-/* 25 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _ramda = __webpack_require__(0);
-
-var _jsCookie = __webpack_require__(26);
-
-var Cookies = _interopRequireWildcard(_jsCookie);
-
-var _cookies = __webpack_require__(10);
-
-var _util = __webpack_require__(1);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-exports.default = new Map([[_cookies.Read, function (_ref, dispatch) {
-  var key = _ref.key,
-      result = _ref.result;
-  return Promise.resolve(Cookies.getJSON(key)).then((0, _ramda.pipe)((0, _ramda.defaultTo)({}), (0, _util.constructMessage)(result), dispatch));
-}], [_cookies.Write, function (_ref2) {
-  var key = _ref2.key,
-      value = _ref2.value,
-      path = _ref2.path,
-      expires = _ref2.expires;
-  return Cookies.set(key, value, {
-    path: path || '/',
-    expires: expires || null
-  });
-}], [_cookies.Delete, function (_ref3) {
-  var key = _ref3.key;
-  return Cookies.remove(key);
-}]]);
-
-/***/ }),
-/* 26 */
-/***/ (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_26__;
-
-/***/ }),
-/* 27 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _ramda = __webpack_require__(0);
-
-var _local_storage = __webpack_require__(11);
-
-var _util = __webpack_require__(1);
-
-var get = window.localStorage.getItem.bind(window.localStorage);
-
-exports.default = new Map([[_local_storage.Read, function (_ref, dispatch) {
-  var key = _ref.key,
-      result = _ref.result;
-  return (0, _ramda.pipe)(get, _util.safeParse, (0, _ramda.objOf)('value'), (0, _ramda.merge)({ key: key }), (0, _util.constructMessage)(result), dispatch)(key);
-}], [_local_storage.Write, function (_ref2) {
-  var key = _ref2.key,
-      value = _ref2.value;
-  return window.localStorage.setItem(key, (0, _util.safeStringify)(value));
-}], [_local_storage.Delete, function (_ref3) {
-  var key = _ref3.key;
-  return window.localStorage.removeItem(key);
-}], [_local_storage.Clear, function () {
-  return window.localStorage.clear();
-}]]);
-
-/***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2691,7 +2305,7 @@ exports.default = (0, _ramda.curry)(function (effects, dispatch, msg) {
 });
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2705,17 +2319,17 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _ramda = __webpack_require__(0);
 
-var _react = __webpack_require__(4);
+var _react = __webpack_require__(5);
 
 var _react2 = _interopRequireDefault(_react);
 
-var _propTypes = __webpack_require__(30);
+var _propTypes = __webpack_require__(31);
 
 var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _message = __webpack_require__(2);
 
-var _exec_context = __webpack_require__(12);
+var _exec_context = __webpack_require__(26);
 
 var _exec_context2 = _interopRequireDefault(_exec_context);
 
@@ -2815,7 +2429,7 @@ ViewWrapper.defaultProps = { delegate: null };
 exports.default = ViewWrapper;
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports) {
 
 module.exports =
@@ -3329,7 +2943,7 @@ module.exports =
 /******/ ]);
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3344,7 +2958,7 @@ var _ramda = __webpack_require__(0);
 
 var _util = __webpack_require__(1);
 
-var _commands = __webpack_require__(32);
+var _commands = __webpack_require__(24);
 
 var commands = _interopRequireWildcard(_commands);
 
@@ -3448,41 +3062,6 @@ var notify = exports.notify = function notify(_ref) {
 };
 
 /***/ }),
-/* 32 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.LocalStorage = exports.Http = exports.Cookies = exports.Browser = undefined;
-
-var _browser = __webpack_require__(9);
-
-var _Browser = _interopRequireWildcard(_browser);
-
-var _cookies = __webpack_require__(10);
-
-var _Cookies = _interopRequireWildcard(_cookies);
-
-var _http = __webpack_require__(7);
-
-var _Http = _interopRequireWildcard(_http);
-
-var _local_storage = __webpack_require__(11);
-
-var _LocalStorage = _interopRequireWildcard(_local_storage);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-exports.Browser = _Browser;
-exports.Cookies = _Cookies;
-exports.Http = _Http;
-exports.LocalStorage = _LocalStorage;
-
-/***/ }),
 /* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -3575,5 +3154,5 @@ var StateManager = function () {
 exports.default = StateManager;
 
 /***/ })
-/******/ ]);
+],[27]);
 });
