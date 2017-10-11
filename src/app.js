@@ -1,11 +1,25 @@
-import { is, pipe, always, identity, curry, omit, merge, defaultTo, map, ifElse, constructN, splitEvery, evolve } from 'ramda';
-import React from 'react';
+import {
+	is,
+	pipe,
+	always,
+	identity,
+	curry,
+	omit,
+	merge,
+	defaultTo,
+	map,
+	ifElse,
+	constructN,
+	splitEvery,
+	evolve
+} from "ramda";
+import React from "react";
 
-import effects from './effects';
-import dispatcher from './effects/dispatcher';
-import ViewWrapper from './view_wrapper';
-import StateManager from './state_manager';
-import ExecContext from './exec_context';
+import effects from "./effects";
+import dispatcher from "./effects/dispatcher";
+import ViewWrapper from "./view_wrapper";
+import StateManager from "./state_manager";
+import ExecContext from "./exec_context";
 
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
@@ -25,18 +39,22 @@ const toMap = ifElse(is(Array), constructN(1, Map), identity);
  * @return {Function} Returns the wrapped container view
  */
 const wrapView = ({ env, container }) => {
-  /* eslint-disable react/prop-types */
-  const mergeProps = pipe(defaultTo({}), omit(['delegate']));
+	/* eslint-disable react/prop-types */
+	const mergeProps = pipe(defaultTo({}), omit(["delegate"]));
 
-  return (props = {}) => React.createElement(ViewWrapper, {
-    env, container, delegate: props.delegate || container.delegate, childProps: mergeProps(props),
-  });
+	return (props = {}) =>
+		React.createElement(ViewWrapper, {
+			env,
+			container,
+			delegate: props.delegate || container.delegate,
+			childProps: mergeProps(props)
+		});
 };
 
 /**
  * Maps default values of a container definition.
  */
-const mapDef = evolve({ update: toMap, name: defaultTo('UnknownContainer') });
+const mapDef = evolve({ update: toMap, name: defaultTo("UnknownContainer") });
 
 /**
  * Creates an execution environment for a container by providing it with a set of effects
@@ -55,25 +73,30 @@ const mapDef = evolve({ update: toMap, name: defaultTo('UnknownContainer') });
  *         - identity: Returns the parameters that created this environment
  */
 export const environment = ({ effects, dispatcher, log = null, stateManager = null }) => ({
-  stateManager: stateManager || (() => new StateManager()),
-  dispatcher: dispatcher(effects),
-  log: log || console.error.bind(console), // eslint-disable-line no-console
-  identity: () => ({ effects, dispatcher, log, stateManager }),
+	stateManager: stateManager || (() => new StateManager()),
+	dispatcher: dispatcher(effects),
+	log: log || console.error.bind(console), // eslint-disable-line no-console
+	identity: () => ({ effects, dispatcher, log, stateManager })
 });
 
 /**
  * Creates a container bound to an execution environment
  *
- * @param  {Object} env The environment
- * @param  {Object} container The container definition
+ * @param  {Object} env - The environment
+ * @param  {Object} container - The container definition
  * @return {Component} Returns a renderable React component
  */
 export const withEnvironment = curry((env, containerDef) => {
-  let container;
-  const { freeze, assign, defineProperty } = Object;
-  const fns = { identity: () => merge({}, containerDef), accepts: msgType => container.update.has(msgType) };
-  container = assign(mapDef(containerDef), fns);
-  return freeze(defineProperty(assign(wrapView({ env, container }), fns), 'name', { value: container.name }));
+	let container;
+	const { freeze, assign, defineProperty } = Object;
+	const fns = {
+		identity: () => merge({}, containerDef),
+		accepts: msgType => container.update.has(msgType)
+	};
+	container = assign(mapDef(containerDef), fns);
+	return freeze(
+		defineProperty(assign(wrapView({ env, container }), fns), "name", { value: container.name })
+	);
 });
 
 const defaultEnv = environment({ effects, dispatcher });
@@ -133,30 +156,29 @@ export const container = withEnvironment(defaultEnv);
  * Calling `dispatch()` on the container will simply return any commands issued.
  */
 export const isolate = (ctr, opts = {}) => {
-  const env = environment({
-    effects: [],
-    log: () => {},
-    dispatcher: curry((_, __, msg) => msg),
-    stateManager: opts.stateManager && always(opts.stateManager) || (() => new StateManager()),
-  });
+	const env = environment({
+		effects: [],
+		log: () => {},
+		dispatcher: curry((_, __, msg) => msg),
+		stateManager: (opts.stateManager && always(opts.stateManager)) || (() => new StateManager())
+	});
 
-  const container = Object.assign(mapDef(ctr.identity()), {
-    accepts: msgType => container.update.has(msgType),
-  });
-  const parent = opts.relay ? { relay: always(opts.relay) } : null;
-  const execContext = new ExecContext({ env, parent, container, delegate: null });
+	const container = Object.assign(mapDef(ctr.identity()), {
+		accepts: msgType => container.update.has(msgType)
+	});
+	const parent = opts.relay ? { relay: always(opts.relay) } : null;
+	const execContext = new ExecContext({ env, parent, container, delegate: null });
 
-  return Object.assign(wrapView({ env, container }), {
-    dispatch: execContext.dispatch.bind(execContext),
-    state: execContext.state.bind(execContext),
-    push: execContext.push.bind(execContext),
-  });
+	return Object.assign(wrapView({ env, container }), {
+		dispatch: execContext.dispatch.bind(execContext),
+		state: execContext.state.bind(execContext),
+		push: execContext.push.bind(execContext)
+	});
 };
 
 const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), identity);
-const consCommands = (model, msg, relay) => pipe(splitEvery(2), map(
-  ([cmd, data]) => new cmd(mapData(model, msg, relay)(data))
-));
+const consCommands = (model, msg, relay) =>
+	pipe(splitEvery(2), map(([cmd, data]) => new cmd(mapData(model, msg, relay)(data))));
 
 /**
  * Helper function for updaters that only issue commands. Pass in alternating command constructors and command data, i.e.:
@@ -172,8 +194,10 @@ const consCommands = (model, msg, relay) => pipe(splitEvery(2), map(
  * ```
  */
 export const commands = (...args) => {
-  if (args.length % 2 !== 0) {
-    throw new TypeError('commands() must be called with an equal number of command constructors & data parameters');
-  }
-  return (model, msg, relay) => [model, consCommands(model, msg, relay)(args)];
+	if (args.length % 2 !== 0) {
+		throw new TypeError(
+			"commands() must be called with an equal number of command constructors & data parameters"
+		);
+	}
+	return (model, msg, relay) => [model, consCommands(model, msg, relay)(args)];
 };
