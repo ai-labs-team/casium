@@ -1,10 +1,33 @@
 import {
-  pipe, curry, evolve, is, pickAll, keys, all, merge as _merge, values, both, propEq,
-  ifElse, identity, reduce, mergeDeepWith, union, map, flip, filter, not, isEmpty, nth,
-  zipWith, equals, either as or, both as and
-} from 'ramda';
-import React, { Children } from 'react';
-import Message from './message';
+	pipe,
+	curry,
+	evolve,
+	is,
+	pickAll,
+	keys,
+	all,
+	merge as _merge,
+	values,
+	both,
+	propEq,
+	ifElse,
+	identity,
+	reduce,
+	mergeDeepWith,
+	union,
+	map,
+	flip,
+	filter,
+	not,
+	isEmpty,
+	nth,
+	zipWith,
+	equals,
+	either as or,
+	both as and
+} from "ramda";
+import React, { Children } from "react";
+import Message from "./message";
 
 /**
  * Deep-merges two objects, overwriting left-hand keys with right-hand keys, unionizing arrays.
@@ -13,9 +36,9 @@ import Message from './message';
  * @param  {Object} right
  * @return {Object}
  */
-export const merge = mergeDeepWith((left, right) => (
-  all(is(Array), [left, right]) ? union(left, right) : right
-));
+export const merge = mergeDeepWith(
+	(left, right) => (all(is(Array), [left, right]) ? union(left, right) : right)
+);
 
 /**
  * Convenience function for handlers that only update state with fixed values,
@@ -48,36 +71,29 @@ export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, 
  * getValidationFailures({ foo: is(String), bar: is(Function) })({ foo: "Hello", bar: "not Func" }) -> ["bar"]
  * ```
  */
-export const getValidationFailures = spec => pipe(
-  pickAll(keys(spec)),
-  evolve(spec),
-  filter(not),
-  keys
-);
+export const getValidationFailures = spec =>
+	pipe(pickAll(keys(spec)), evolve(spec), filter(not), keys);
 
-const isFunctionWithNumArgs = numArgs => both(is(Function), propEq('length', numArgs));
+const isFunctionWithNumArgs = numArgs => both(is(Function), propEq("length", numArgs));
 
-const isObjectAndAllValuesAreFunctions = both(
-  is(Object),
-  pipe(values, all(is(Function)))
-);
+const isObjectAndAllValuesAreFunctions = both(is(Object), pipe(values, all(is(Function))));
 
 const assertValid = (fnMap, component) => {
-  const spec = { fnMap: isObjectAndAllValuesAreFunctions, component: isFunctionWithNumArgs(1) };
-  const failures = getValidationFailures(spec)({ fnMap, component });
+	const spec = { fnMap: isObjectAndAllValuesAreFunctions, component: isFunctionWithNumArgs(1) };
+	const failures = getValidationFailures(spec)({ fnMap, component });
 
-  if (!isEmpty(failures)) {
-    throw new TypeError('withProps failed on types: ' + failures.join(', '));
-  }
+	if (!isEmpty(failures)) {
+		throw new TypeError("withProps failed on types: " + failures.join(", "));
+	}
 };
 
 /**
  * Accepts an object of key/function pairs and a pure component function, and returns
  * a new pure component that will generate and inject new props into the pass component
  * function.
- * @param  {Object<Function>} An object hash of functions used to generate new props
- * @param  {Component} A pure function that returns React DOM
- * @params {Object} Accepts props passed from parent
+ * @param  {Object<Function>} fnMap - An object hash of functions used to generate new props
+ * @param  {Component} component - A pure function that returns React DOM
+ * @params {Object} props - Accepts props passed from parent
  * @return {Component} Returns a new component that generates new props from passed props
  *
  * @example
@@ -95,31 +111,56 @@ const assertValid = (fnMap, component) => {
  * ```
  */
 export const withProps = curry((fnMap, component, props) => {
-  assertValid(fnMap, component, props);
-  return component(merge(props, map(fn => fn(props), fnMap)));
+	assertValid(fnMap, component, props);
+	return component(merge(props, map(fn => fn(props), fnMap)));
 });
 
-export const cloneRecursive = (children, newProps) => Children.map(children, (child) => {
-  const mapProps = (child) => {
-    const props = is(Function, newProps) ? newProps(child) : newProps;
-    const hasChildren = child.props && child.props.children;
-    const mapper = hasChildren && is(Array, child.props.children) ? identity : nth(0);
-    const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
-    return merge(props || {}, { children });
-  };
+/**
+* Merges new props into each child from a children array and also into nested children arrays
+*
+* @params {Array{}} children - array of children elements
+* @params {Object} newProps
+* @return array of children objects, each with additional newProps
+**/
 
-  return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
-});
+export const cloneRecursive = (children, newProps) =>
+	Children.map(children, child => {
+		const mapProps = child => {
+			const props = is(Function, newProps) ? newProps(child) : newProps;
+			const hasChildren = child.props && child.props.children;
+			const mapper = hasChildren && is(Array, child.props.children) ? identity : nth(0);
+			const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
+			return merge(props || {}, { children });
+		};
 
-export const clone = (children, newProps) => Children.map(children, child => (
-  React.cloneElement(child, merge(React.isValidElement(child) ? newProps : {}, {
-    children: child.props.children,
-  }))
-));
+		return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
+	});
 
-export const suppressEvent = (e) => {
-  e.preventDefault();
-  return e;
+/**
+* Merges new props into each child from a children array
+*
+* @params {Array{}} children - array of children elements
+* @params {Object} newProps
+* @return array of children objects, each with additional newProps
+**/
+
+export const clone = (children, newProps) =>
+	Children.map(children, child =>
+		React.cloneElement(
+			child,
+			merge(React.isValidElement(child) ? newProps : {}, {
+				children: child.props.children
+			})
+		)
+	);
+
+/**
+* prevents default action of events then returns the event object
+**/
+
+export const suppressEvent = e => {
+	e.preventDefault();
+	return e;
 };
 
 /**
@@ -127,8 +168,8 @@ export const suppressEvent = (e) => {
  * function pipelines.
  */
 export const log = curry((msg, val) => {
-  console.log(msg, val); // eslint-disable-line no-console
-  return val;
+	console.log(msg, val); // eslint-disable-line no-console
+	return val;
 });
 
 /**
@@ -141,15 +182,13 @@ export const log = curry((msg, val) => {
  *                    of calling the wrapped function, otherwise returns the result of
  *                    passing the error (along with the arguments) to the handler.
  */
-export const trap = curry((handler, fn) => (
-  (...args) => {
-    try {
-      return fn(...args);
-    } catch (e) {
-      return handler(e, ...args);
-    }
-  }
-));
+export const trap = curry((handler, fn) => (...args) => {
+	try {
+		return fn(...args);
+	} catch (e) {
+		return handler(e, ...args);
+	}
+});
 
 /**
  * Converts a value to an array... unless it's already an array, then it just returns it.
@@ -166,34 +205,39 @@ export const mergeMaps = reduce(mergeMap, new Map([]));
 /**
  * Safely stringifies a JavaScript value to prevent error-ception in `app.result()`.
  */
-export const safeStringify = (val) => {
-  try {
-    return JSON.stringify(val);
-  } catch (e) {
-    return '{ unrepresentable value }';
-  }
+export const safeStringify = val => {
+	try {
+		return JSON.stringify(val);
+	} catch (e) {
+		return "{ unrepresentable value }";
+	}
 };
 
 /**
  * Safely parses a JavaScript value to prevent error-ception.
  */
-export const safeParse = (val) => {
-  try {
-    return JSON.parse(val);
-  } catch (e) {
-    return undefined;
-  }
+export const safeParse = val => {
+	try {
+		return JSON.parse(val);
+	} catch (e) {
+		return undefined;
+	}
 };
 
 /**
  * Checks that a value is a message constructor.
  */
-export const isMessage = result => result && result.prototype && result.prototype instanceof Message;
+export const isMessage = result =>
+	result && result.prototype && result.prototype instanceof Message;
 
 /**
  * Checks that a value is emittable as a message constructor
  */
 export const isEmittable = or(isMessage, and(is(Array), pipe(nth(0), isMessage)));
+
+/**
+  * checks if a value is an array, if so then it is returned, if not it gets placed in an array
+  **/
 
 export const toEmittable = ifElse(is(Array), identity, type => [type, {}]);
 
@@ -201,6 +245,6 @@ export const toEmittable = ifElse(is(Array), identity, type => [type, {}]);
  * Maps an emittable and message data to a message.
  */
 export const constructMessage = curry((msgType, data) => {
-  const [type, extra] = toEmittable(msgType);
-  return new type(merge(data, extra));
+	const [type, extra] = toEmittable(msgType);
+	return new type(merge(data, extra));
 });
