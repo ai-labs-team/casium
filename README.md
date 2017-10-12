@@ -1,6 +1,6 @@
 # The Axiom Front-End Architecture
 
-The Axiom Front-End Architecture is a _data_ and _effects_ management system that helps you manage the complexity of large React applications reliabily and predictably.
+The Axiom Front-End Architecture is a _data_ and _effects_ management system that helps you manage the complexity of large React applications reliably and predictably.
 
 It does this by modeling the state of your application (yes, all of it) as a single, immutable value, and handling side-effects in application logic with _messages_. If this reminds you of [Redux](http://redux.js.org/), that might be because both are derived from [The Elm Architecture](https://guide.elm-lang.org/architecture/). However, this library attempts to hew more closely to Elm's design in order to gain [more of Elm's advantages](https://www.youtube.com/watch?v=XsNk5aOpqUc&t=16m24s), and to provide a better, more cohesive developer experience.
 
@@ -64,12 +64,12 @@ You may have also noticed the `Increment` and `Decrement` classes up at the top 
 In our initial example, we completed the cycle of...
 
  1. Setting up the component with an initial state
- 1. Rendering the component with the initial state
- 1. Receiving messages from the view
- 1. Handling the messages in `update`
- 1. Updating the state
- 1. Re-rendering the view
- 1. Go to (3)
+ 2. Rendering the component with the initial state
+ 3. Receiving messages from the view
+ 4. Handling the messages in `update`
+ 5. Updating the state
+ 6. Re-rendering the view
+ 7. Go to (3)
 
 It looks a bit like this...
 
@@ -292,7 +292,7 @@ Again, we're changing the return value of `init()` to the array format we saw be
 
 We handle our `LoadCounter` message, destructuring the `value` property and assigning it to the `count` property of our new state. Great, right?
 
-Well, almost. Don't look now, but we've just introduced an error into our app: `count` is supposed to be a number, but local storage returns strings. We need to pass `value` through `parseInt()` and... this is starting to look a lot like work we've already done. 
+Well, almost. Don't look now, but we've just introduced an error into our app: `count` is supposed to be a number, but local storage returns strings. We need to pass `value` through `parseInt()` and... this is starting to look a lot like work we've already done.
 
 Instead, we can reuse our existing `SetCounter` message — both messages expect to have a `value` which gets number-ified and written to the `count` property of the state.
 
@@ -339,7 +339,7 @@ export default container({
 
       <button onClick={emit(Increment)}> + </button>
       <button onClick={emit([Increment, { step: 10 }])}> ++ </button>
-      
+
       <button onClick={emit(SaveCounter)}>Save</button>
     </div>
   )
