@@ -21,7 +21,7 @@ export default class ViewWrapper extends Component {
     container: PropTypes.object.isRequired,
     env: PropTypes.object.isRequired,
     childProps: PropTypes.object.isRequired,
-    delegate: PropTypes.string,
+    delegate: PropTypes.oneOfType([PropTypes.string, PropTypes.symbol]),
   };
 
   static defaultProps = { delegate: null };

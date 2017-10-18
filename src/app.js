@@ -177,3 +177,9 @@ export const commands = (...args) => {
   }
   return (model, msg, relay) => [model, consCommands(model, msg, relay)(args)];
 };
+
+/**
+ *  A global symbol that allows users to opt into what is currently the default delegate behavior
+ *  i.e when a delegate is unspecified, the container is hoisted into it's parent state
+ */
+export const PARENT = Symbol.for('@delegate/parent');

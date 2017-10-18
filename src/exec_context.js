@@ -5,6 +5,7 @@ import {
 } from 'ramda';
 import deepFreeze from 'deep-freeze-strict';
 import { safeStringify, suppressEvent, trap, isEmittable, toEmittable, constructMessage } from './util';
+import { PARENT } from './app';
 import { notify, intercept, cmdName } from './dev_tools';
 import Message from './message';
 
@@ -173,12 +174,14 @@ export default class ExecContext {
   stateMgr = null;
   getState = null;
   parent = null;
+  delegate = null;
   path = [];
   env = null;
 
   constructor({ env, container, parent, delegate }) {
     const stateMgr = parent ? null : intercept(env.stateManager(container)), proto = this.constructor.prototype;
-    const path = (parent && parent.path || []).concat(delegate || []);
+    const delegatePath = (delegate && delegate !== PARENT) ? delegate : [];
+    const path = (parent && parent.path || []).concat(delegatePath);
     const { freeze, assign } = Object;
     let hasInitialized = false;
 
@@ -204,6 +207,7 @@ export default class ExecContext {
       env,
       path,
       parent,
+      delegate,
       stateMgr,
       container,
       getState: stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path }),
@@ -236,6 +240,12 @@ export default class ExecContext {
   }
 
   push(val, config) {
+    if (!this.stateMgr && !this.delegate && this.getState() !== val) {
+      throw new Error(`'${this.container.name}' is trying to modify the state, `
+        + 'but has no \'delegate\' specified. Either opt into parent modification by '
+        + `giving '${this.container.name}' the delegate of the PARENT Symbol, or `
+        + `not have '${this.container.name}' modify the state.`);
+    }
     return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
   }
 
