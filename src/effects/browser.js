@@ -11,6 +11,6 @@ export default new Map([
   [Back, ({ state }) => history.goBack(state)],
   [
     Timeout,
-    ({ result, timeout }, dispatch) => setTimeout(() => pipe(constructMessage(result), dispatch)({}), timeout)
+    ({ result, timeout }, dispatch) => setTimeout(() => pipe(constructMessage(result), dispatch)({}), timeout),
   ],
 ]);

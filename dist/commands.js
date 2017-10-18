@@ -224,13 +224,15 @@ var formData = exports.formData = function formData(data) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Back = exports.PushHistory = exports.ReplaceHistory = undefined;
+exports.Timeout = exports.Back = exports.PushHistory = exports.ReplaceHistory = undefined;
 
 var _ramda = __webpack_require__(0);
 
 var _message = __webpack_require__(2);
 
 var _message2 = _interopRequireDefault(_message);
+
+var _util = __webpack_require__(1);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -279,6 +281,20 @@ var Back = exports.Back = function (_Message3) {
 
   return Back;
 }(_message2.default);
+
+var Timeout = exports.Timeout = function (_Message4) {
+  _inherits(Timeout, _Message4);
+
+  function Timeout() {
+    _classCallCheck(this, Timeout);
+
+    return _possibleConstructorReturn(this, (Timeout.__proto__ || Object.getPrototypeOf(Timeout)).apply(this, arguments));
+  }
+
+  return Timeout;
+}(_message2.default);
+
+Timeout.expects = { result: _util.isEmittable, timeout: (0, _ramda.is)(Number) };
 
 /***/ }),
 

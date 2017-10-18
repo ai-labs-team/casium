@@ -444,13 +444,15 @@ var formData = exports.formData = function formData(data) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Back = exports.PushHistory = exports.ReplaceHistory = undefined;
+exports.Timeout = exports.Back = exports.PushHistory = exports.ReplaceHistory = undefined;
 
 var _ramda = __webpack_require__(0);
 
 var _message = __webpack_require__(2);
 
 var _message2 = _interopRequireDefault(_message);
+
+var _util = __webpack_require__(1);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -499,6 +501,20 @@ var Back = exports.Back = function (_Message3) {
 
   return Back;
 }(_message2.default);
+
+var Timeout = exports.Timeout = function (_Message4) {
+  _inherits(Timeout, _Message4);
+
+  function Timeout() {
+    _classCallCheck(this, Timeout);
+
+    return _possibleConstructorReturn(this, (Timeout.__proto__ || Object.getPrototypeOf(Timeout)).apply(this, arguments));
+  }
+
+  return Timeout;
+}(_message2.default);
+
+Timeout.expects = { result: _util.isEmittable, timeout: (0, _ramda.is)(Number) };
 
 /***/ }),
 /* 8 */
@@ -804,11 +820,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.history = undefined;
 
+var _ramda = __webpack_require__(0);
+
 var _createBrowserHistory = __webpack_require__(15);
 
 var _createBrowserHistory2 = _interopRequireDefault(_createBrowserHistory);
 
 var _browser = __webpack_require__(7);
+
+var _util = __webpack_require__(1);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -825,6 +845,12 @@ exports.default = new Map([[_browser.PushHistory, function (_ref) {
 }], [_browser.Back, function (_ref3) {
   var state = _ref3.state;
   return history.goBack(state);
+}], [_browser.Timeout, function (_ref4, dispatch) {
+  var result = _ref4.result,
+      timeout = _ref4.timeout;
+  return setTimeout(function () {
+    return (0, _ramda.pipe)((0, _util.constructMessage)(result), dispatch)({});
+  }, timeout);
 }]]);
 
 /***/ }),

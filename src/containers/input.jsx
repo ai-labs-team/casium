@@ -2,9 +2,9 @@ import { assoc, omit } from 'ramda';
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { container, PARENT } from 'architecture';
-import { cloneRecursive, withProps } from 'architecture/util';
-import Message from 'architecture/message';
+import { container, PARENT } from '../app';
+import { cloneRecursive, withProps } from '../util';
+import Message from '../message';
 
 export class Change extends Message {}
 

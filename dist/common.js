@@ -410,7 +410,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _ramda = __webpack_require__(0);
 
-var _deepFreezeStrict = __webpack_require__(25);
+var _deepFreezeStrict = __webpack_require__(26);
 
 var _deepFreezeStrict2 = _interopRequireDefault(_deepFreezeStrict);
 
@@ -486,7 +486,7 @@ var Activate = exports.Activate = function (_Message) {
 
 /***/ }),
 
-/***/ 25:
+/***/ 26:
 /***/ (function(module, exports) {
 
 module.exports = function deepFreeze (o) {

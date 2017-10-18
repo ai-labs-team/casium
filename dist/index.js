@@ -444,13 +444,15 @@ var formData = exports.formData = function formData(data) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Back = exports.PushHistory = exports.ReplaceHistory = undefined;
+exports.Timeout = exports.Back = exports.PushHistory = exports.ReplaceHistory = undefined;
 
 var _ramda = __webpack_require__(0);
 
 var _message = __webpack_require__(2);
 
 var _message2 = _interopRequireDefault(_message);
+
+var _util = __webpack_require__(1);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -499,6 +501,20 @@ var Back = exports.Back = function (_Message3) {
 
   return Back;
 }(_message2.default);
+
+var Timeout = exports.Timeout = function (_Message4) {
+  _inherits(Timeout, _Message4);
+
+  function Timeout() {
+    _classCallCheck(this, Timeout);
+
+    return _possibleConstructorReturn(this, (Timeout.__proto__ || Object.getPrototypeOf(Timeout)).apply(this, arguments));
+  }
+
+  return Timeout;
+}(_message2.default);
+
+Timeout.expects = { result: _util.isEmittable, timeout: (0, _ramda.is)(Number) };
 
 /***/ }),
 /* 8 */
@@ -804,11 +820,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.history = undefined;
 
+var _ramda = __webpack_require__(0);
+
 var _createBrowserHistory = __webpack_require__(15);
 
 var _createBrowserHistory2 = _interopRequireDefault(_createBrowserHistory);
 
 var _browser = __webpack_require__(7);
+
+var _util = __webpack_require__(1);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -825,6 +845,12 @@ exports.default = new Map([[_browser.PushHistory, function (_ref) {
 }], [_browser.Back, function (_ref3) {
   var state = _ref3.state;
   return history.goBack(state);
+}], [_browser.Timeout, function (_ref4, dispatch) {
+  var result = _ref4.result,
+      timeout = _ref4.timeout;
+  return setTimeout(function () {
+    return (0, _ramda.pipe)((0, _util.constructMessage)(result), dispatch)({});
+  }, timeout);
 }]]);
 
 /***/ }),
@@ -1537,8 +1563,7 @@ exports.Http = _Http;
 exports.LocalStorage = _LocalStorage;
 
 /***/ }),
-/* 25 */,
-/* 26 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1547,470 +1572,7 @@ exports.LocalStorage = _LocalStorage;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-var _ramda = __webpack_require__(0);
-
-var _deepFreezeStrict = __webpack_require__(25);
-
-var _deepFreezeStrict2 = _interopRequireDefault(_deepFreezeStrict);
-
-var _util = __webpack_require__(1);
-
-var _dev_tools = __webpack_require__(32);
-
-var _message = __webpack_require__(2);
-
-var _message2 = _interopRequireDefault(_message);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
-
-var propOf = (0, _ramda.flip)(_ramda.prop);
-
-/**
- * Walk up a container hierarchy looking for a value.
- *
- * @param  {Function} Callback to check an execution context for a value
- * @param  {Object} The starting (child) execution context to walk up from
- * @param  {*} args Arguments to pass to `cb`
- * @return {*}
- */
-var walk = (0, _ramda.curry)(function (cb, exec, val) {
-  return cb(exec, val) || exec.parent && walk(cb, exec.parent, val);
-});
-
-/**
- * Checks if a container or a container's ancestor handles messages of a given type
- *
- * @param  {Object} exec An instance of ExecContext
- * @param  {Function} msgType A message constructor
- * @return {Boolean} Returns true if the container (or an ancestor) has an update handler matching
- *         the given constructor, otherwise false.
- */
-var handlesMsg = function handlesMsg(exec) {
-  return (0, _ramda.pipe)(_util.toEmittable, (0, _ramda.nth)(0), walk(function (exec, type) {
-    return exec.container.accepts(type);
-  }, exec));
-};
-
-/**
- * Formats a message for showing an error that occurred as the result of a command
- *
- * @param  {Message} msg
- * @param  {Message} cmd
- * @return {string}
- */
-var formatError = function formatError(msg, cmd) {
-  return ['An error was thrown as the result of command ' + ((0, _dev_tools.cmdName)(cmd) || '{COMMAND UNDEFINED}'), '(' + (0, _util.safeStringify)(cmd && cmd.data) + '), which was initiated by message', msg && msg.constructor && msg.constructor.name || '{INIT}', '(' + (0, _util.safeStringify)(msg && msg.data) + ') --'].join(' ');
-};
-
-var error = (0, _ramda.curry)(function (logger, err, msg) {
-  var cmd = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-  return logger(formatError(msg, cmd), err) || err;
-});
-
-/**
- * Checks that a Message object is valid
- * @param  {Object} A ExecContext instance
- * @param {Object} A Message instance
- * @return {Object} Returns the message instance, otherwise throws an error if it is invalid
- */
-var checkMessage = function checkMessage(exec, msg) {
-  var msgType = msg && msg.constructor;
-
-  if (msgType === Function) {
-    throw new TypeError('Attempted to dispatch message constructor \'' + msg.name + '\' \u2014 should be an instance');
-  }
-  if (!handlesMsg(exec)(msgType)) {
-    throw new TypeError('Unhandled message type \'' + msgType.name + '\' in container \'' + exec.container.name + '\'');
-  }
-  return msg;
-};
-
-/**
- * Attaches a container's state manager to a Redux store to receive updates.
- *
- * @param  {Object} config The attachment configuration
- * @param  {Object} container The container
- * @return {Object} Returns the store's current state to use as the container's initial state
- */
-var attachStore = function attachStore(config, container) {
-  var getState = function getState() {
-    return (config.key && (0, _ramda.prop)(config.key) || _ramda.identity)(config.store.getState());
-  };
-  config.store.subscribe((0, _ramda.pipe)(getState, (0, _ramda.merge)(_ramda.__, container.state()), container.push));
-  return getState();
-};
-
-/**
- * Freezes a value if that value is an object, otherwise return.
- */
-var freezeObj = (0, _ramda.ifElse)((0, _ramda.is)(Object), _deepFreezeStrict2.default, _ramda.identity);
-
-/**
- * Maps an `init()` or `update()` return value to the proper format.
- */
-var result = (0, _ramda.cond)([[(0, _ramda.both)((0, _ramda.is)(Array), (0, _ramda.propEq)('length', 0)), function () {
-  throw new TypeError('An empty array is an invalid value');
-}], [(0, _ramda.both)((0, _ramda.is)(Array), (0, _ramda.propEq)('length', 1)), function (_ref) {
-  var _ref2 = _slicedToArray(_ref, 1),
-      state = _ref2[0];
-
-  return [freezeObj(state), []];
-}], [(0, _ramda.is)(Array), function (_ref3) {
-  var _ref4 = _toArray(_ref3),
-      state = _ref4[0],
-      commands = _ref4.slice(1);
-
-  return [freezeObj(state), commands];
-}], [(0, _ramda.is)(Object), function (state) {
-  return [freezeObj(state), []];
-}], [(0, _ramda.always)(true), function (val) {
-  throw new TypeError('Unrecognized structure ' + (0, _util.safeStringify)(val));
-}]]);
-
-/**
- * Maps a state & a message to a new state and optional command (or list of commands).
- */
-var mapMessage = function mapMessage(handler, state, msg, relay) {
-  if (!(0, _ramda.is)(_message2.default, msg)) {
-    var ctor = msg && msg.constructor && msg.constructor.name || '{Unknown}';
-    throw new TypeError('Message of type \'' + ctor + '\' is not an instance of Message');
-  }
-  if (!handler || !(0, _ramda.is)(Function, handler)) {
-    throw new TypeError('Invalid handler for message type \'' + msg.constructor.name + '\'');
-  }
-  return result(handler(state, msg.data, relay));
-};
-
-/**
- * Maps an Event object to a hash that will be wrapped in a Message.
- */
-var mapEvent = (0, _ramda.curry)(function (extra, event) {
-  var isDomEvent = event && event.nativeEvent && (0, _ramda.is)(Object, event.target);
-  var isCheckbox = isDomEvent && event.target.type && event.target.type.toLowerCase() === 'checkbox';
-  var value = isDomEvent && (isCheckbox ? event.target.checked : event.target.value);
-  var eventVal = isDomEvent ? _extends({ value: value }, (0, _ramda.pickBy)((0, _ramda.complement)((0, _ramda.is)(Object)), event)) : event;
-
-  if (isDomEvent && !isCheckbox && extra.preventDefault !== false) {
-    (0, _util.suppressEvent)(event);
-  }
-  return (0, _ramda.mergeAll)([{ event: (0, _ramda.always)(event) }, eventVal, extra]);
-});
-
-/**
- * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
- */
-var checkCmdMsgs = (0, _ramda.curry)(function (exec, cmd) {
-  var unhandled = (0, _ramda.pipe)((0, _ramda.prop)('data'), _ramda.values, (0, _ramda.filter)(_util.isEmittable), (0, _ramda.filter)((0, _ramda.complement)(handlesMsg(exec))));
-  var msgs = unhandled(cmd);
-
-  if (!msgs.length) {
-    return cmd;
-  }
-  throw new Error(['A ' + (0, _dev_tools.cmdName)(cmd) + ' command was sent from container ' + exec.container.name + ' ', 'with one or more result messages that are unhandled by the container (or its ancestors): ', msgs.map((0, _ramda.prop)('name')).join(', ')].join(''));
-});
-
-/**
- * Receives a Redux action and, if that action has been mapped to a container message constructor,
- * dispatches a message of the matching type to the container.
- *
- * @param  {Object} exec An executor bound to a container
- * @param  {Object} messageTypes An object that pairs one or more Redux action types to message
- *                  constructors
- * @param  {Object} action A Redux action
- */
-var dispatchAction = function dispatchAction(exec, messageTypes, action) {
-  if (action && action.type && messageTypes[action.type]) {
-    exec.dispatch(new messageTypes[action.type](action));
-  }
-};
-
-/**
- * Binds together a container, environment, and a state manager to handles message execution within a
- * container.
- *
- * @param  {Function} getContainer A function that returns the container context to operate in
- * @param  {Map} updateMap A Map instance pairing message constructors to update handlers
- * @param  {Function} init An initialization function that executes the container's `init` function
- *                    with the initial state.
- * @return {Object} Returns an execution handler with the following functions:
- *         - initialize: A wrapper function used to delay the container's initial execution until its API
- *           is invoked
- *         - dispatch: Accepts a message to dispatch to the container
- */
-
-var ExecContext = function () {
-  function ExecContext(_ref5) {
-    var _this = this;
-
-    var env = _ref5.env,
-        container = _ref5.container,
-        parent = _ref5.parent,
-        delegate = _ref5.delegate;
-
-    _classCallCheck(this, ExecContext);
-
-    this.id = Math.round(Math.random() * Math.pow(2, 50)).toString();
-    this.stateMgr = null;
-    this.getState = null;
-    this.parent = null;
-    this.path = [];
-    this.env = null;
-
-    var stateMgr = parent ? null : (0, _dev_tools.intercept)(env.stateManager(container)),
-        proto = this.constructor.prototype;
-    var path = (parent && parent.path || []).concat(delegate || []);
-    var freeze = Object.freeze,
-        assign = Object.assign;
-
-    var hasInitialized = false;
-
-    var run = function run(msg, _ref6) {
-      var _ref7 = _slicedToArray(_ref6, 2),
-          next = _ref7[0],
-          cmds = _ref7[1];
-
-      (0, _dev_tools.notify)({ context: _this, container: container, msg: msg, path: _this.path, prev: _this.getState({ path: [] }), next: next, cmds: cmds });
-      _this.push(next);
-      return _this.commands(msg, cmds);
-    };
-
-    var initialize = function initialize(fn) {
-      return function () {
-        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
-
-        if (!hasInitialized && container.init) {
-          hasInitialized = true;
-          var attach = container.attach,
-              hasStore = attach && attach.store;
-          var initial = hasStore ? attachStore(container.attach, container) : _this.getState() || {};
-          run(null, result(container.init(initial) || {}));
-        }
-        return fn.call.apply(fn, [_this].concat(args));
-      };
-    };
-
-    var wrapInit = (0, _ramda.pipe)((0, _ramda.map)(propOf(proto)), (0, _ramda.map)(function (fn) {
-      return _defineProperty({}, fn.name, fn);
-    }), _ramda.mergeAll, (0, _ramda.map)(initialize));
-
-    freeze(assign(this, _extends({
-      env: env,
-      path: path,
-      parent: parent,
-      stateMgr: stateMgr,
-      container: container,
-      getState: stateMgr ? stateMgr.get.bind(stateMgr) : function (config) {
-        return parent.state(config || { path: path });
-      },
-      dispatch: initialize(this.dispatch.bind(this))
-    }, wrapInit(['push', 'subscribe', 'state', 'relay']))));
-
-    Object.assign(this.dispatch, { run: run });
-  }
-
-  _createClass(ExecContext, [{
-    key: 'subscribe',
-    value: function subscribe(listener, config) {
-      return (this.stateMgr || this.parent).subscribe(listener, config || { path: this.path });
-    }
-  }, {
-    key: 'dispatch',
-    value: function dispatch(message) {
-      var _this2 = this;
-
-      return (0, _util.trap)(error(this.env.log), function (msg) {
-        var msgType = msg.constructor,
-            updater = _this2.container.update.get(msgType);
-
-        if (!updater) {
-          return _this2.parent.dispatch(msg);
-        }
-        return _this2.dispatch.run(msg, mapMessage(updater, _this2.getState(), msg, _this2.relay()));
-      })(checkMessage(this, message));
-    }
-  }, {
-    key: 'commands',
-    value: function commands(msg, cmds) {
-      return (0, _ramda.pipe)(_ramda.flatten, (0, _ramda.filter)((0, _ramda.is)(Object)), (0, _ramda.map)((0, _util.trap)(error(this.env.log, _ramda.__, msg), (0, _ramda.pipe)(checkCmdMsgs(this), this.env.dispatcher(this.dispatch)))))(cmds);
-    }
-  }, {
-    key: 'push',
-    value: function push(val, config) {
-      return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
-    }
-  }, {
-    key: 'state',
-    value: function state(cfg) {
-      return this.getState(cfg);
-    }
-
-    /**
-     * Converts a container's relay map definition to a function that return's the container's relay value.
-      * @param  {Object} The `name: () => value` relay map for a container
-     * @param  {Object} The container to map
-     * @return {Object} Converts the relay map to `name: value` by passing the state and parent relay values
-     *         to each relay function.
-     */
-
-  }, {
-    key: 'relay',
-    value: function relay() {
-      var _this3 = this;
-
-      var parent = this.parent,
-          container = this.container,
-          inherited = parent && parent.relay() || {};
-
-      return (0, _ramda.merge)(inherited, (0, _ramda.map)(function (fn) {
-        return fn(_this3.state(), inherited);
-      }, container.relay || {}));
-    }
-
-    /**
-     * Returns a Redux-compatible reducer, which optionally accepts a map of action types to message constructors
-     * which the container should handle.
-     *
-     * @param  {Object} msgTypes
-     */
-
-  }, {
-    key: 'reducer',
-    value: function reducer() {
-      var _this4 = this;
-
-      var msgTypes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-      return function (prev, action) {
-        return dispatchAction(_this4.dispatch.run, msgTypes, action) || _this4.getState();
-      };
-    }
-
-    /**
-     * Returns a function that wraps a DOM event in a message and dispatches it to the attached container.
-     */
-
-  }, {
-    key: 'emit',
-    value: function emit(msgType) {
-      var em = (0, _util.toEmittable)(msgType),
-          _em = _slicedToArray(em, 2),
-          type = _em[0],
-          extra = _em[1],
-          ctr = this.container.name,
-          name = type && type.name || '??';
-
-      if (handlesMsg(this)(em)) {
-        return (0, _ramda.pipe)((0, _ramda.defaultTo)({}), mapEvent(extra), (0, _util.constructMessage)(type), this.dispatch);
-      }
-      throw new Error('Messages of type \'' + name + '\' are not handled by container \'' + ctr + '\' or any of its ancestors');
-    }
-  }]);
-
-  return ExecContext;
-}();
-
-exports.default = ExecContext;
-
-/***/ }),
-/* 27 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _app = __webpack_require__(28);
-
-Object.keys(_app).forEach(function (key) {
-  if (key === "default" || key === "__esModule") return;
-  Object.defineProperty(exports, key, {
-    enumerable: true,
-    get: function get() {
-      return _app[key];
-    }
-  });
-});
-
-var _util = __webpack_require__(1);
-
-Object.defineProperty(exports, 'mergeDeep', {
-  enumerable: true,
-  get: function get() {
-    return _util.merge;
-  }
-});
-Object.defineProperty(exports, 'replace', {
-  enumerable: true,
-  get: function get() {
-    return _util.update;
-  }
-});
-Object.defineProperty(exports, 'withProps', {
-  enumerable: true,
-  get: function get() {
-    return _util.withProps;
-  }
-});
-Object.defineProperty(exports, 'clone', {
-  enumerable: true,
-  get: function get() {
-    return _util.clone;
-  }
-});
-Object.defineProperty(exports, 'cloneRecursive', {
-  enumerable: true,
-  get: function get() {
-    return _util.cloneRecursive;
-  }
-});
-Object.defineProperty(exports, 'log', {
-  enumerable: true,
-  get: function get() {
-    return _util.log;
-  }
-});
-Object.defineProperty(exports, 'mergeMaps', {
-  enumerable: true,
-  get: function get() {
-    return _util.mergeMaps;
-  }
-});
-Object.defineProperty(exports, 'toArray', {
-  enumerable: true,
-  get: function get() {
-    return _util.toArray;
-  }
-});
-
-/***/ }),
-/* 28 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.commands = exports.isolate = exports.container = exports.withEnvironment = exports.environment = undefined;
+exports.PARENT = exports.commands = exports.isolate = exports.container = exports.withEnvironment = exports.environment = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -2036,7 +1598,7 @@ var _state_manager = __webpack_require__(33);
 
 var _state_manager2 = _interopRequireDefault(_state_manager);
 
-var _exec_context = __webpack_require__(26);
+var _exec_context = __webpack_require__(27);
 
 var _exec_context2 = _interopRequireDefault(_exec_context);
 
@@ -2262,6 +1824,484 @@ var commands = exports.commands = function commands() {
   };
 };
 
+/**
+ *  A global symbol that allows users to opt into what is currently the default delegate behavior
+ *  i.e when a delegate is unspecified, the container is hoisted into it's parent state
+ */
+var PARENT = exports.PARENT = Symbol.for('@delegate/parent');
+
+/***/ }),
+/* 26 */,
+/* 27 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _ramda = __webpack_require__(0);
+
+var _deepFreezeStrict = __webpack_require__(26);
+
+var _deepFreezeStrict2 = _interopRequireDefault(_deepFreezeStrict);
+
+var _util = __webpack_require__(1);
+
+var _app = __webpack_require__(25);
+
+var _dev_tools = __webpack_require__(32);
+
+var _message = __webpack_require__(2);
+
+var _message2 = _interopRequireDefault(_message);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
+
+var propOf = (0, _ramda.flip)(_ramda.prop);
+
+/**
+ * Walk up a container hierarchy looking for a value.
+ *
+ * @param  {Function} Callback to check an execution context for a value
+ * @param  {Object} The starting (child) execution context to walk up from
+ * @param  {*} args Arguments to pass to `cb`
+ * @return {*}
+ */
+var walk = (0, _ramda.curry)(function (cb, exec, val) {
+  return cb(exec, val) || exec.parent && walk(cb, exec.parent, val);
+});
+
+/**
+ * Checks if a container or a container's ancestor handles messages of a given type
+ *
+ * @param  {Object} exec An instance of ExecContext
+ * @param  {Function} msgType A message constructor
+ * @return {Boolean} Returns true if the container (or an ancestor) has an update handler matching
+ *         the given constructor, otherwise false.
+ */
+var handlesMsg = function handlesMsg(exec) {
+  return (0, _ramda.pipe)(_util.toEmittable, (0, _ramda.nth)(0), walk(function (exec, type) {
+    return exec.container.accepts(type);
+  }, exec));
+};
+
+/**
+ * Formats a message for showing an error that occurred as the result of a command
+ *
+ * @param  {Message} msg
+ * @param  {Message} cmd
+ * @return {string}
+ */
+var formatError = function formatError(msg, cmd) {
+  return ['An error was thrown as the result of command ' + ((0, _dev_tools.cmdName)(cmd) || '{COMMAND UNDEFINED}'), '(' + (0, _util.safeStringify)(cmd && cmd.data) + '), which was initiated by message', msg && msg.constructor && msg.constructor.name || '{INIT}', '(' + (0, _util.safeStringify)(msg && msg.data) + ') --'].join(' ');
+};
+
+var error = (0, _ramda.curry)(function (logger, err, msg) {
+  var cmd = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+  return logger(formatError(msg, cmd), err) || err;
+});
+
+/**
+ * Checks that a Message object is valid
+ * @param  {Object} A ExecContext instance
+ * @param {Object} A Message instance
+ * @return {Object} Returns the message instance, otherwise throws an error if it is invalid
+ */
+var checkMessage = function checkMessage(exec, msg) {
+  var msgType = msg && msg.constructor;
+
+  if (msgType === Function) {
+    throw new TypeError('Attempted to dispatch message constructor \'' + msg.name + '\' \u2014 should be an instance');
+  }
+  if (!handlesMsg(exec)(msgType)) {
+    throw new TypeError('Unhandled message type \'' + msgType.name + '\' in container \'' + exec.container.name + '\'');
+  }
+  return msg;
+};
+
+/**
+ * Attaches a container's state manager to a Redux store to receive updates.
+ *
+ * @param  {Object} config The attachment configuration
+ * @param  {Object} container The container
+ * @return {Object} Returns the store's current state to use as the container's initial state
+ */
+var attachStore = function attachStore(config, container) {
+  var getState = function getState() {
+    return (config.key && (0, _ramda.prop)(config.key) || _ramda.identity)(config.store.getState());
+  };
+  config.store.subscribe((0, _ramda.pipe)(getState, (0, _ramda.merge)(_ramda.__, container.state()), container.push));
+  return getState();
+};
+
+/**
+ * Freezes a value if that value is an object, otherwise return.
+ */
+var freezeObj = (0, _ramda.ifElse)((0, _ramda.is)(Object), _deepFreezeStrict2.default, _ramda.identity);
+
+/**
+ * Maps an `init()` or `update()` return value to the proper format.
+ */
+var result = (0, _ramda.cond)([[(0, _ramda.both)((0, _ramda.is)(Array), (0, _ramda.propEq)('length', 0)), function () {
+  throw new TypeError('An empty array is an invalid value');
+}], [(0, _ramda.both)((0, _ramda.is)(Array), (0, _ramda.propEq)('length', 1)), function (_ref) {
+  var _ref2 = _slicedToArray(_ref, 1),
+      state = _ref2[0];
+
+  return [freezeObj(state), []];
+}], [(0, _ramda.is)(Array), function (_ref3) {
+  var _ref4 = _toArray(_ref3),
+      state = _ref4[0],
+      commands = _ref4.slice(1);
+
+  return [freezeObj(state), commands];
+}], [(0, _ramda.is)(Object), function (state) {
+  return [freezeObj(state), []];
+}], [(0, _ramda.always)(true), function (val) {
+  throw new TypeError('Unrecognized structure ' + (0, _util.safeStringify)(val));
+}]]);
+
+/**
+ * Maps a state & a message to a new state and optional command (or list of commands).
+ */
+var mapMessage = function mapMessage(handler, state, msg, relay) {
+  if (!(0, _ramda.is)(_message2.default, msg)) {
+    var ctor = msg && msg.constructor && msg.constructor.name || '{Unknown}';
+    throw new TypeError('Message of type \'' + ctor + '\' is not an instance of Message');
+  }
+  if (!handler || !(0, _ramda.is)(Function, handler)) {
+    throw new TypeError('Invalid handler for message type \'' + msg.constructor.name + '\'');
+  }
+  return result(handler(state, msg.data, relay));
+};
+
+/**
+ * Maps an Event object to a hash that will be wrapped in a Message.
+ */
+var mapEvent = (0, _ramda.curry)(function (extra, event) {
+  var isDomEvent = event && event.nativeEvent && (0, _ramda.is)(Object, event.target);
+  var isCheckbox = isDomEvent && event.target.type && event.target.type.toLowerCase() === 'checkbox';
+  var value = isDomEvent && (isCheckbox ? event.target.checked : event.target.value);
+  var eventVal = isDomEvent ? _extends({ value: value }, (0, _ramda.pickBy)((0, _ramda.complement)((0, _ramda.is)(Object)), event)) : event;
+
+  if (isDomEvent && !isCheckbox && extra.preventDefault !== false) {
+    (0, _util.suppressEvent)(event);
+  }
+  return (0, _ramda.mergeAll)([{ event: (0, _ramda.always)(event) }, eventVal, extra]);
+});
+
+/**
+ * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
+ */
+var checkCmdMsgs = (0, _ramda.curry)(function (exec, cmd) {
+  var unhandled = (0, _ramda.pipe)((0, _ramda.prop)('data'), _ramda.values, (0, _ramda.filter)(_util.isEmittable), (0, _ramda.filter)((0, _ramda.complement)(handlesMsg(exec))));
+  var msgs = unhandled(cmd);
+
+  if (!msgs.length) {
+    return cmd;
+  }
+  throw new Error(['A ' + (0, _dev_tools.cmdName)(cmd) + ' command was sent from container ' + exec.container.name + ' ', 'with one or more result messages that are unhandled by the container (or its ancestors): ', msgs.map((0, _ramda.prop)('name')).join(', ')].join(''));
+});
+
+/**
+ * Receives a Redux action and, if that action has been mapped to a container message constructor,
+ * dispatches a message of the matching type to the container.
+ *
+ * @param  {Object} exec An executor bound to a container
+ * @param  {Object} messageTypes An object that pairs one or more Redux action types to message
+ *                  constructors
+ * @param  {Object} action A Redux action
+ */
+var dispatchAction = function dispatchAction(exec, messageTypes, action) {
+  if (action && action.type && messageTypes[action.type]) {
+    exec.dispatch(new messageTypes[action.type](action));
+  }
+};
+
+/**
+ * Binds together a container, environment, and a state manager to handles message execution within a
+ * container.
+ *
+ * @param  {Function} getContainer A function that returns the container context to operate in
+ * @param  {Map} updateMap A Map instance pairing message constructors to update handlers
+ * @param  {Function} init An initialization function that executes the container's `init` function
+ *                    with the initial state.
+ * @return {Object} Returns an execution handler with the following functions:
+ *         - initialize: A wrapper function used to delay the container's initial execution until its API
+ *           is invoked
+ *         - dispatch: Accepts a message to dispatch to the container
+ */
+
+var ExecContext = function () {
+  function ExecContext(_ref5) {
+    var _this = this;
+
+    var env = _ref5.env,
+        container = _ref5.container,
+        parent = _ref5.parent,
+        delegate = _ref5.delegate;
+
+    _classCallCheck(this, ExecContext);
+
+    this.id = Math.round(Math.random() * Math.pow(2, 50)).toString();
+    this.stateMgr = null;
+    this.getState = null;
+    this.parent = null;
+    this.delegate = null;
+    this.path = [];
+    this.env = null;
+
+    var stateMgr = parent ? null : (0, _dev_tools.intercept)(env.stateManager(container)),
+        proto = this.constructor.prototype;
+    var delegatePath = delegate && delegate !== _app.PARENT ? delegate : [];
+    var path = (parent && parent.path || []).concat(delegatePath);
+    var freeze = Object.freeze,
+        assign = Object.assign;
+
+    var hasInitialized = false;
+
+    var run = function run(msg, _ref6) {
+      var _ref7 = _slicedToArray(_ref6, 2),
+          next = _ref7[0],
+          cmds = _ref7[1];
+
+      (0, _dev_tools.notify)({ context: _this, container: container, msg: msg, path: _this.path, prev: _this.getState({ path: [] }), next: next, cmds: cmds });
+      _this.push(next);
+      return _this.commands(msg, cmds);
+    };
+
+    var initialize = function initialize(fn) {
+      return function () {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        if (!hasInitialized && container.init) {
+          hasInitialized = true;
+          var attach = container.attach,
+              hasStore = attach && attach.store;
+          var initial = hasStore ? attachStore(container.attach, container) : _this.getState() || {};
+          run(null, result(container.init(initial) || {}));
+        }
+        return fn.call.apply(fn, [_this].concat(args));
+      };
+    };
+
+    var wrapInit = (0, _ramda.pipe)((0, _ramda.map)(propOf(proto)), (0, _ramda.map)(function (fn) {
+      return _defineProperty({}, fn.name, fn);
+    }), _ramda.mergeAll, (0, _ramda.map)(initialize));
+
+    freeze(assign(this, _extends({
+      env: env,
+      path: path,
+      parent: parent,
+      delegate: delegate,
+      stateMgr: stateMgr,
+      container: container,
+      getState: stateMgr ? stateMgr.get.bind(stateMgr) : function (config) {
+        return parent.state(config || { path: path });
+      },
+      dispatch: initialize(this.dispatch.bind(this))
+    }, wrapInit(['push', 'subscribe', 'state', 'relay']))));
+
+    Object.assign(this.dispatch, { run: run });
+  }
+
+  _createClass(ExecContext, [{
+    key: 'subscribe',
+    value: function subscribe(listener, config) {
+      return (this.stateMgr || this.parent).subscribe(listener, config || { path: this.path });
+    }
+  }, {
+    key: 'dispatch',
+    value: function dispatch(message) {
+      var _this2 = this;
+
+      return (0, _util.trap)(error(this.env.log), function (msg) {
+        var msgType = msg.constructor,
+            updater = _this2.container.update.get(msgType);
+
+        if (!updater) {
+          return _this2.parent.dispatch(msg);
+        }
+        return _this2.dispatch.run(msg, mapMessage(updater, _this2.getState(), msg, _this2.relay()));
+      })(checkMessage(this, message));
+    }
+  }, {
+    key: 'commands',
+    value: function commands(msg, cmds) {
+      return (0, _ramda.pipe)(_ramda.flatten, (0, _ramda.filter)((0, _ramda.is)(Object)), (0, _ramda.map)((0, _util.trap)(error(this.env.log, _ramda.__, msg), (0, _ramda.pipe)(checkCmdMsgs(this), this.env.dispatcher(this.dispatch)))))(cmds);
+    }
+  }, {
+    key: 'push',
+    value: function push(val, config) {
+      if (!this.stateMgr && !this.delegate && this.getState() !== val) {
+        throw new Error('\'' + this.container.name + '\' is trying to modify the state, ' + 'but has no \'delegate\' specified. Either opt into parent modification by ' + ('giving \'' + this.container.name + '\' the delegate of the PARENT Symbol, or ') + ('not have \'' + this.container.name + '\' modify the state.'));
+      }
+      return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
+    }
+  }, {
+    key: 'state',
+    value: function state(cfg) {
+      return this.getState(cfg);
+    }
+
+    /**
+     * Converts a container's relay map definition to a function that return's the container's relay value.
+      * @param  {Object} The `name: () => value` relay map for a container
+     * @param  {Object} The container to map
+     * @return {Object} Converts the relay map to `name: value` by passing the state and parent relay values
+     *         to each relay function.
+     */
+
+  }, {
+    key: 'relay',
+    value: function relay() {
+      var _this3 = this;
+
+      var parent = this.parent,
+          container = this.container,
+          inherited = parent && parent.relay() || {};
+
+      return (0, _ramda.merge)(inherited, (0, _ramda.map)(function (fn) {
+        return fn(_this3.state(), inherited);
+      }, container.relay || {}));
+    }
+
+    /**
+     * Returns a Redux-compatible reducer, which optionally accepts a map of action types to message constructors
+     * which the container should handle.
+     *
+     * @param  {Object} msgTypes
+     */
+
+  }, {
+    key: 'reducer',
+    value: function reducer() {
+      var _this4 = this;
+
+      var msgTypes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+      return function (prev, action) {
+        return dispatchAction(_this4.dispatch.run, msgTypes, action) || _this4.getState();
+      };
+    }
+
+    /**
+     * Returns a function that wraps a DOM event in a message and dispatches it to the attached container.
+     */
+
+  }, {
+    key: 'emit',
+    value: function emit(msgType) {
+      var em = (0, _util.toEmittable)(msgType),
+          _em = _slicedToArray(em, 2),
+          type = _em[0],
+          extra = _em[1],
+          ctr = this.container.name,
+          name = type && type.name || '??';
+
+      if (handlesMsg(this)(em)) {
+        return (0, _ramda.pipe)((0, _ramda.defaultTo)({}), mapEvent(extra), (0, _util.constructMessage)(type), this.dispatch);
+      }
+      throw new Error('Messages of type \'' + name + '\' are not handled by container \'' + ctr + '\' or any of its ancestors');
+    }
+  }]);
+
+  return ExecContext;
+}();
+
+exports.default = ExecContext;
+
+/***/ }),
+/* 28 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _app = __webpack_require__(25);
+
+Object.keys(_app).forEach(function (key) {
+  if (key === "default" || key === "__esModule") return;
+  Object.defineProperty(exports, key, {
+    enumerable: true,
+    get: function get() {
+      return _app[key];
+    }
+  });
+});
+
+var _util = __webpack_require__(1);
+
+Object.defineProperty(exports, 'mergeDeep', {
+  enumerable: true,
+  get: function get() {
+    return _util.merge;
+  }
+});
+Object.defineProperty(exports, 'replace', {
+  enumerable: true,
+  get: function get() {
+    return _util.update;
+  }
+});
+Object.defineProperty(exports, 'withProps', {
+  enumerable: true,
+  get: function get() {
+    return _util.withProps;
+  }
+});
+Object.defineProperty(exports, 'clone', {
+  enumerable: true,
+  get: function get() {
+    return _util.clone;
+  }
+});
+Object.defineProperty(exports, 'cloneRecursive', {
+  enumerable: true,
+  get: function get() {
+    return _util.cloneRecursive;
+  }
+});
+Object.defineProperty(exports, 'log', {
+  enumerable: true,
+  get: function get() {
+    return _util.log;
+  }
+});
+Object.defineProperty(exports, 'mergeMaps', {
+  enumerable: true,
+  get: function get() {
+    return _util.mergeMaps;
+  }
+});
+Object.defineProperty(exports, 'toArray', {
+  enumerable: true,
+  get: function get() {
+    return _util.toArray;
+  }
+});
+
 /***/ }),
 /* 29 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -2329,7 +2369,7 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _message = __webpack_require__(2);
 
-var _exec_context = __webpack_require__(26);
+var _exec_context = __webpack_require__(27);
 
 var _exec_context2 = _interopRequireDefault(_exec_context);
 
@@ -2423,7 +2463,7 @@ ViewWrapper.propTypes = {
   container: _propTypes2.default.object.isRequired,
   env: _propTypes2.default.object.isRequired,
   childProps: _propTypes2.default.object.isRequired,
-  delegate: _propTypes2.default.string
+  delegate: _propTypes2.default.oneOfType([_propTypes2.default.string, _propTypes2.default.symbol])
 };
 ViewWrapper.defaultProps = { delegate: null };
 exports.default = ViewWrapper;
@@ -3082,47 +3122,63 @@ var _util = __webpack_require__(1);
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var inList = (0, _ramda.flip)(_ramda.contains);
+
 var StateManager = function () {
   function StateManager() {
+    var _this = this;
+
     var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
     _classCallCheck(this, StateManager);
 
-    Object.assign(this, { listeners: [], state: state });
+    Object.assign(this, {
+      state: state,
+      listeners: [],
+      _broadcast: function _broadcast(_ref) {
+        var _ref2 = _slicedToArray(_ref, 2),
+            path = _ref2[0],
+            listener = _ref2[1];
+
+        return listener((0, _ramda.defaultTo)({}, _this.get({ path: path })));
+      }
+    });
   }
+
+  /**
+   * Gets the current state, optionally with a path into the root value.
+   */
+
 
   _createClass(StateManager, [{
     key: 'get',
     value: function get() {
       var opts = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { path: [] };
 
-      var path = opts && opts.path;
-      return (0, _ramda.view)((0, _ramda.lensPath)(path), this.state);
+      return (0, _ramda.view)((0, _ramda.lensPath)(opts && opts.path || []))(this.state);
     }
-  }, {
-    key: '_listeners',
-    value: function _listeners(path) {
-      return (0, _ramda.filter)((0, _ramda.pipe)((0, _ramda.nth)(0), (0, _util.compareOffsets)(path)));
-    }
+
+    /**
+     * Pushes a new state value to the state container. Optionally accepts a path into
+     * the root value to write into.
+     */
+
   }, {
     key: 'set',
     value: function set(newState) {
       var opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : { path: [] };
 
-      var broadcast = (0, _ramda.pipe)(this._listeners(opts.path), (0, _ramda.forEach)(this.broadcast.bind(this)));
       this.state = (0, _ramda.set)((0, _ramda.lensPath)(opts.path), newState, this.state);
-      broadcast(this.listeners);
+      this.listeners.forEach((0, _ramda.when)((0, _ramda.both)(inList(this.listeners), (0, _ramda.pipe)((0, _ramda.nth)(0), (0, _util.compareOffsets)(opts.path))), this._broadcast));
       return this.state;
     }
-  }, {
-    key: 'broadcast',
-    value: function broadcast(_ref) {
-      var _ref2 = _slicedToArray(_ref, 2),
-          path = _ref2[0],
-          listener = _ref2[1];
 
-      listener((0, _ramda.defaultTo)({}, this.get({ path: path })));
-    }
+    /**
+     * Attaches a subscriber function that is invoked when the state is updated. Optionally
+     * accepts an array representing a path into the root state value that this listener
+     * should observe changes on. Returns an unsubscribe function.
+     */
+
   }, {
     key: 'subscribe',
     value: function subscribe(listener) {
@@ -3132,18 +3188,23 @@ var StateManager = function () {
       this.listeners.push(config);
 
       if (this.state) {
-        this.broadcast(config);
+        this._broadcast(config);
       }
-      return this.unsubscribe(config);
+      return this.unsubscribeFn(config);
     }
+
+    /**
+     * Returns an unsubscribe function for a listener.
+     */
+
   }, {
-    key: 'unsubscribe',
-    value: function unsubscribe(listener) {
-      var _this = this;
+    key: 'unsubscribeFn',
+    value: function unsubscribeFn(listener) {
+      var _this2 = this;
 
       return function () {
-        var index = _this.listeners.indexOf(listener);
-        return index > -1 && _this.listeners.splice(index, 1)[0] || false;
+        var index = _this2.listeners.indexOf(listener);
+        return index > -1 && _this2.listeners.splice(index, 1)[0] || false;
       };
     }
   }]);
@@ -3154,5 +3215,5 @@ var StateManager = function () {
 exports.default = StateManager;
 
 /***/ })
-],[27]);
+],[28]);
 });

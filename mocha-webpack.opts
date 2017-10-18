@@ -1,0 +1,7 @@
+--webpack-config test/webpack.config.js
+--colors
+--reporter dot
+--recursive
+--require babel-register
+--require jsdom-global/register
+--require test/setup.js
