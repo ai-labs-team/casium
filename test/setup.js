@@ -6,10 +6,4 @@ const enzyme = require('enzyme');
 const { render, shallow, mount } = enzyme;
 
 chai.use(chaiEnzyme());
-
-Object.assign(global, {
-  expect: chai.expect,
-  mount,
-  render,
-  shallow,
-});
+Object.assign(global, { expect: chai.expect, mount, render, shallow });
