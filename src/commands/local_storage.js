@@ -1,10 +1,10 @@
-import { is, complement as not, isNil } from "ramda";
-import Message from "../message";
-import { isEmittable } from "../util";
+import { is, complement as not, isNil } from 'ramda';
+import Message from '../message';
+import { isEmittable } from '../util';
 
 /**
 *
-* These classes are used to handle interactions with local storage.
+* These classes are used to handle interactions with local storage. 
 *
 **/
 

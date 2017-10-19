@@ -25,15 +25,15 @@ import {
 	equals,
 	either as or,
 	both as and
-} from "ramda";
-import React, { Children } from "react";
-import Message from "./message";
+} from 'ramda';
+import React, { Children } from 'react';
+import Message from './message';
 
 /**
  * Deep-merges two objects, overwriting left-hand keys with right-hand keys, unionizing arrays.
  *
  * @param  {Object} left
- * @param  {Object} right
+ * @param  {Object} right 
  * @return {Object}
  */
 export const merge = mergeDeepWith(
@@ -74,7 +74,7 @@ export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, 
 export const getValidationFailures = spec =>
 	pipe(pickAll(keys(spec)), evolve(spec), filter(not), keys);
 
-const isFunctionWithNumArgs = numArgs => both(is(Function), propEq("length", numArgs));
+const isFunctionWithNumArgs = numArgs => both(is(Function), propEq('length', numArgs));
 
 const isObjectAndAllValuesAreFunctions = both(is(Object), pipe(values, all(is(Function))));
 
@@ -83,7 +83,7 @@ const assertValid = (fnMap, component) => {
 	const failures = getValidationFailures(spec)({ fnMap, component });
 
 	if (!isEmpty(failures)) {
-		throw new TypeError("withProps failed on types: " + failures.join(", "));
+		throw new TypeError('withProps failed on types: ' + failures.join(', '));
 	}
 };
 
@@ -209,7 +209,7 @@ export const safeStringify = val => {
 	try {
 		return JSON.stringify(val);
 	} catch (e) {
-		return "{ unrepresentable value }";
+		return '{ unrepresentable value }';
 	}
 };
 

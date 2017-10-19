@@ -1,9 +1,9 @@
-import { pipe, filter, nth, lensPath, view, set, forEach, defaultTo } from "ramda";
-import { compareOffsets } from "./util";
+import { pipe, filter, nth, lensPath, view, set, forEach, defaultTo } from 'ramda';
+import { compareOffsets } from './util';
 
 /**
 *
-* StateManager adds and removes event listeners
+* StateManager adds and removes event listeners 
 *
 **/
 

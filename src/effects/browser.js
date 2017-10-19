@@ -1,8 +1,8 @@
-import createHistory from "history/createBrowserHistory";
-import { PushHistory, ReplaceHistory, Back } from "../commands/browser";
+import createHistory from 'history/createBrowserHistory';
+import { PushHistory, ReplaceHistory, Back } from '../commands/browser';
 
 /**
-*
+* 
 * The history export's documentation is found at {@link https://www.npmjs.com/package/history}
 *
 * The Map constructor function manages the browser history and uses the history package to

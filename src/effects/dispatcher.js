@@ -1,9 +1,9 @@
-import { is, curry, flip } from "ramda";
-import Message from "../message";
+import { is, curry, flip } from 'ramda';
+import Message from '../message';
 
 /**
  * Dispatches command messages.
- *
+ * 
  * @param {Map} effects - A map pairing command message constructors to effects handlers
  * @param {Function} dispatch - A container-bound dispatch function for sending
  *        effect results (where applicable) back to containers

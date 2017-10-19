@@ -1,8 +1,8 @@
-import { is } from "ramda";
-import Message from "../message";
+import { is } from 'ramda';
+import Message from '../message';
 
 /**
-* PushHistory, ReplaceHistory, and Back classes manage the browser history.
+* PushHistory, ReplaceHistory, and Back classes manage the browser history. 
 * Additionally, PushHistory and ReplaceHistory check if the path is a string
 **/
 

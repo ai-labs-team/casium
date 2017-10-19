@@ -1,6 +1,6 @@
-import { is, merge, isEmpty, join } from "ramda";
-import deepFreeze from "deep-freeze-strict";
-import { getValidationFailures, safeStringify } from "./util";
+import { is, merge, isEmpty, join } from 'ramda';
+import deepFreeze from 'deep-freeze-strict';
+import { getValidationFailures, safeStringify } from './util';
 
 /**
 *
@@ -8,7 +8,7 @@ import { getValidationFailures, safeStringify } from "./util";
 * the view. Message has logic that checks to make sure that what is passed is formatted correctly
 * (as an object) and that the value types match.
 *
-* Activate is the first message class and will be used later on.
+* Activate is the first message class and will be used later on. 
 *
 **/
 
@@ -26,7 +26,7 @@ export default class Message {
 		if (!isEmpty(invalidTypes)) {
 			throw new TypeError(
 				`Message data ${safeStringify(data)} failed expectations in ${ctor.name}: {${join(
-					", ",
+					', ',
 					invalidTypes
 				)}}`
 			);
@@ -45,12 +45,12 @@ export default class Message {
 			return;
 		}
 		const msg = [
-			"Message data must be an object in message",
+			'Message data must be an object in message',
 			this.constructor.name,
-			"but is",
+			'but is',
 			safeStringify(data)
 		];
-		throw new Error(msg.join(" "));
+		throw new Error(msg.join(' '));
 	}
 
 	map(data) {

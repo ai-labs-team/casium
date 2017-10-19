@@ -12,14 +12,14 @@ import {
 	constructN,
 	splitEvery,
 	evolve
-} from "ramda";
-import React from "react";
+} from 'ramda';
+import React from 'react';
 
-import effects from "./effects";
-import dispatcher from "./effects/dispatcher";
-import ViewWrapper from "./view_wrapper";
-import StateManager from "./state_manager";
-import ExecContext from "./exec_context";
+import effects from './effects';
+import dispatcher from './effects/dispatcher';
+import ViewWrapper from './view_wrapper';
+import StateManager from './state_manager';
+import ExecContext from './exec_context';
 
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
@@ -40,7 +40,7 @@ const toMap = ifElse(is(Array), constructN(1, Map), identity);
  */
 const wrapView = ({ env, container }) => {
 	/* eslint-disable react/prop-types */
-	const mergeProps = pipe(defaultTo({}), omit(["delegate"]));
+	const mergeProps = pipe(defaultTo({}), omit(['delegate']));
 
 	return (props = {}) =>
 		React.createElement(ViewWrapper, {
@@ -54,7 +54,7 @@ const wrapView = ({ env, container }) => {
 /**
  * Maps default values of a container definition.
  */
-const mapDef = evolve({ update: toMap, name: defaultTo("UnknownContainer") });
+const mapDef = evolve({ update: toMap, name: defaultTo('UnknownContainer') });
 
 /**
  * Creates an execution environment for a container by providing it with a set of effects
@@ -95,7 +95,7 @@ export const withEnvironment = curry((env, containerDef) => {
 	};
 	container = assign(mapDef(containerDef), fns);
 	return freeze(
-		defineProperty(assign(wrapView({ env, container }), fns), "name", { value: container.name })
+		defineProperty(assign(wrapView({ env, container }), fns), 'name', { value: container.name })
 	);
 });
 
@@ -196,7 +196,7 @@ const consCommands = (model, msg, relay) =>
 export const commands = (...args) => {
 	if (args.length % 2 !== 0) {
 		throw new TypeError(
-			"commands() must be called with an equal number of command constructors & data parameters"
+			'commands() must be called with an equal number of command constructors & data parameters'
 		);
 	}
 	return (model, msg, relay) => [model, consCommands(model, msg, relay)(args)];

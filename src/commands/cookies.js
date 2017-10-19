@@ -1,6 +1,6 @@
-import { is, isNil, either as or } from "ramda";
-import { isEmittable } from "../util";
-import Message from "../message";
+import { is, isNil, either as or } from 'ramda';
+import { isEmittable } from '../util';
+import Message from '../message';
 
 /**
 * Read checks that its input is an object and that it has no invalid types

@@ -21,8 +21,8 @@ import {
 	nth,
 	ifElse,
 	flip
-} from "ramda";
-import deepFreeze from "deep-freeze-strict";
+} from 'ramda';
+import deepFreeze from 'deep-freeze-strict';
 import {
 	safeStringify,
 	suppressEvent,
@@ -30,14 +30,14 @@ import {
 	isEmittable,
 	toEmittable,
 	constructMessage
-} from "./util";
-import { notify, intercept, cmdName } from "./dev_tools";
-import Message from "./message";
+} from './util';
+import { notify, intercept, cmdName } from './dev_tools';
+import Message from './message';
 
 const propOf = flip(prop);
 
 /**
- * Walk up a container hierarchy looking for a value.
+ * Walk up a container hierarchy looking for a value. 
  *
  * @param  {Function} Callback to check an execution context for a value
  * @param  {Object} The starting (child) execution context to walk up from
@@ -68,11 +68,11 @@ const handlesMsg = exec =>
  */
 const formatError = (msg, cmd) =>
 	[
-		`An error was thrown as the result of command ${cmdName(cmd) || "{COMMAND UNDEFINED}"}`,
+		`An error was thrown as the result of command ${cmdName(cmd) || '{COMMAND UNDEFINED}'}`,
 		`(${safeStringify(cmd && cmd.data)}), which was initiated by message`,
-		(msg && msg.constructor && msg.constructor.name) || "{INIT}",
+		(msg && msg.constructor && msg.constructor.name) || '{INIT}',
 		`(${safeStringify(msg && msg.data)}) --`
-	].join(" ");
+	].join(' ');
 
 const error = curry((logger, err, msg, cmd = null) => logger(formatError(msg, cmd), err) || err);
 
@@ -121,18 +121,18 @@ const freezeObj = ifElse(is(Object), deepFreeze, identity);
  */
 const result = cond([
 	[
-		both(is(Array), propEq("length", 0)),
+		both(is(Array), propEq('length', 0)),
 		() => {
-			throw new TypeError("An empty array is an invalid value");
+			throw new TypeError('An empty array is an invalid value');
 		}
 	],
-	[both(is(Array), propEq("length", 1)), ([state]) => [freezeObj(state), []]],
+	[both(is(Array), propEq('length', 1)), ([state]) => [freezeObj(state), []]],
 	[is(Array), ([state, ...commands]) => [freezeObj(state), commands]],
 	[is(Object), state => [freezeObj(state), []]],
 	[
 		always(true),
 		val => {
-			throw new TypeError("Unrecognized structure " + safeStringify(val));
+			throw new TypeError('Unrecognized structure ' + safeStringify(val));
 		}
 	]
 ]);
@@ -142,7 +142,7 @@ const result = cond([
  */
 const mapMessage = (handler, state, msg, relay) => {
 	if (!is(Message, msg)) {
-		const ctor = (msg && msg.constructor && msg.constructor.name) || "{Unknown}";
+		const ctor = (msg && msg.constructor && msg.constructor.name) || '{Unknown}';
 		throw new TypeError(`Message of type '${ctor}' is not an instance of Message`);
 	}
 	if (!handler || !is(Function, handler)) {
@@ -157,7 +157,7 @@ const mapMessage = (handler, state, msg, relay) => {
 const mapEvent = curry((extra, event) => {
 	const isDomEvent = event && event.nativeEvent && is(Object, event.target);
 	const isCheckbox =
-		isDomEvent && event.target.type && event.target.type.toLowerCase() === "checkbox";
+		isDomEvent && event.target.type && event.target.type.toLowerCase() === 'checkbox';
 	const value = isDomEvent && (isCheckbox ? event.target.checked : event.target.value);
 	const eventVal = isDomEvent ? { value, ...pickBy(not(is(Object)), event) } : event;
 
@@ -171,7 +171,7 @@ const mapEvent = curry((extra, event) => {
  * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
  */
 const checkCmdMsgs = curry((exec, cmd) => {
-	const unhandled = pipe(prop("data"), values, filter(isEmittable), filter(not(handlesMsg(exec))));
+	const unhandled = pipe(prop('data'), values, filter(isEmittable), filter(not(handlesMsg(exec))));
 	const msgs = unhandled(cmd);
 
 	if (!msgs.length) {
@@ -180,9 +180,9 @@ const checkCmdMsgs = curry((exec, cmd) => {
 	throw new Error(
 		[
 			`A ${cmdName(cmd)} command was sent from container ${exec.container.name} `,
-			"with one or more result messages that are unhandled by the container (or its ancestors): ",
-			msgs.map(prop("name")).join(", ")
-		].join("")
+			'with one or more result messages that are unhandled by the container (or its ancestors): ',
+			msgs.map(prop('name')).join(', ')
+		].join('')
 	);
 });
 
@@ -274,7 +274,7 @@ export default class ExecContext {
 					? stateMgr.get.bind(stateMgr)
 					: config => parent.state(config || { path }),
 				dispatch: initialize(this.dispatch.bind(this)),
-				...wrapInit(["push", "subscribe", "state", "relay"])
+				...wrapInit(['push', 'subscribe', 'state', 'relay'])
 			})
 		);
 
@@ -352,7 +352,7 @@ export default class ExecContext {
 		const em = toEmittable(msgType),
 			[type, extra] = em,
 			ctr = this.container.name,
-			name = (type && type.name) || "??";
+			name = (type && type.name) || '??';
 
 		if (handlesMsg(this)(em)) {
 			return pipe(defaultTo({}), mapEvent(extra), constructMessage(type), this.dispatch);

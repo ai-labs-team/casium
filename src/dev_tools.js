@@ -1,13 +1,13 @@
-import { is, map, filter, pipe, lensPath, set, flatten } from "ramda";
-import { safeParse, safeStringify } from "./util";
-import * as commands from "./commands";
+import { is, map, filter, pipe, lensPath, set, flatten } from 'ramda';
+import { safeParse, safeStringify } from './util';
+import * as commands from './commands';
 
 const session =
 	Date.now() +
 	Math.random()
 		.toString(36)
 		.substr(2);
-const send = msg => window.postMessage(msg, "*"),
+const send = msg => window.postMessage(msg, '*'),
 	serialize = map(pipe(safeStringify, safeParse));
 
 const _ARCH_DEV_TOOLS_STATE = (window._ARCH_DEV_TOOLS_STATE = {
@@ -44,20 +44,20 @@ export const cmdName = cmd => {
 			if (cmd && cmd.constructor && cls === cmd.constructor) return `${mod}.${name}`;
 		}
 	}
-	return (cmd && cmd.constructor && cmd.constructor.name) || "??";
+	return (cmd && cmd.constructor && cmd.constructor.name) || '??';
 };
 
 window.addEventListener(
-	"message",
+	'message',
 	message => {
 		const data = (message && message.data) || {};
 
-		if (data.from === "ArchDevToolsPageScript" && data.state === "initialized") {
+		if (data.from === 'ArchDevToolsPageScript' && data.state === 'initialized') {
 			_ARCH_DEV_TOOLS_STATE.connected = true;
 			_ARCH_DEV_TOOLS_STATE.flush();
 		}
 
-		if (data.from !== "ArchDevToolsPanel") {
+		if (data.from !== 'ArchDevToolsPanel') {
 			return;
 		}
 		if (!_ARCH_DEV_TOOLS_STATE.root) {
@@ -96,7 +96,7 @@ export const notify = ({ context, msg, prev, next, path, cmds }) => {
 		prev,
 		next,
 		path,
-		from: "Arch",
+		from: 'Arch',
 		relay: context.relay(),
 		message: (msg && msg.constructor && msg.constructor.name) || `Init (${container.name})`,
 		data: msg && msg.data,
@@ -111,5 +111,5 @@ export const notify = ({ context, msg, prev, next, path, cmds }) => {
 		return _ARCH_DEV_TOOLS_STATE.queue.push(serialized);
 	}
 	_ARCH_DEV_TOOLS_STATE.flush();
-	send(serialized, "*");
+	send(serialized, '*');
 };
