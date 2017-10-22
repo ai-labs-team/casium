@@ -8,11 +8,11 @@
   "license": "Apache-2.0",
   "scripts": {
     "build": "webpack",
-    "lint": "NODE_ENV=test eslint \"src/**/*.{js,jsx}\"",
-    "lint-fix": "NODE_ENV=test eslint --fix \"src/**/*.{js,jsx}\"",
+    "lint": "NODE_ENV=test tslint -c tslint.json \"src/**/*.{js,ts,jsx,tsx}\"",
+    "lint-fix": "NODE_ENV=test tslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
-    "unit-test": "mocha-webpack \"src/**/*_test.{js,jsx}\"",
-    "debug-tests": "node --inspect-brk ./node_modules/mocha-webpack/bin/mocha-webpack \"src/**/*_test.{js,jsx}\""
+    "unit-test": "mocha-webpack \"src/**/*_test.{js,ts,jsx,tsx}\"",
+    "debug-tests": "node --inspect-brk ./node_modules/mocha-webpack/bin/mocha-webpack \"src/**/*_test.{js,ts,jsx,tsx}\""
   },
   "dependencies": {
     "axios": "0.16.1",
@@ -24,11 +24,13 @@
     "react": "15.5.4"
   },
   "devDependencies": {
+    "@types/ramda": "^0.24.17",
+    "awesome-typescript-loader": "^3.2.3",
     "babel-core": "6.18.2",
+    "babel-eslint": "7.2.3",
     "babel-loader": "7.1.2",
     "babel-plugin-react-css-modules": "2.6.1",
     "babel-plugin-transform-es2015-modules-commonjs": "6.18.0",
-    "babel-eslint": "7.2.3",
     "babel-plugin-transform-es3-member-expression-literals": "6.22.0",
     "babel-plugin-transform-es3-property-literals": "6.22.0",
     "babel-plugin-transform-react-jsx": "6.24.1",
@@ -41,14 +43,6 @@
     "chai-enzyme": "0.8.0",
     "cheerio": "1.0.0-rc.1",
     "enzyme": "2.9.1",
-    "mocha-webpack": "^1.0.0-rc.1",
-    "react-dom": "15.5.4",
-    "react-test-renderer": "15.5.4",
-    "url-parse": "1.1.9",
-    "webpack": "3.5.6",
-    "webpack-node-externals": "1.6.0",
-    "eslint": "3.19.0",
-    "eslint-config-airbnb": "15.1.0",
     "eslint-import-resolver-webpack": "0.8.3",
     "eslint-plugin-import": "2.7.0",
     "eslint-plugin-jsx-a11y": "5.1.1",
@@ -57,8 +51,17 @@
     "jsdom-global": "3.0.2",
     "jss": "8.1.0",
     "mocha": "3.4.1",
+    "mocha-webpack": "^1.0.0-rc.1",
     "react-addons-test-utils": "15.3.2",
+    "react-dom": "15.5.4",
+    "react-test-renderer": "15.5.4",
+    "tslint": "^5.7.0",
+    "tslint-config-airbnb": "^5.3.0",
+    "typescript": "^2.5.3",
     "uglifyjs-webpack-plugin": "1.0.0-beta.2",
-    "webpack-merge": "4.1.0"
+    "url-parse": "1.1.9",
+    "webpack": "3.5.6",
+    "webpack-merge": "4.1.0",
+    "webpack-node-externals": "1.6.0"
   }
 }

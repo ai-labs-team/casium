@@ -45,7 +45,8 @@ export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, 
  *
  * @example
  * ```
- * getValidationFailures({ foo: is(String), bar: is(Function) })({ foo: "Hello", bar: "not Func" }) -> ["bar"]
+ * getValidationFailures({ foo: is(String), bar: is(Function) })
+ *   ({ foo: "Hello", bar: "not Func" }) -> ["bar"]
  * ```
  */
 export const getValidationFailures = spec => pipe(
@@ -188,7 +189,7 @@ export const safeParse = (val) => {
 /**
  * Checks that a value is a message constructor.
  */
-export const isMessage = result => result && result.prototype && result.prototype instanceof Message;
+export const isMessage = val => val && val.prototype && val.prototype instanceof Message;
 
 /**
  * Checks that a value is emittable as a message constructor

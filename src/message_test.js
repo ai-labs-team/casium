@@ -20,7 +20,7 @@ describe('Message', () => {
     });
 
     it('validates its inputs', () => {
-      class Msg extends Message { static expects = { foo: is(Function) } }
+      class Msg extends Message { static expects = { foo: is(Function) }; }
 
       expect(() => new Msg({ foo: null })).to.throw(TypeError);
       expect(() => new Msg({})).to.throw(TypeError);

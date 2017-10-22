@@ -1,42 +1,105 @@
-import { is, pipe, always, identity, curry, omit, merge, defaultTo, map, ifElse, constructN, splitEvery, evolve } from 'ramda';
-import React from 'react';
+import {
+  always, constructN, curry, defaultTo, evolve, flip, identity, ifElse, is, map, merge, omit, pipe, splitEvery
+} from 'ramda';
+import * as React from 'react';
 
 import effects from './effects';
 import dispatcher from './effects/dispatcher';
-import ViewWrapper from './view_wrapper';
-import StateManager from './state_manager';
 import ExecContext from './exec_context';
+import Message from './message';
+import StateManager from './state_manager';
+import ViewWrapper from './view_wrapper';
+
+/**
+ *  A global symbol that allows users to opt into what is currently the default delegate behavior
+ *  i.e when a delegate is unspecified, the container is hoisted into it's parent state
+ */
+export const PARENT = Symbol.for('@delegate/parent');
+
+interface MessageConstructor {
+  new(): Message;
+}
+
+type MessageOrEmpty = Message | false | null | undefined;
+
+type UpdateResult = object |
+  [object] |
+  [object, MessageOrEmpty] |
+  [object, MessageOrEmpty, MessageOrEmpty] |
+  [object, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
+  [object, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
+  [object, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
+  [
+    object, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
+    MessageOrEmpty, MessageOrEmpty
+  ] |
+  [
+    object, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
+    MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty
+  ] |
+  [
+    object, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
+    MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty
+  ];
+
+type Updater = (...args: any[]) => UpdateResult;
+
+type EnvDef = {
+  dispatcher: any;
+  effects: UpdateMap;
+  log?: (...args: any[]) => any | void;
+  stateManager?: () => StateManager
+};
+
+type DelegateDef = symbol | string;
+type UpdateMapDef = [MessageConstructor, Updater][];
+type UpdateMap = Map<MessageConstructor, Updater>;
+
+type ContainerDefPartial = { update?: UpdateMapDef, name?: string };
+type ContainerDef = ContainerDefPartial & {
+  delegate: DelegateDef;
+  init?: (...args: any[]) => UpdateResult;
+  relay?: { [key: string]: (model: object, relay: object) => object };
+  view: (props: object) => any;
+  attach?: { store: object, key?: string }
+};
+
+type Container = any;
+type Environment = any;
 
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
  */
-const toMap = ifElse(is(Array), constructN(1, Map), identity);
+const toMap = ifElse(is(Array), constructN(1, Map as any), identity);
 
 /**
- * Wraps a container's view to extract container-specific props and inject `emit()` helper function
- * into the view's props.
+ * Wraps a container's view to extract container-specific props and inject `emit()` helper
+ * function into the view's props.
  *
  * @param  {Function} getContainer A function that returns the container
  * @param  {Function} emit An emit function bound to the container
  * @param  {String|Array} delegate The `delegate` value passed to the container
- * @param  {Function} register A registration function that allows the container to hook itself into
- *         the component tree
+ * @param  {Function} register A registration function that allows the container to hook
+ *                    itself into the component tree
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView = ({ env, container }) => {
+const wrapView = ({ env, container }: { env: Environment, container: Container }) => {
   /* eslint-disable react/prop-types */
   const mergeProps = pipe(defaultTo({}), omit(['delegate']));
 
-  return (props = {}) => React.createElement(ViewWrapper, {
-    env, container, delegate: props.delegate || container.delegate, childProps: mergeProps(props),
+  return (props: object & { delegate?: DelegateDef } = {}) => React.createElement(ViewWrapper, {
+    childProps: mergeProps(props), container, delegate: props.delegate || container.delegate, env
   });
 };
 
 /**
  * Maps default values of a container definition.
  */
-const mapDef = evolve({ update: toMap, name: defaultTo('UnknownContainer') });
+const mapDef: (def: ContainerDefPartial) => { update: UpdateMap, name: string } = pipe(
+  flip(merge)({ name: null, update: [] }),
+  evolve({ update: toMap, name: defaultTo('UnknownContainer') })
+);
 
 /**
  * Creates an execution environment for a container by providing it with a set of effects
@@ -54,11 +117,11 @@ const mapDef = evolve({ update: toMap, name: defaultTo('UnknownContainer') });
  *         - stateManager: A StateManager factory function
  *         - identity: Returns the parameters that created this environment
  */
-export const environment = ({ effects, dispatcher, log = null, stateManager = null }) => ({
-  stateManager: stateManager || (() => new StateManager()),
+export const environment = ({ effects, dispatcher, log = null, stateManager = null }: EnvDef): Environment => ({
   dispatcher: dispatcher(effects),
-  log: log || console.error.bind(console), // eslint-disable-line no-console
   identity: () => ({ effects, dispatcher, log, stateManager }),
+  log: log || console.error.bind(console),
+  stateManager: stateManager || (() => new StateManager())
 });
 
 /**
@@ -68,7 +131,7 @@ export const environment = ({ effects, dispatcher, log = null, stateManager = nu
  * @param  {Object} container The container definition
  * @return {Component} Returns a renderable React component
  */
-export const withEnvironment = curry((env, containerDef) => {
+export const withEnvironment = curry((env: EnvDef, containerDef: ContainerDef): Container => {
   let container;
   const { freeze, assign, defineProperty } = Object;
   const fns = { identity: () => merge({}, containerDef), accepts: msgType => container.update.has(msgType) };
@@ -132,12 +195,12 @@ export const container = withEnvironment(defaultEnv);
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
  * Calling `dispatch()` on the container will simply return any commands issued.
  */
-export const isolate = (ctr, opts = {}) => {
+export const isolate = (ctr: Container, opts: any = {}) => {
   const env = environment({
-    effects: [],
-    log: () => {},
     dispatcher: curry((_, __, msg) => msg),
-    stateManager: opts.stateManager && always(opts.stateManager) || (() => new StateManager()),
+    effects: new Map([]),
+    log: () => {},
+    stateManager: opts.stateManager && always(opts.stateManager) || (() => new StateManager())
   });
 
   const container = Object.assign(mapDef(ctr.identity()), {
@@ -148,24 +211,26 @@ export const isolate = (ctr, opts = {}) => {
 
   return Object.assign(wrapView({ env, container }), {
     dispatch: execContext.dispatch.bind(execContext),
-    state: execContext.state.bind(execContext),
     push: execContext.push.bind(execContext),
+    state: execContext.state.bind(execContext)
   });
 };
 
 const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), identity);
 const consCommands = (model, msg, relay) => pipe(splitEvery(2), map(
-  ([cmd, data]) => new cmd(mapData(model, msg, relay)(data))
+  ([cmd, data]) => new (cmd as any)(mapData(model, msg, relay)(data))
 ));
 
 /**
- * Helper function for updaters that only issue commands. Pass in alternating command constructors and command data, i.e.:
+ * Helper function for updaters that only issue commands. Pass in alternating command constructors and
+ * command data, i.e.:
  *
  * ```
  * [FooMessage, commands(LocalStorage.Write, { key: 'foo' }, LocalStorage.Delete, { key: 'bar' })]
  * ```
  *
- * Command data arguments can also be functions that return data. These functions have the same type signature as updaters:
+ * Command data arguments can also be functions that return data. These functions have the same type
+ * signature as updaters:
  *
  * ```
  * [FooMessage, commands(Http.Post, (model, msg) => ({ url: '/foo', data: [model.someData, msg.otherData] }))]]
@@ -177,9 +242,3 @@ export const commands = (...args) => {
   }
   return (model, msg, relay) => [model, consCommands(model, msg, relay)(args)];
 };
-
-/**
- *  A global symbol that allows users to opt into what is currently the default delegate behavior
- *  i.e when a delegate is unspecified, the container is hoisted into it's parent state
- */
-export const PARENT = Symbol.for('@delegate/parent');

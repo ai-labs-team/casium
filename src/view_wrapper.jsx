@@ -18,10 +18,10 @@ export default class ViewWrapper extends Component {
   static childContextTypes = { execContext: PropTypes.object };
 
   static propTypes = {
-    container: PropTypes.object.isRequired,
-    env: PropTypes.object.isRequired,
     childProps: PropTypes.object.isRequired,
+    container: PropTypes.object.isRequired,
     delegate: PropTypes.oneOfType([PropTypes.string, PropTypes.symbol]),
+    env: PropTypes.object.isRequired
   };
 
   static defaultProps = { delegate: null };
@@ -35,7 +35,8 @@ export default class ViewWrapper extends Component {
     const { container, delegate, env, childProps } = this.props;
 
     if (delegate && !parent) {
-      throw new Error(`Attempting to delegate state property '${delegate}' with no parent container`);
+      const msg = `Attempting to delegate state property '${delegate}' with no parent container`;
+      throw new Error(msg);
     }
     this.execContext = new ExecContext({ env, parent, container, delegate });
 

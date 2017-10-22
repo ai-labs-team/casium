@@ -1,0 +1,45 @@
+{
+    "defaultSeverity": "error",
+    "extends": [
+        "tslint:recommended",
+        "tslint-config-airbnb"
+    ],
+    "jsRules": {
+      "no-unused-expression": false,
+      "object-literal-sort-keys": false,
+      "one-variable-per-declaration": false,
+      "quotemark": [true, "single", "jsx-single", "avoid-escape"],
+      "no-shadowed-variable": false,
+      "strict-boolean-expressions": false,
+      "no-boolean-literal-compare": false,
+      "object-shorthand-properties-first": false,
+      "no-empty": false,
+      "import-name": false,
+      "trailing-comma": false,
+      "max-classes-per-file": [true, 10],
+      "max-line-length": {
+          "options": [110]
+      }
+    },
+    "rules": {
+      "array-type": false,
+      "object-literal-sort-keys": false,
+      "no-unused-expression": false,
+      "one-variable-per-declaration": false,
+      "quotemark": [true, "single", "jsx-single", "avoid-escape"],
+      "interface-name": [true, "never-prefix"],
+      "interface-over-type-literal": false,
+      "strict-boolean-expressions": false,
+      "no-boolean-literal-compare": false,
+      "object-shorthand-properties-first": false,
+      "no-shadowed-variable": false,
+      "no-empty": false,
+      "import-name": false,
+      "trailing-comma": false,
+      "max-classes-per-file": [true, 10],
+      "max-line-length": {
+          "options": [120]
+      }
+    },
+    "rulesDirectory": []
+}

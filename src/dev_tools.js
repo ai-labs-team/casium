@@ -27,7 +27,9 @@ export const cmdName = (cmd) => {
   for (mod in commands) {
     for (name in commands[mod]) {
       cls = commands[mod][name];
-      if (cmd && cmd.constructor && cls === cmd.constructor) return `${mod}.${name}`;
+      if (cmd && cmd.constructor && cls === cmd.constructor) {
+        return `${mod}.${name}`;
+      }
     }
   }
   return cmd && cmd.constructor && cmd.constructor.name || '??';
