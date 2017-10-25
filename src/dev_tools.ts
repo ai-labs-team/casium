@@ -1,11 +1,33 @@
-import { is, map, filter, pipe, lensPath, set, flatten } from 'ramda';
-import { safeParse, safeStringify } from './util';
+import { filter, flatten, is, lensPath, map, pipe, set } from 'ramda';
 import * as commands from './commands';
+import Message from './message';
+import { safeParse, safeStringify } from './util';
+
+type DevTools = {
+  messageCounter: number,
+  root?: any,
+  connected: boolean,
+  containers: any[],
+  contexts: object,
+  queue: string[],
+  next: () => number,
+  flush: () => void
+};
+
+type DevToolsMessage = {
+  context: any,
+  container: any,
+  msg: Message,
+  prev?: object,
+  next: object,
+  path: any[],
+  cmds: any[]
+};
 
 const session = Date.now() + Math.random().toString(36).substr(2);
-const send = msg => window.postMessage(msg, '*'), serialize = map(pipe(safeStringify, safeParse));
+const send = (msg: string) => window.postMessage(msg, '*'), serialize = map(pipe(safeStringify, safeParse));
 
-const _ARCH_DEV_TOOLS_STATE = window._ARCH_DEV_TOOLS_STATE = {
+const _ARCH_DEV_TOOLS_STATE: DevTools = (window as any)._ARCH_DEV_TOOLS_STATE = {
   messageCounter: 0,
   root: null,
   connected: false,
@@ -27,13 +49,15 @@ export const cmdName = (cmd) => {
   for (mod in commands) {
     for (name in commands[mod]) {
       cls = commands[mod][name];
-      if (cmd && cmd.constructor && cls === cmd.constructor) return `${mod}.${name}`;
+      if (cmd && cmd.constructor && cls === cmd.constructor) {
+        return `${mod}.${name}`;
+      }
     }
   }
   return cmd && cmd.constructor && cmd.constructor.name || '??';
 };
 
-window.addEventListener('message', (message) => {
+const inBoundMsgHandler = (message: object & { data: any }) => {
   const data = message && message.data || {};
 
   if (data.from === 'ArchDevToolsPageScript' && data.state === 'initialized') {
@@ -52,11 +76,13 @@ window.addEventListener('message', (message) => {
   if (sel && sel.path && sel.next && sel.prev) {
     _ARCH_DEV_TOOLS_STATE.root.set(set(lensPath(sel.path), sel.next, sel.prev));
   }
-}, false);
+};
+
+window.addEventListener('message', inBoundMsgHandler, false);
 
 export const intercept = stateManager => _ARCH_DEV_TOOLS_STATE.root = stateManager;
 
-export const notify = ({ context, msg, prev, next, path, cmds }) => {
+export const notify = ({ context, msg, prev, next, path, cmds }: DevToolsMessage) => {
   const { container } = context;
 
   const serialized = serialize({
@@ -71,14 +97,15 @@ export const notify = ({ context, msg, prev, next, path, cmds }) => {
     message: msg && msg.constructor && msg.constructor.name || `Init (${container.name})`,
     data: msg && msg.data,
     commands: pipe(flatten, filter(is(Object)), map(cmd => [cmdName(cmd), cmd.data]))(cmds),
-  });
+  } as any).toString();
 
   _ARCH_DEV_TOOLS_STATE.containers.includes(container) || _ARCH_DEV_TOOLS_STATE.containers.push(container);
   _ARCH_DEV_TOOLS_STATE.contexts[context.id] = context;
 
   if (!_ARCH_DEV_TOOLS_STATE.connected) {
-    return _ARCH_DEV_TOOLS_STATE.queue.push(serialized);
+    _ARCH_DEV_TOOLS_STATE.queue.push(serialized as string);
+  } else {
+    _ARCH_DEV_TOOLS_STATE.flush();
+    send(serialized);
   }
-  _ARCH_DEV_TOOLS_STATE.flush();
-  send(serialized, '*');
 };

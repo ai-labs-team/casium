@@ -3,17 +3,17 @@ import Message from '../message';
 import { isEmittable } from '../util';
 
 export class Read extends Message {
-  static expects = { key: is(String), result: isEmittable }
+  static expects = { key: is(String), result: isEmittable };
 }
 
 export class Write extends Message {
-  static expects = { key: is(String), value: not(isNil) }
+  static expects = { key: is(String), value: not(isNil) };
 }
 
 export class Delete extends Message {
-  static expects = { key: is(String) }
+  static expects = { key: is(String) };
 }
 
 export class Clear extends Message {
-  static expects = {}
+  static expects = {};
 }

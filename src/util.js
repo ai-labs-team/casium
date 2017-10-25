@@ -45,7 +45,8 @@ export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, 
  *
  * @example
  * ```
- * getValidationFailures({ foo: is(String), bar: is(Function) })({ foo: "Hello", bar: "not Func" }) -> ["bar"]
+ * getValidationFailures({ foo: is(String), bar: is(Function) })
+ *   ({ foo: "Hello", bar: "not Func" }) -> ["bar"]
  * ```
  */
 export const getValidationFailures = spec => pipe(
@@ -127,7 +128,8 @@ export const suppressEvent = (e) => {
  * function pipelines.
  */
 export const log = curry((msg, val) => {
-  console.log(msg, val); // eslint-disable-line no-console
+  // tslint:disable-next-line:no-console
+  console.log(msg, val);
   return val;
 });
 
@@ -141,15 +143,13 @@ export const log = curry((msg, val) => {
  *                    of calling the wrapped function, otherwise returns the result of
  *                    passing the error (along with the arguments) to the handler.
  */
-export const trap = curry((handler, fn) => (
-  (...args) => {
-    try {
-      return fn(...args);
-    } catch (e) {
-      return handler(e, ...args);
-    }
+export const trap = curry((handler, fn) => ((...args) => {
+  try {
+    return fn(...args);
+  } catch (e) {
+    return handler(args, e);
   }
-));
+}));
 
 /**
  * Converts a value to an array... unless it's already an array, then it just returns it.
@@ -188,7 +188,7 @@ export const safeParse = (val) => {
 /**
  * Checks that a value is a message constructor.
  */
-export const isMessage = result => result && result.prototype && result.prototype instanceof Message;
+export const isMessage = val => val && val.prototype && val.prototype instanceof Message;
 
 /**
  * Checks that a value is emittable as a message constructor

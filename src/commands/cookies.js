@@ -8,10 +8,10 @@ export class Read extends Message {
 
 export class Write extends Message {
   static expects = {
-    key: is(String),
-    value: or(is(Object), is(String)),
-    path: or(is(String), isNil),
     expires: or(is(Date), isNil),
+    key: is(String),
+    path: or(is(String), isNil),
+    value: or(is(Object), is(String))
   };
 }
 

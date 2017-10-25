@@ -39,7 +39,10 @@ describe('app', () => {
 
     it('throws on constructor dispatch', () => {
       const ctr = isolate(container({ update: [] }));
-      expect(() => ctr.dispatch(Msg)).to.throw(TypeError, /Attempted to dispatch message constructor/);
+      expect(() => ctr.dispatch(Msg)).to.throw(
+        TypeError,
+        /Attempted to dispatch message constructor/
+      );
     });
 
     it('throws on invalid update return values', () => {
@@ -73,16 +76,17 @@ describe('app', () => {
 
     it('throws on unhandled messages', () => {
       const view = ({ emit }) => (<button onClick={emit(Msg2)}>Foo</button>);
-      const ctr = isolate(container({ name: 'FooContainer', update, view }));
+      const ctr = container({ name: 'FooContainer', update, view });
 
       expect(() => shallow(ctr()).html()).to.throw(
-        "Messages of type 'Msg2' are not handled by container 'FooContainer' or any of its ancestors"
+        "Messages of type 'Msg2' are not handled by container " +
+        "'FooContainer' or any of its ancestors"
       );
     });
 
     it('does not throw on handled messages', () => {
       const view = ({ emit }) => (<button onClick={emit(Msg)}>Foo</button>);
-      const ctr = isolate(container({ update, view }));
+      const ctr = container({ update, view });
       expect(() => shallow(ctr()).html()).not.to.throw;
     });
 

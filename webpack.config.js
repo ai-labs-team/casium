@@ -4,7 +4,7 @@ var webpack = require('webpack');
 module.exports = {
   entry: {
     index: './src/index.js',
-    message: './src/message.js',
+    message: './src/message.ts',
     commands: './src/commands/index.js',
     effects: './src/effects/index.js'
   },
@@ -15,6 +15,7 @@ module.exports = {
     library: 'architecture',
     libraryTarget: 'umd',
   },
+  devtool: 'source-map',
   externals: {
     react: 'react',
     ramda: 'ramda',
@@ -23,6 +24,10 @@ module.exports = {
   },
   module: {
     loaders: [{
+      test: [/\.tsx?$/],
+      loader: 'awesome-typescript-loader',
+      exclude: /node_modules/
+    }, {
       test: /\.jsx?$/,
       exclude: /node_modules/,
       loader: 'babel-loader',
@@ -32,6 +37,6 @@ module.exports = {
     }]
   },
   resolve: {
-    extensions: ['.js', '.jsx']
+    extensions: ['.js', '.jsx', '.ts', '.tsx']
   }
 };

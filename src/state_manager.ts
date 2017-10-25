@@ -1,22 +1,24 @@
-import { pipe, nth, lensPath, view, set, defaultTo, flip, contains, when, both } from 'ramda';
+import { both, contains, defaultTo, flip, lensPath, nth, pipe, set, view, when } from 'ramda';
 import { compareOffsets } from './util';
 
 const inList = flip(contains);
 
+export type Callback = (...args: any[]) => any;
+export type Config = object & { path: string[] };
+
 export default class StateManager {
 
-  constructor(state = {}) {
-    Object.assign(this, {
-      state,
-      listeners: [],
-      _broadcast: ([path, listener]) => listener(defaultTo({}, this.get({ path }))),
-    });
+  public state: object = {};
+  public listeners: [any, Callback][] = [];
+
+  constructor(state: object = {}) {
+    Object.assign(this, { state });
   }
 
   /**
    * Gets the current state, optionally with a path into the root value.
    */
-  get(opts = { path: [] }) {
+  public get(opts: Config = { path: [] }) {
     return view(lensPath(opts && opts.path || []))(this.state);
   }
 
@@ -24,11 +26,11 @@ export default class StateManager {
    * Pushes a new state value to the state container. Optionally accepts a path into
    * the root value to write into.
    */
-  set(newState, opts = { path: [] }) {
+  public set(newState: object, opts: Config = { path: [] }) {
     this.state = set(lensPath(opts.path), newState, this.state);
     this.listeners.forEach(when(
       both(inList(this.listeners), pipe(nth(0), compareOffsets(opts.path))),
-      this._broadcast
+      this.broadcast
     ));
     return this.state;
   }
@@ -38,20 +40,22 @@ export default class StateManager {
    * accepts an array representing a path into the root state value that this listener
    * should observe changes on. Returns an unsubscribe function.
    */
-  subscribe(listener, opts = { path: [] }) {
-    const config = [opts.path, listener];
+  public subscribe(listener: Callback, opts: Config = { path: [] }): () => any {
+    const config: [any, Callback] = [opts.path, listener];
     this.listeners.push(config);
 
     if (this.state) {
-      this._broadcast(config);
+      this.broadcast(config);
     }
     return this.unsubscribeFn(config);
   }
 
+  protected broadcast = ([path, listener]) => listener(defaultTo({}, this.get({ path })));
+
   /**
    * Returns an unsubscribe function for a listener.
    */
-  unsubscribeFn(listener) {
+  protected unsubscribeFn(listener: [any, Callback]) {
     return () => {
       const index = this.listeners.indexOf(listener);
       return index > -1 && this.listeners.splice(index, 1)[0] || false;

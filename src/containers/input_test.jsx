@@ -12,15 +12,15 @@ describe('InputContainer', () => {
     view: () => (<InputContainer><input name='textField' /></InputContainer>),
   }));
 
-  const wrapper = mount(<Container />);
-
   describe('InputContainer', () => {
 
     it('initially renders inputs with state data', () => {
+      const wrapper = mount(<Container />);
       expect(wrapper.find('input').prop('value')).to.equal('foo');
     });
 
     it('updates parent state with input changes', () => {
+      const wrapper = mount(<Container />);
       wrapper.find('input').simulate('change', { target: { value: 'bar' } });
       expect(wrapper.find('input').prop('value')).to.equal('bar');
     });

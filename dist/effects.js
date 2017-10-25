@@ -7,16 +7,394 @@
 		exports["architecture"] = factory(require("ramda"), require("react"), require("axios"), require("js-cookie"));
 	else
 		root["architecture"] = factory(root["ramda"], root["react"], root["axios"], root["js-cookie"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_5__, __WEBPACK_EXTERNAL_MODULE_13__, __WEBPACK_EXTERNAL_MODULE_22__) {
-return webpackJsonparchitecture([1,3],[
+})(this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_4__, __WEBPACK_EXTERNAL_MODULE_14__, __WEBPACK_EXTERNAL_MODULE_24__) {
+return /******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 12);
+/******/ })
+/************************************************************************/
+/******/ ([
 /* 0 */
 /***/ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_0__;
 
 /***/ }),
-/* 1 */,
-/* 2 */,
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.constructMessage = exports.toEmittable = exports.isEmittable = exports.isMessage = exports.safeParse = exports.safeStringify = exports.mergeMaps = exports.mergeMap = exports.toArray = exports.trap = exports.log = exports.suppressEvent = exports.clone = exports.cloneRecursive = exports.withProps = exports.getValidationFailures = exports.compareOffsets = exports.update = exports.merge = undefined;
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _ramda = __webpack_require__(0);
+
+var _react = __webpack_require__(4);
+
+var _react2 = _interopRequireDefault(_react);
+
+var _message = __webpack_require__(2);
+
+var _message2 = _interopRequireDefault(_message);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+/**
+ * Deep-merges two objects, overwriting left-hand keys with right-hand keys, unionizing arrays.
+ *
+ * @param  {Object} left
+ * @param  {Object} right
+ * @return {Object}
+ */
+var merge = exports.merge = (0, _ramda.mergeDeepWith)(function (left, right) {
+  return (0, _ramda.all)((0, _ramda.is)(Array), [left, right]) ? (0, _ramda.union)(left, right) : right;
+});
+
+/**
+ * Convenience function for handlers that only update state with fixed values,
+ * i.e. `[FooMessage, state => merge(state, { bar: true })]` becomes
+ * `[FooMessage, update({ bar: true })]`
+ */
+var update = exports.update = (0, _ramda.flip)(_ramda.merge);
+
+/**
+ * Returns the count of offsets that are equal between two arrays. Useful for determining
+ * if one array is the prefix of another, i.e.:
+ *
+ * ```
+ * compareOffsets([1,2,3], [1,2,3,4,5]) -> true
+ * compareOffsets([1,2,3,5], [1,2,3,4,5]) -> false
+ * ```
+ *
+ * @param  {Array} a 'Prefix' array
+ * @param  {Array} b Array to compare against
+ * @return {Boolean} Returns true if `a` is the prefix of `b`.
+ */
+var compareOffsets = exports.compareOffsets = (0, _ramda.curry)(function (a, b) {
+  return (0, _ramda.all)((0, _ramda.equals)(true), (0, _ramda.zipWith)(_ramda.equals, a, b));
+});
+
+/**
+ * Accepts a validator object where the values are functions that return boolean, and
+ * returns a function that accepts an object to check against the validator.
+ *
+ * @example
+ * ```
+ * getValidationFailures({ foo: is(String), bar: is(Function) })
+ *   ({ foo: "Hello", bar: "not Func" }) -> ["bar"]
+ * ```
+ */
+var getValidationFailures = exports.getValidationFailures = function getValidationFailures(spec) {
+  return (0, _ramda.pipe)((0, _ramda.pickAll)((0, _ramda.keys)(spec)), (0, _ramda.evolve)(spec), (0, _ramda.filter)(_ramda.not), _ramda.keys);
+};
+
+var isFunctionWithNumArgs = function isFunctionWithNumArgs(numArgs) {
+  return (0, _ramda.both)((0, _ramda.is)(Function), (0, _ramda.propEq)('length', numArgs));
+};
+
+var isObjectAndAllValuesAreFunctions = (0, _ramda.both)((0, _ramda.is)(Object), (0, _ramda.pipe)(_ramda.values, (0, _ramda.all)((0, _ramda.is)(Function))));
+
+var assertValid = function assertValid(fnMap, component) {
+  var spec = { fnMap: isObjectAndAllValuesAreFunctions, component: isFunctionWithNumArgs(1) };
+  var failures = getValidationFailures(spec)({ fnMap: fnMap, component: component });
+
+  if (!(0, _ramda.isEmpty)(failures)) {
+    throw new TypeError('withProps failed on types: ' + failures.join(', '));
+  }
+};
+
+/**
+ * Accepts an object of key/function pairs and a pure component function, and returns
+ * a new pure component that will generate and inject new props into the pass component
+ * function.
+ * @param  {Object<Function>} An object hash of functions used to generate new props
+ * @param  {Component} A pure function that returns React DOM
+ * @params {Object} Accepts props passed from parent
+ * @return {Component} Returns a new component that generates new props from passed props
+ *
+ * @example
+ * ```
+ * const FullName = (props) => (<span>{props.fullName}</span>);
+ *
+ * const Name = withProps(
+ *   {
+ *     fullName: (props) => `${props.first} ${props.last}`
+ *   },
+ *   FullName
+ * );
+ *
+ * <Name first="Bob" last="Loblaw" />
+ * ```
+ */
+var withProps = exports.withProps = (0, _ramda.curry)(function (fnMap, component, props) {
+  assertValid(fnMap, component, props);
+  return component(merge(props, (0, _ramda.map)(function (fn) {
+    return fn(props);
+  }, fnMap)));
+});
+
+var cloneRecursive = exports.cloneRecursive = function cloneRecursive(children, newProps) {
+  return _react.Children.map(children, function (child) {
+    var mapProps = function mapProps(child) {
+      var props = (0, _ramda.is)(Function, newProps) ? newProps(child) : newProps;
+      var hasChildren = child.props && child.props.children;
+      var mapper = hasChildren && (0, _ramda.is)(Array, child.props.children) ? _ramda.identity : (0, _ramda.nth)(0);
+      var children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
+      return merge(props || {}, { children: children });
+    };
+
+    return _react2.default.isValidElement(child) ? _react2.default.cloneElement(child, mapProps(child)) : child;
+  });
+};
+
+var clone = exports.clone = function clone(children, newProps) {
+  return _react.Children.map(children, function (child) {
+    return _react2.default.cloneElement(child, merge(_react2.default.isValidElement(child) ? newProps : {}, {
+      children: child.props.children
+    }));
+  });
+};
+
+var suppressEvent = exports.suppressEvent = function suppressEvent(e) {
+  e.preventDefault();
+  return e;
+};
+
+/**
+ * Logs a value with a message and returns the value. Good for inspecting complex
+ * function pipelines.
+ */
+var log = exports.log = (0, _ramda.curry)(function (msg, val) {
+  console.log(msg, val); // eslint-disable-line no-console
+  return val;
+});
+
+/**
+ * Provides a functional interface for catching and handling errors.
+ *
+ * @param  {Function} handler A handler function to call when an error is thrown.
+ * @param  {Function} fn A function to trap errors on.
+ * @return {Function} Returns a function that, when called, passes its arguments to the
+ *                    wrapped function. If the call succeeds, the it returns the result
+ *                    of calling the wrapped function, otherwise returns the result of
+ *                    passing the error (along with the arguments) to the handler.
+ */
+var trap = exports.trap = (0, _ramda.curry)(function (handler, fn) {
+  return function () {
+    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+      args[_key] = arguments[_key];
+    }
+
+    try {
+      return fn.apply(undefined, args);
+    } catch (e) {
+      return handler.apply(undefined, [e].concat(args));
+    }
+  };
+});
+
+/**
+ * Converts a value to an array... unless it's already an array, then it just returns it.
+ * @type {[type]}
+ */
+var toArray = exports.toArray = (0, _ramda.ifElse)((0, _ramda.is)(Array), _ramda.identity, Array.of);
+
+/**
+ * Helper functions for reducing effect Maps into a single Map.
+ */
+var mergeMap = exports.mergeMap = function mergeMap(first, second) {
+  return new Map([].concat(_toConsumableArray(first), _toConsumableArray(second)));
+};
+var mergeMaps = exports.mergeMaps = (0, _ramda.reduce)(mergeMap, new Map([]));
+
+/**
+ * Safely stringifies a JavaScript value to prevent error-ception in `app.result()`.
+ */
+var safeStringify = exports.safeStringify = function safeStringify(val) {
+  try {
+    return JSON.stringify(val);
+  } catch (e) {
+    return '{ unrepresentable value }';
+  }
+};
+
+/**
+ * Safely parses a JavaScript value to prevent error-ception.
+ */
+var safeParse = exports.safeParse = function safeParse(val) {
+  try {
+    return JSON.parse(val);
+  } catch (e) {
+    return undefined;
+  }
+};
+
+/**
+ * Checks that a value is a message constructor.
+ */
+var isMessage = exports.isMessage = function isMessage(val) {
+  return val && val.prototype && val.prototype instanceof _message2.default;
+};
+
+/**
+ * Checks that a value is emittable as a message constructor
+ */
+var isEmittable = exports.isEmittable = (0, _ramda.either)(isMessage, (0, _ramda.both)((0, _ramda.is)(Array), (0, _ramda.pipe)((0, _ramda.nth)(0), isMessage)));
+
+var toEmittable = exports.toEmittable = (0, _ramda.ifElse)((0, _ramda.is)(Array), _ramda.identity, function (type) {
+  return [type, {}];
+});
+
+/**
+ * Maps an emittable and message data to a message.
+ */
+var constructMessage = exports.constructMessage = (0, _ramda.curry)(function (msgType, data) {
+  var _toEmittable = toEmittable(msgType),
+      _toEmittable2 = _slicedToArray(_toEmittable, 2),
+      type = _toEmittable2[0],
+      extra = _toEmittable2[1];
+
+  return new type(merge(data, extra));
+});
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var deep_freeze_strict_1 = __webpack_require__(5);
+var ramda_1 = __webpack_require__(0);
+var util_1 = __webpack_require__(1);
+var Message = /** @class */ (function () {
+    function Message(data, opts) {
+        if (data === void 0) { data = {}; }
+        if (opts === void 0) { opts = {}; }
+        var ctor = this.constructor;
+        this.check(data);
+        this.data = ramda_1.merge(ctor.defaults, data);
+        var invalidTypes = util_1.getValidationFailures(ctor.expects)(this.data);
+        if (!ramda_1.isEmpty(invalidTypes)) {
+            var msgData = util_1.safeStringify(data), types = ramda_1.join(', ', invalidTypes);
+            throw new TypeError("Message data " + msgData + " failed expectations in " + ctor.name + ": " + types);
+        }
+        if (opts && opts.shallow) {
+            Object.freeze(this);
+            Object.freeze(this.data);
+        }
+        else {
+            deep_freeze_strict_1.default(this);
+        }
+    }
+    Message.prototype.check = function (data) {
+        if (ramda_1.is(Object, data)) {
+            return;
+        }
+        throw new Error([
+            'Message data must be an object in message',
+            this.constructor.name,
+            'but is',
+            util_1.safeStringify(data),
+        ].join(' '));
+    };
+    Message.prototype.map = function (data) {
+        return new this.constructor(ramda_1.merge(this.data, data));
+    };
+    Message.defaults = {};
+    Message.expects = {};
+    return Message;
+}());
+exports.default = Message;
+var Activate = /** @class */ (function (_super) {
+    __extends(Activate, _super);
+    function Activate() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return Activate;
+}(Message));
+exports.Activate = Activate;
+
+
+/***/ }),
 /* 3 */
 /***/ (function(module, exports) {
 
@@ -208,77 +586,33 @@ process.umask = function() { return 0; };
 
 /***/ }),
 /* 4 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-"use strict";
-/* WEBPACK VAR INJECTION */(function(process) {/**
- * Copyright 2014-2015, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- */
-
-
-
-/**
- * Similar to invariant but only logs a warning if the condition is not met.
- * This can be used to log issues in development environments in critical
- * paths. Removing the logging code for production environments will keep the
- * same logic and follow the same code paths.
- */
-
-var warning = function() {};
-
-if (process.env.NODE_ENV !== 'production') {
-  warning = function(condition, format, args) {
-    var len = arguments.length;
-    args = new Array(len > 2 ? len - 2 : 0);
-    for (var key = 2; key < len; key++) {
-      args[key - 2] = arguments[key];
-    }
-    if (format === undefined) {
-      throw new Error(
-        '`warning(condition, format, ...args)` requires a warning ' +
-        'message argument'
-      );
-    }
-
-    if (format.length < 10 || (/^[s\W]*$/).test(format)) {
-      throw new Error(
-        'The warning format should be able to uniquely identify this ' +
-        'warning. Please, use a more descriptive format than: ' + format
-      );
-    }
-
-    if (!condition) {
-      var argIndex = 0;
-      var message = 'Warning: ' +
-        format.replace(/%s/g, function() {
-          return args[argIndex++];
-        });
-      if (typeof console !== 'undefined') {
-        console.error(message);
-      }
-      try {
-        // This error was thrown as a convenience so that you can use this stack
-        // to find the callsite that caused this warning to fire.
-        throw new Error(message);
-      } catch(x) {}
-    }
-  };
-}
-
-module.exports = warning;
-
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
+module.exports = __WEBPACK_EXTERNAL_MODULE_4__;
 
 /***/ }),
 /* 5 */
 /***/ (function(module, exports) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE_5__;
+module.exports = function deepFreeze (o) {
+  Object.freeze(o);
+
+  var oIsFunction = typeof o === "function";
+  var hasOwnProp = Object.prototype.hasOwnProperty;
+
+  Object.getOwnPropertyNames(o).forEach(function (prop) {
+    if (hasOwnProp.call(o, prop)
+    && (oIsFunction ? prop !== 'caller' && prop !== 'callee' && prop !== 'arguments' : true )
+    && o[prop] !== null
+    && (typeof o[prop] === "object" || typeof o[prop] === "function")
+    && !Object.isFrozen(o[prop])) {
+      deepFreeze(o[prop]);
+    }
+  });
+  
+  return o;
+};
+
 
 /***/ }),
 /* 6 */
@@ -440,81 +774,56 @@ var formData = exports.formData = function formData(data) {
 
 "use strict";
 
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var ramda_1 = __webpack_require__(0);
+var message_1 = __webpack_require__(2);
+var util_1 = __webpack_require__(1);
+var ReplaceHistory = /** @class */ (function (_super) {
+    __extends(ReplaceHistory, _super);
+    function ReplaceHistory() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    ReplaceHistory.expects = { path: ramda_1.is(String) };
+    return ReplaceHistory;
+}(message_1.default));
+exports.ReplaceHistory = ReplaceHistory;
+var PushHistory = /** @class */ (function (_super) {
+    __extends(PushHistory, _super);
+    function PushHistory() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    PushHistory.expects = { path: ramda_1.is(String) };
+    return PushHistory;
+}(message_1.default));
+exports.PushHistory = PushHistory;
+var Back = /** @class */ (function (_super) {
+    __extends(Back, _super);
+    function Back() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return Back;
+}(message_1.default));
+exports.Back = Back;
+var Timeout = /** @class */ (function (_super) {
+    __extends(Timeout, _super);
+    function Timeout() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Timeout.expects = { result: util_1.isEmittable, timeout: ramda_1.is(Number) };
+    return Timeout;
+}(message_1.default));
+exports.Timeout = Timeout;
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Timeout = exports.Back = exports.PushHistory = exports.ReplaceHistory = undefined;
-
-var _ramda = __webpack_require__(0);
-
-var _message = __webpack_require__(2);
-
-var _message2 = _interopRequireDefault(_message);
-
-var _util = __webpack_require__(1);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var ReplaceHistory = exports.ReplaceHistory = function (_Message) {
-  _inherits(ReplaceHistory, _Message);
-
-  function ReplaceHistory() {
-    _classCallCheck(this, ReplaceHistory);
-
-    return _possibleConstructorReturn(this, (ReplaceHistory.__proto__ || Object.getPrototypeOf(ReplaceHistory)).apply(this, arguments));
-  }
-
-  return ReplaceHistory;
-}(_message2.default);
-
-ReplaceHistory.expects = { path: (0, _ramda.is)(String) };
-
-var PushHistory = exports.PushHistory = function (_Message2) {
-  _inherits(PushHistory, _Message2);
-
-  function PushHistory() {
-    _classCallCheck(this, PushHistory);
-
-    return _possibleConstructorReturn(this, (PushHistory.__proto__ || Object.getPrototypeOf(PushHistory)).apply(this, arguments));
-  }
-
-  return PushHistory;
-}(_message2.default);
-
-PushHistory.expects = { path: (0, _ramda.is)(String) };
-
-var Back = exports.Back = function (_Message3) {
-  _inherits(Back, _Message3);
-
-  function Back() {
-    _classCallCheck(this, Back);
-
-    return _possibleConstructorReturn(this, (Back.__proto__ || Object.getPrototypeOf(Back)).apply(this, arguments));
-  }
-
-  return Back;
-}(_message2.default);
-
-var Timeout = exports.Timeout = function (_Message4) {
-  _inherits(Timeout, _Message4);
-
-  function Timeout() {
-    _classCallCheck(this, Timeout);
-
-    return _possibleConstructorReturn(this, (Timeout.__proto__ || Object.getPrototypeOf(Timeout)).apply(this, arguments));
-  }
-
-  return Timeout;
-}(_message2.default);
-
-Timeout.expects = { result: _util.isEmittable, timeout: (0, _ramda.is)(Number) };
 
 /***/ }),
 /* 8 */
@@ -571,10 +880,10 @@ var Write = exports.Write = function (_Message2) {
 }(_message2.default);
 
 Write.expects = {
+  expires: (0, _ramda.either)((0, _ramda.is)(Date), _ramda.isNil),
   key: (0, _ramda.is)(String),
-  value: (0, _ramda.either)((0, _ramda.is)(Object), (0, _ramda.is)(String)),
   path: (0, _ramda.either)((0, _ramda.is)(String), _ramda.isNil),
-  expires: (0, _ramda.either)((0, _ramda.is)(Date), _ramda.isNil)
+  value: (0, _ramda.either)((0, _ramda.is)(Object), (0, _ramda.is)(String))
 };
 
 var Delete = exports.Delete = function (_Message3) {
@@ -680,6 +989,74 @@ Clear.expects = {};
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
+/* WEBPACK VAR INJECTION */(function(process) {/**
+ * Copyright 2014-2015, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+
+
+/**
+ * Similar to invariant but only logs a warning if the condition is not met.
+ * This can be used to log issues in development environments in critical
+ * paths. Removing the logging code for production environments will keep the
+ * same logic and follow the same code paths.
+ */
+
+var warning = function() {};
+
+if (process.env.NODE_ENV !== 'production') {
+  warning = function(condition, format, args) {
+    var len = arguments.length;
+    args = new Array(len > 2 ? len - 2 : 0);
+    for (var key = 2; key < len; key++) {
+      args[key - 2] = arguments[key];
+    }
+    if (format === undefined) {
+      throw new Error(
+        '`warning(condition, format, ...args)` requires a warning ' +
+        'message argument'
+      );
+    }
+
+    if (format.length < 10 || (/^[s\W]*$/).test(format)) {
+      throw new Error(
+        'The warning format should be able to uniquely identify this ' +
+        'warning. Please, use a more descriptive format than: ' + format
+      );
+    }
+
+    if (!condition) {
+      var argIndex = 0;
+      var message = 'Warning: ' +
+        format.replace(/%s/g, function() {
+          return args[argIndex++];
+        });
+      if (typeof console !== 'undefined') {
+        console.error(message);
+      }
+      try {
+        // This error was thrown as a convenience so that you can use this stack
+        // to find the callsite that caused this warning to fire.
+        throw new Error(message);
+      } catch(x) {}
+    }
+  };
+}
+
+module.exports = warning;
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
 
 
 exports.__esModule = true;
@@ -695,8 +1072,12 @@ var stripPrefix = exports.stripPrefix = function stripPrefix(path, prefix) {
   return path.indexOf(prefix) === 0 ? path.substr(prefix.length) : path;
 };
 
+var stripTrailingSlash = exports.stripTrailingSlash = function stripTrailingSlash(path) {
+  return path.charAt(path.length - 1) === '/' ? path.slice(0, -1) : path;
+};
+
 var parsePath = exports.parsePath = function parsePath(path) {
-  var pathname = path;
+  var pathname = path || '/';
   var search = '';
   var hash = '';
 
@@ -712,6 +1093,8 @@ var parsePath = exports.parsePath = function parsePath(path) {
     pathname = pathname.substr(0, searchIndex);
   }
 
+  pathname = decodeURI(pathname);
+
   return {
     pathname: pathname,
     search: search === '?' ? '' : search,
@@ -720,11 +1103,12 @@ var parsePath = exports.parsePath = function parsePath(path) {
 };
 
 var createPath = exports.createPath = function createPath(location) {
-  var pathname = location.pathname;
-  var search = location.search;
-  var hash = location.hash;
+  var pathname = location.pathname,
+      search = location.search,
+      hash = location.hash;
 
-  var path = pathname || '/';
+
+  var path = encodeURI(pathname || '/');
 
   if (search && search !== '?') path += search.charAt(0) === '?' ? search : '?' + search;
 
@@ -732,39 +1116,6 @@ var createPath = exports.createPath = function createPath(location) {
 
   return path;
 };
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _util = __webpack_require__(1);
-
-var _http = __webpack_require__(12);
-
-var _http2 = _interopRequireDefault(_http);
-
-var _browser = __webpack_require__(14);
-
-var _browser2 = _interopRequireDefault(_browser);
-
-var _cookies = __webpack_require__(21);
-
-var _cookies2 = _interopRequireDefault(_cookies);
-
-var _local_storage = __webpack_require__(23);
-
-var _local_storage2 = _interopRequireDefault(_local_storage);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = (0, _util.mergeMaps)([_http2.default, _browser2.default, _cookies2.default, _local_storage2.default]);
 
 /***/ }),
 /* 12 */
@@ -777,7 +1128,40 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _axios = __webpack_require__(13);
+var _util = __webpack_require__(1);
+
+var _http = __webpack_require__(13);
+
+var _http2 = _interopRequireDefault(_http);
+
+var _browser = __webpack_require__(15);
+
+var _browser2 = _interopRequireDefault(_browser);
+
+var _cookies = __webpack_require__(23);
+
+var _cookies2 = _interopRequireDefault(_cookies);
+
+var _local_storage = __webpack_require__(25);
+
+var _local_storage2 = _interopRequireDefault(_local_storage);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = (0, _util.mergeMaps)([_http2.default, _browser2.default, _cookies2.default, _local_storage2.default]);
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _axios = __webpack_require__(14);
 
 var _axios2 = _interopRequireDefault(_axios);
 
@@ -803,13 +1187,13 @@ exports.default = new Map([[_http.Request, function (_ref, dispatch) {
 }]]);
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE_13__;
+module.exports = __WEBPACK_EXTERNAL_MODULE_14__;
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -822,7 +1206,7 @@ exports.history = undefined;
 
 var _ramda = __webpack_require__(0);
 
-var _createBrowserHistory = __webpack_require__(15);
+var _createBrowserHistory = __webpack_require__(16);
 
 var _createBrowserHistory2 = _interopRequireDefault(_createBrowserHistory);
 
@@ -854,35 +1238,35 @@ exports.default = new Map([[_browser.PushHistory, function (_ref) {
 }]]);
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
+
 
 exports.__esModule = true;
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _warning = __webpack_require__(4);
+var _warning = __webpack_require__(10);
 
 var _warning2 = _interopRequireDefault(_warning);
 
-var _invariant = __webpack_require__(16);
+var _invariant = __webpack_require__(17);
 
 var _invariant2 = _interopRequireDefault(_invariant);
 
-var _LocationUtils = __webpack_require__(17);
+var _LocationUtils = __webpack_require__(18);
 
-var _PathUtils = __webpack_require__(10);
+var _PathUtils = __webpack_require__(11);
 
-var _createTransitionManager = __webpack_require__(18);
+var _createTransitionManager = __webpack_require__(21);
 
 var _createTransitionManager2 = _interopRequireDefault(_createTransitionManager);
 
-var _ExecutionEnvironment = __webpack_require__(19);
-
-var _DOMUtils = __webpack_require__(20);
+var _DOMUtils = __webpack_require__(22);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -894,7 +1278,7 @@ var getHistoryState = function getHistoryState() {
     return window.history.state || {};
   } catch (e) {
     // IE 11 sometimes throws when accessing window.history.state
-    // See https://github.com/mjackson/history/pull/289
+    // See https://github.com/ReactTraining/history/pull/289
     return {};
   }
 };
@@ -904,33 +1288,32 @@ var getHistoryState = function getHistoryState() {
  * pushState, replaceState, and the popstate event.
  */
 var createBrowserHistory = function createBrowserHistory() {
-  var props = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+  var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-  !_ExecutionEnvironment.canUseDOM ? process.env.NODE_ENV !== 'production' ? (0, _invariant2.default)(false, 'Browser history needs a DOM') : (0, _invariant2.default)(false) : void 0;
+  (0, _invariant2.default)(_DOMUtils.canUseDOM, 'Browser history needs a DOM');
 
   var globalHistory = window.history;
   var canUseHistory = (0, _DOMUtils.supportsHistory)();
   var needsHashChangeListener = !(0, _DOMUtils.supportsPopStateOnHashChange)();
 
-  var _props$basename = props.basename;
-  var basename = _props$basename === undefined ? '' : _props$basename;
-  var _props$forceRefresh = props.forceRefresh;
-  var forceRefresh = _props$forceRefresh === undefined ? false : _props$forceRefresh;
-  var _props$getUserConfirm = props.getUserConfirmation;
-  var getUserConfirmation = _props$getUserConfirm === undefined ? _DOMUtils.getConfirmation : _props$getUserConfirm;
-  var _props$keyLength = props.keyLength;
-  var keyLength = _props$keyLength === undefined ? 6 : _props$keyLength;
+  var _props$forceRefresh = props.forceRefresh,
+      forceRefresh = _props$forceRefresh === undefined ? false : _props$forceRefresh,
+      _props$getUserConfirm = props.getUserConfirmation,
+      getUserConfirmation = _props$getUserConfirm === undefined ? _DOMUtils.getConfirmation : _props$getUserConfirm,
+      _props$keyLength = props.keyLength,
+      keyLength = _props$keyLength === undefined ? 6 : _props$keyLength;
 
+  var basename = props.basename ? (0, _PathUtils.stripTrailingSlash)((0, _PathUtils.addLeadingSlash)(props.basename)) : '';
 
   var getDOMLocation = function getDOMLocation(historyState) {
-    var _ref = historyState || {};
+    var _ref = historyState || {},
+        key = _ref.key,
+        state = _ref.state;
 
-    var key = _ref.key;
-    var state = _ref.state;
-    var _window$location = window.location;
-    var pathname = _window$location.pathname;
-    var search = _window$location.search;
-    var hash = _window$location.hash;
+    var _window$location = window.location,
+        pathname = _window$location.pathname,
+        search = _window$location.search,
+        hash = _window$location.hash;
 
 
     var path = pathname + search + hash;
@@ -958,7 +1341,8 @@ var createBrowserHistory = function createBrowserHistory() {
   };
 
   var handlePopState = function handlePopState(event) {
-    if (event.state === undefined) return; // Ignore extraneous popstate events in WebKit.
+    // Ignore extraneous popstate events in WebKit.
+    if ((0, _DOMUtils.isExtraneousPopstateEvent)(event)) return;
 
     handlePop(getDOMLocation(event.state));
   };
@@ -974,17 +1358,15 @@ var createBrowserHistory = function createBrowserHistory() {
       forceNextPop = false;
       setState();
     } else {
-      (function () {
-        var action = 'POP';
+      var action = 'POP';
 
-        transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
-          if (ok) {
-            setState({ action: action, location: location });
-          } else {
-            revertPop(location);
-          }
-        });
-      })();
+      transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
+        if (ok) {
+          setState({ action: action, location: location });
+        } else {
+          revertPop(location);
+        }
+      });
     }
   };
 
@@ -1016,23 +1398,29 @@ var createBrowserHistory = function createBrowserHistory() {
 
   // Public interface
 
+  var createHref = function createHref(location) {
+    return basename + (0, _PathUtils.createPath)(location);
+  };
+
   var push = function push(path, state) {
+    (0, _warning2.default)(!((typeof path === 'undefined' ? 'undefined' : _typeof(path)) === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to push when the 1st ' + 'argument is a location-like object that already has state; it is ignored');
+
     var action = 'PUSH';
-    var location = (0, _LocationUtils.createLocation)(path, state, createKey());
+    var location = (0, _LocationUtils.createLocation)(path, state, createKey(), history.location);
 
     transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
       if (!ok) return;
 
-      var url = basename + (0, _PathUtils.createPath)(location);
-      var key = location.key;
-      var state = location.state;
+      var href = createHref(location);
+      var key = location.key,
+          state = location.state;
 
 
       if (canUseHistory) {
-        globalHistory.pushState({ key: key, state: state }, null, url);
+        globalHistory.pushState({ key: key, state: state }, null, href);
 
         if (forceRefresh) {
-          window.location.href = url;
+          window.location.href = href;
         } else {
           var prevIndex = allKeys.indexOf(history.location.key);
           var nextKeys = allKeys.slice(0, prevIndex === -1 ? 0 : prevIndex + 1);
@@ -1043,30 +1431,32 @@ var createBrowserHistory = function createBrowserHistory() {
           setState({ action: action, location: location });
         }
       } else {
-        process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(state === undefined, 'Browser history cannot push state in browsers that do not support HTML5 history') : void 0;
+        (0, _warning2.default)(state === undefined, 'Browser history cannot push state in browsers that do not support HTML5 history');
 
-        window.location.href = url;
+        window.location.href = href;
       }
     });
   };
 
   var replace = function replace(path, state) {
+    (0, _warning2.default)(!((typeof path === 'undefined' ? 'undefined' : _typeof(path)) === 'object' && path.state !== undefined && state !== undefined), 'You should avoid providing a 2nd state argument to replace when the 1st ' + 'argument is a location-like object that already has state; it is ignored');
+
     var action = 'REPLACE';
-    var location = (0, _LocationUtils.createLocation)(path, state, createKey());
+    var location = (0, _LocationUtils.createLocation)(path, state, createKey(), history.location);
 
     transitionManager.confirmTransitionTo(location, action, getUserConfirmation, function (ok) {
       if (!ok) return;
 
-      var url = basename + (0, _PathUtils.createPath)(location);
-      var key = location.key;
-      var state = location.state;
+      var href = createHref(location);
+      var key = location.key,
+          state = location.state;
 
 
       if (canUseHistory) {
-        globalHistory.replaceState({ key: key, state: state }, null, url);
+        globalHistory.replaceState({ key: key, state: state }, null, href);
 
         if (forceRefresh) {
-          window.location.replace(url);
+          window.location.replace(href);
         } else {
           var prevIndex = allKeys.indexOf(history.location.key);
 
@@ -1075,9 +1465,9 @@ var createBrowserHistory = function createBrowserHistory() {
           setState({ action: action, location: location });
         }
       } else {
-        process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(state === undefined, 'Browser history cannot replace state in browsers that do not support HTML5 history') : void 0;
+        (0, _warning2.default)(state === undefined, 'Browser history cannot replace state in browsers that do not support HTML5 history');
 
-        window.location.replace(url);
+        window.location.replace(href);
       }
     });
   };
@@ -1113,7 +1503,7 @@ var createBrowserHistory = function createBrowserHistory() {
   var isBlocked = false;
 
   var block = function block() {
-    var prompt = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+    var prompt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
     var unblock = transitionManager.setPrompt(prompt);
 
@@ -1138,7 +1528,7 @@ var createBrowserHistory = function createBrowserHistory() {
 
     return function () {
       checkDOMListeners(-1);
-      return unlisten();
+      unlisten();
     };
   };
 
@@ -1146,6 +1536,7 @@ var createBrowserHistory = function createBrowserHistory() {
     length: globalHistory.length,
     action: 'POP',
     location: initialLocation,
+    createHref: createHref,
     push: push,
     replace: replace,
     go: go,
@@ -1159,10 +1550,9 @@ var createBrowserHistory = function createBrowserHistory() {
 };
 
 exports.default = createBrowserHistory;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1221,30 +1611,30 @@ module.exports = invariant;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
+
 
 exports.__esModule = true;
 exports.locationsAreEqual = exports.createLocation = undefined;
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _warning = __webpack_require__(4);
+var _resolvePathname = __webpack_require__(19);
 
-var _warning2 = _interopRequireDefault(_warning);
+var _resolvePathname2 = _interopRequireDefault(_resolvePathname);
 
-var _PathUtils = __webpack_require__(10);
+var _valueEqual = __webpack_require__(20);
+
+var _valueEqual2 = _interopRequireDefault(_valueEqual);
+
+var _PathUtils = __webpack_require__(11);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// A private helper function used to create location
-// objects from the args to push/replace.
-var createLocation = exports.createLocation = function createLocation(path, state, key) {
+var createLocation = exports.createLocation = function createLocation(path, state, key, currentLocation) {
   var location = void 0;
   if (typeof path === 'string') {
     // Two-arg form: push(path, state)
@@ -1254,63 +1644,174 @@ var createLocation = exports.createLocation = function createLocation(path, stat
     // One-arg form: push(location)
     location = _extends({}, path);
 
-    if (state !== undefined) {
-      if (location.state === undefined) {
-        location.state = state;
-      } else {
-        process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(false, 'When providing a location-like object with state as the first argument to push/replace ' + 'you should avoid providing a second "state" argument; it is ignored') : void 0;
-      }
+    if (location.pathname === undefined) location.pathname = '';
+
+    if (location.search) {
+      if (location.search.charAt(0) !== '?') location.search = '?' + location.search;
+    } else {
+      location.search = '';
     }
+
+    if (location.hash) {
+      if (location.hash.charAt(0) !== '#') location.hash = '#' + location.hash;
+    } else {
+      location.hash = '';
+    }
+
+    if (state !== undefined && location.state === undefined) location.state = state;
   }
 
   location.key = key;
 
+  if (currentLocation) {
+    // Resolve incomplete/relative pathname relative to current location.
+    if (!location.pathname) {
+      location.pathname = currentLocation.pathname;
+    } else if (location.pathname.charAt(0) !== '/') {
+      location.pathname = (0, _resolvePathname2.default)(location.pathname, currentLocation.pathname);
+    }
+  }
+
   return location;
 };
 
-var looseEqual = function looseEqual(a, b) {
-  if (a == null) return a == b;
-
-  var typeofA = typeof a === 'undefined' ? 'undefined' : _typeof(a);
-  var typeofB = typeof b === 'undefined' ? 'undefined' : _typeof(b);
-
-  if (typeofA !== typeofB) return false;
-
-  if (Array.isArray(a)) {
-    if (!Array.isArray(b) || a.length !== b.length) return false;
-
-    return a.every(function (item, index) {
-      return looseEqual(item, b[index]);
-    });
-  } else if (typeofA === 'object') {
-    var keysOfA = Object.keys(a);
-    var keysOfB = Object.keys(b);
-
-    if (keysOfA.length !== keysOfB.length) return false;
-
-    return keysOfA.every(function (key) {
-      return looseEqual(a[key], b[key]);
-    });
-  }
-
-  return a === b;
-};
-
 var locationsAreEqual = exports.locationsAreEqual = function locationsAreEqual(a, b) {
-  return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.key === b.key && looseEqual(a.state, b.state);
+  return a.pathname === b.pathname && a.search === b.search && a.hash === b.hash && a.key === b.key && (0, _valueEqual2.default)(a.state, b.state);
 };
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ }),
-/* 18 */
+/* 19 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+function isAbsolute(pathname) {
+  return pathname.charAt(0) === '/';
+}
+
+// About 1.5x faster than the two-arg version of Array#splice()
+function spliceOne(list, index) {
+  for (var i = index, k = i + 1, n = list.length; k < n; i += 1, k += 1) {
+    list[i] = list[k];
+  }
+
+  list.pop();
+}
+
+// This implementation is based heavily on node's url.parse
+function resolvePathname(to) {
+  var from = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+
+  var toParts = to && to.split('/') || [];
+  var fromParts = from && from.split('/') || [];
+
+  var isToAbs = to && isAbsolute(to);
+  var isFromAbs = from && isAbsolute(from);
+  var mustEndAbs = isToAbs || isFromAbs;
+
+  if (to && isAbsolute(to)) {
+    // to is absolute
+    fromParts = toParts;
+  } else if (toParts.length) {
+    // to is relative, drop the filename
+    fromParts.pop();
+    fromParts = fromParts.concat(toParts);
+  }
+
+  if (!fromParts.length) return '/';
+
+  var hasTrailingSlash = void 0;
+  if (fromParts.length) {
+    var last = fromParts[fromParts.length - 1];
+    hasTrailingSlash = last === '.' || last === '..' || last === '';
+  } else {
+    hasTrailingSlash = false;
+  }
+
+  var up = 0;
+  for (var i = fromParts.length; i >= 0; i--) {
+    var part = fromParts[i];
+
+    if (part === '.') {
+      spliceOne(fromParts, i);
+    } else if (part === '..') {
+      spliceOne(fromParts, i);
+      up++;
+    } else if (up) {
+      spliceOne(fromParts, i);
+      up--;
+    }
+  }
+
+  if (!mustEndAbs) for (; up--; up) {
+    fromParts.unshift('..');
+  }if (mustEndAbs && fromParts[0] !== '' && (!fromParts[0] || !isAbsolute(fromParts[0]))) fromParts.unshift('');
+
+  var result = fromParts.join('/');
+
+  if (hasTrailingSlash && result.substr(-1) !== '/') result += '/';
+
+  return result;
+}
+
+/* harmony default export */ __webpack_exports__["default"] = (resolvePathname);
+
+/***/ }),
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(process) {
+
 
 exports.__esModule = true;
 
-var _warning = __webpack_require__(4);
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var valueEqual = function valueEqual(a, b) {
+  if (a === b) return true;
+
+  if (a == null || b == null) return false;
+
+  if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every(function (item, index) {
+    return valueEqual(item, b[index]);
+  });
+
+  var aType = typeof a === 'undefined' ? 'undefined' : _typeof(a);
+  var bType = typeof b === 'undefined' ? 'undefined' : _typeof(b);
+
+  if (aType !== bType) return false;
+
+  if (aType === 'object') {
+    var aValue = a.valueOf();
+    var bValue = b.valueOf();
+
+    if (aValue !== a || bValue !== b) return valueEqual(aValue, bValue);
+
+    var aKeys = Object.keys(a);
+    var bKeys = Object.keys(b);
+
+    if (aKeys.length !== bKeys.length) return false;
+
+    return aKeys.every(function (key) {
+      return valueEqual(a[key], b[key]);
+    });
+  }
+
+  return false;
+};
+
+exports.default = valueEqual;
+
+/***/ }),
+/* 21 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+
+var _warning = __webpack_require__(10);
 
 var _warning2 = _interopRequireDefault(_warning);
 
@@ -1320,7 +1821,7 @@ var createTransitionManager = function createTransitionManager() {
   var prompt = null;
 
   var setPrompt = function setPrompt(nextPrompt) {
-    process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(prompt == null, 'A history supports only one prompt at a time') : void 0;
+    (0, _warning2.default)(prompt == null, 'A history supports only one prompt at a time');
 
     prompt = nextPrompt;
 
@@ -1340,7 +1841,7 @@ var createTransitionManager = function createTransitionManager() {
         if (typeof getUserConfirmation === 'function') {
           getUserConfirmation(result, callback);
         } else {
-          process.env.NODE_ENV !== 'production' ? (0, _warning2.default)(false, 'A history needs a getUserConfirmation function in order to use a prompt message') : void 0;
+          (0, _warning2.default)(false, 'A history needs a getUserConfirmation function in order to use a prompt message');
 
           callback(true);
         }
@@ -1355,10 +1856,17 @@ var createTransitionManager = function createTransitionManager() {
 
   var listeners = [];
 
-  var appendListener = function appendListener(listener) {
+  var appendListener = function appendListener(fn) {
+    var isActive = true;
+
+    var listener = function listener() {
+      if (isActive) fn.apply(undefined, arguments);
+    };
+
     listeners.push(listener);
 
     return function () {
+      isActive = false;
       listeners = listeners.filter(function (item) {
         return item !== listener;
       });
@@ -1370,7 +1878,7 @@ var createTransitionManager = function createTransitionManager() {
       args[_key] = arguments[_key];
     }
 
-    return listeners.forEach(function (listener) {
+    listeners.forEach(function (listener) {
       return listener.apply(undefined, args);
     });
   };
@@ -1384,10 +1892,9 @@ var createTransitionManager = function createTransitionManager() {
 };
 
 exports.default = createTransitionManager;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ }),
-/* 19 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1396,14 +1903,6 @@ exports.default = createTransitionManager;
 exports.__esModule = true;
 var canUseDOM = exports.canUseDOM = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
 
-/***/ }),
-/* 20 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.__esModule = true;
 var addEventListener = exports.addEventListener = function addEventListener(node, event, listener) {
   return node.addEventListener ? node.addEventListener(event, listener, false) : node.attachEvent('on' + event, listener);
 };
@@ -1446,8 +1945,17 @@ var supportsGoWithoutReloadUsingHash = exports.supportsGoWithoutReloadUsingHash 
   return window.navigator.userAgent.indexOf('Firefox') === -1;
 };
 
+/**
+ * Returns true if a given popstate event is an extraneous WebKit event.
+ * Accounts for the fact that Chrome on iOS fires real popstate events
+ * containing undefined state when pressing the back button.
+ */
+var isExtraneousPopstateEvent = exports.isExtraneousPopstateEvent = function isExtraneousPopstateEvent(event) {
+  return event.state === undefined && navigator.userAgent.indexOf('CriOS') === -1;
+};
+
 /***/ }),
-/* 21 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1459,7 +1967,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _ramda = __webpack_require__(0);
 
-var _jsCookie = __webpack_require__(22);
+var _jsCookie = __webpack_require__(24);
 
 var Cookies = _interopRequireWildcard(_jsCookie);
 
@@ -1488,13 +1996,13 @@ exports.default = new Map([[_cookies.Read, function (_ref, dispatch) {
 }]]);
 
 /***/ }),
-/* 22 */
+/* 24 */
 /***/ (function(module, exports) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE_22__;
+module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
 
 /***/ }),
-/* 23 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1510,7 +2018,7 @@ var _local_storage = __webpack_require__(9);
 
 var _util = __webpack_require__(1);
 
-var get = window.localStorage.getItem.bind(window.localStorage);
+var get = window && window.localStorage && window.localStorage.getItem.bind(window.localStorage) || (0, _ramda.always)('<running outside browser context>');
 
 exports.default = new Map([[_local_storage.Read, function (_ref, dispatch) {
   var key = _ref.key,
@@ -1528,5 +2036,6 @@ exports.default = new Map([[_local_storage.Read, function (_ref, dispatch) {
 }]]);
 
 /***/ })
-],[11]);
+/******/ ]);
 });
+//# sourceMappingURL=effects.js.map

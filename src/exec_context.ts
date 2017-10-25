@@ -1,15 +1,23 @@
+import * as deepFreeze from 'deep-freeze-strict';
 import {
-  __, is, pipe, prop, cond, always, identity, curry, complement as not, propEq,
-  merge, mergeAll, flatten, pickBy, filter, map, both, values, defaultTo, nth,
-  ifElse, flip
+  always, both, complement as not, cond, curry, defaultTo, filter, flatten, flip,
+  identity, ifElse, is, map, merge, mergeAll, nth, pick, pickBy, pipe, prop, propEq, values
 } from 'ramda';
-import deepFreeze from 'deep-freeze-strict';
-import { safeStringify, suppressEvent, trap, isEmittable, toEmittable, constructMessage } from './util';
-import { PARENT } from './app';
-import { notify, intercept, cmdName } from './dev_tools';
-import Message from './message';
 
-const propOf = flip(prop);
+import { Container, DelegateDef, Environment, PARENT } from './app';
+import { cmdName, intercept, notify } from './dev_tools';
+import Message from './message';
+import StateManager, { Callback, Config } from './state_manager';
+import { constructMessage, isEmittable, safeStringify, suppressEvent, toEmittable, trap } from './util';
+
+const update = flip(merge);
+
+type ExecContextDef = {
+  env: Environment,
+  container: Container,
+  parent?: ExecContext | { relay: object, state?: (cfg?: object) => object, path?: string[] },
+  delegate?: DelegateDef
+};
 
 /**
  * Walk up a container hierarchy looking for a value.
@@ -29,7 +37,8 @@ const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, e
  * @return {Boolean} Returns true if the container (or an ancestor) has an update handler matching
  *         the given constructor, otherwise false.
  */
-const handlesMsg = exec => pipe(toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), exec));
+const handlesMsg = (exec: ExecContext) =>
+  pipe(toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), exec));
 
 /**
  * Formats a message for showing an error that occurred as the result of a command
@@ -45,7 +54,7 @@ const formatError = (msg, cmd) => [
   `(${safeStringify(msg && msg.data)}) --`,
 ].join(' ');
 
-const error = curry((logger, err, msg, cmd = null) => logger(formatError(msg, cmd), err) || err);
+const error = curry((logger, ctx, msg, err) => logger(formatError(msg, ctx), err) || err);
 
 /**
  * Checks that a Message object is valid
@@ -74,7 +83,7 @@ const checkMessage = (exec, msg) => {
  */
 const attachStore = (config, container) => {
   const getState = () => (config.key && prop(config.key) || identity)(config.store.getState());
-  config.store.subscribe(pipe(getState, merge(__, container.state()), container.push));
+  config.store.subscribe(pipe(getState, update(container.state()), container.push));
   return getState();
 };
 
@@ -111,10 +120,11 @@ const mapMessage = (handler, state, msg, relay) => {
 /**
  * Maps an Event object to a hash that will be wrapped in a Message.
  */
-const mapEvent = curry((extra, event) => {
-  const isDomEvent = event && event.nativeEvent && is(Object, event.target);
-  const isCheckbox = isDomEvent && event.target.type && event.target.type.toLowerCase() === 'checkbox';
-  const value = isDomEvent && (isCheckbox ? event.target.checked : event.target.value);
+const mapEvent = curry((extra: object & { preventDefault?: boolean }, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const isDomEvent = event && (event as any).nativeEvent && is(Object, target);
+  const isCheckbox = isDomEvent && target.type && target.type.toLowerCase() === 'checkbox';
+  const value = isDomEvent && (isCheckbox ? target.checked : target.value);
   const eventVal = isDomEvent ? { value, ...pickBy(not(is(Object)), event) } : event;
 
   if (isDomEvent && !isCheckbox && extra.preventDefault !== false) {
@@ -126,8 +136,8 @@ const mapEvent = curry((extra, event) => {
 /**
  * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
  */
-const checkCmdMsgs = curry((exec, cmd) => {
-  const unhandled = pipe(prop('data'), values, filter(isEmittable), filter(not(handlesMsg(exec))));
+const checkCmdMsgs = curry((exec: ExecContext, cmd: Message) => {
+  const unhandled = pipe(prop('data'), values, filter(isEmittable), filter(not(handlesMsg(exec) as any)));
   const msgs = unhandled(cmd);
 
   if (!msgs.length) {
@@ -170,18 +180,22 @@ const dispatchAction = (exec, messageTypes, action) => {
  */
 export default class ExecContext {
 
-  id = Math.round(Math.random() * Math.pow(2, 50)).toString();
-  stateMgr = null;
-  getState = null;
-  parent = null;
-  delegate = null;
-  path = [];
-  env = null;
+  public id: string = Math.round(Math.random() * Math.pow(2, 50)).toString();
 
-  constructor({ env, container, parent, delegate }) {
-    const stateMgr = parent ? null : intercept(env.stateManager(container)), proto = this.constructor.prototype;
+  public stateMgr?: StateManager = null;
+  public parent?: ExecContext = null;
+  public delegate?: DelegateDef = null;
+  public path: string[] = [];
+  public env?: Environment = null;
+  public container?: Container = null;
+
+  protected errLog;
+  protected getState: (params?: object) => object = null;
+
+  constructor({ env, container, parent, delegate }: ExecContextDef) {
+    const stateMgr = parent && parent.state ? null : intercept(env.stateManager(container));
     const delegatePath = (delegate && delegate !== PARENT) ? delegate : [];
-    const path = (parent && parent.path || []).concat(delegatePath);
+    const path = (parent && parent.path || []).concat(delegatePath as string[]);
     const { freeze, assign } = Object;
     let hasInitialized = false;
 
@@ -201,45 +215,43 @@ export default class ExecContext {
       return fn.call(this, ...args);
     };
 
-    const wrapInit = pipe(map(propOf(proto)), map(fn => ({ [fn.name]: fn })), mergeAll, map(initialize));
+    const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
+    const errLog = error(env.log);
 
     freeze(assign(this, {
       env,
       path,
       parent,
+      errLog,
       delegate,
       stateMgr,
       container,
       getState: stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path }),
-      dispatch: initialize(this.dispatch.bind(this)),
-      ...wrapInit(['push', 'subscribe', 'state', 'relay']),
+      ...wrapInit(['dispatch', 'push', 'subscribe', 'state', 'relay'])(this.constructor.prototype),
     }));
 
     Object.assign(this.dispatch, { run });
   }
 
-  subscribe(listener, config) {
+  public subscribe(listener: Callback, config: Config) {
     return (this.stateMgr || this.parent).subscribe(listener, config || { path: this.path });
   }
 
-  dispatch(message) {
-    return trap(error(this.env.log), (msg) => {
+  public dispatch(message: Message) {
+    return trap(this.errLog(null), (msg) => {
       const msgType = msg.constructor, updater = this.container.update.get(msgType);
-
-      if (!updater) {
-        return this.parent.dispatch(msg);
-      }
-      return this.dispatch.run(msg, mapMessage(updater, this.getState(), msg, this.relay()));
+      const dispatch = (this.dispatch as any), { parent, getState, relay } = this;
+      return updater ? dispatch.run(msg, mapMessage(updater, getState(), msg, relay())) : parent.dispatch(msg);
     })(checkMessage(this, message));
   }
 
-  commands(msg, cmds) {
+  public commands(msg, cmds) {
     return pipe(flatten, filter(is(Object)), map(
-      trap(error(this.env.log, __, msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.dispatch)))
+      trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.dispatch)))
     ))(cmds);
   }
 
-  push(val, config) {
+  public push(val, config?: object & { path: any[] }) {
     if (!this.stateMgr && !this.delegate && this.getState() !== val) {
       throw new Error(`'${this.container.name}' is trying to modify the state, `
         + 'but has no \'delegate\' specified. Either opt into parent modification by '
@@ -249,19 +261,19 @@ export default class ExecContext {
     return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
   }
 
-  state(cfg) {
+  public state(cfg?: object) {
     return this.getState(cfg);
   }
 
   /**
    * Converts a container's relay map definition to a function that return's the container's relay value.
-
+   *
    * @param  {Object} The `name: () => value` relay map for a container
    * @param  {Object} The container to map
    * @return {Object} Converts the relay map to `name: value` by passing the state and parent relay values
    *         to each relay function.
    */
-  relay() {
+  public relay() {
     const { parent, container } = this, inherited = parent && parent.relay() || {};
     return merge(inherited, map(fn => fn(this.state(), inherited), container.relay || {}));
   }
@@ -272,14 +284,14 @@ export default class ExecContext {
    *
    * @param  {Object} msgTypes
    */
-  reducer(msgTypes = {}) {
-    return (prev, action) => dispatchAction(this.dispatch.run, msgTypes, action) || this.getState();
+  public reducer(msgTypes = {}) {
+    return (prev, action) => dispatchAction((this.dispatch as any).run, msgTypes, action) || this.getState();
   }
 
   /**
    * Returns a function that wraps a DOM event in a message and dispatches it to the attached container.
    */
-  emit(msgType) {
+  public emit(msgType) {
     const em = toEmittable(msgType), [type, extra] = em, ctr = this.container.name, name = type && type.name || '??';
 
     if (handlesMsg(this)(em)) {
