@@ -2,6 +2,7 @@ import * as PropTypes from 'prop-types';
 import { keys, merge, mergeAll, omit, pick } from 'ramda';
 import * as React from 'react';
 import { Container, DelegateDef, Environment } from './app';
+import ErrorComponent from './components/error';
 import ExecContext from './exec_context';
 import { Activate } from './message';
 
@@ -17,7 +18,7 @@ type ViewWrapperProps = {
  * container-bound props.
  *
  * This component looks for `execContext` in its parent context, and propagates
- * itself with `execContext` in its childrens' contexts.
+ * itself with `execContext` in its children's contexts.
  */
 export default class ViewWrapper extends React.Component<ViewWrapperProps, any> {
 
@@ -65,7 +66,16 @@ export default class ViewWrapper extends React.Component<ViewWrapperProps, any> 
     this.subscriptions.forEach(unSub => unSub());
   }
 
+  public unstable_handleError(e) {
+    // tslint:disable-next-line:no-console
+    console.error('Failed to compile React component\n', e);
+    this.setState({ componentError: e });
+  }
+
   public render() {
+    if (this.state.componentError) {
+      return <ErrorComponent message={this.state.componentError.toString()} />;
+    }
     // tslint:disable-next-line:variable-name
     const Child = this.props.container.view, ctx = this.execContext;
     const props = mergeAll([this.props.childProps, ctx.state(), { emit: ctx.emit.bind(ctx) }]);
