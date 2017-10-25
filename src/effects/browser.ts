@@ -5,7 +5,7 @@ import { constructMessage } from '../util';
 
 export const history = createHistory();
 
-export default new Map([
+export default new Map<Function, (data: any, dispatch: any) => any>([
   [PushHistory, ({ path, state }) => history.push(path, state || {})],
   [ReplaceHistory, ({ path, state }) => history.replace(path, state || {})],
   [Back, ({ state }) => history.goBack(state)],
