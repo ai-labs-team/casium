@@ -1,7 +1,7 @@
 import createHistory from 'history/createBrowserHistory';
 import { pipe } from 'ramda';
-import Message from '../message';
 import { Back, PushHistory, ReplaceHistory, Timeout } from '../commands/browser';
+import Message from '../message';
 import { constructMessage } from '../util';
 
 export const history = createHistory();

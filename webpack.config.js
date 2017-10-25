@@ -3,9 +3,9 @@ const webpack = require('webpack');
 
 module.exports = {
   entry: {
-    index: './src/index.js',
+    index: './src/index.ts',
     message: './src/message.ts',
-    commands: './src/commands/index.js',
+    commands: './src/commands/index.ts',
     effects: './src/effects/index.ts'
   },
   output: {

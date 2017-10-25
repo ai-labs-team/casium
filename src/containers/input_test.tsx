@@ -1,7 +1,9 @@
-/* eslint-env node, mocha */
-/* eslint-disable react/prop-types */
-import React from 'react';
-import { isolate, container } from '../app';
+/* tslint:disable:variable-name */
+import { expect } from 'chai';
+import { mount } from 'enzyme';
+import 'mocha';
+import * as React from 'react';
+import { container, isolate } from '../app';
 import InputContainer from './input';
 
 describe('InputContainer', () => {

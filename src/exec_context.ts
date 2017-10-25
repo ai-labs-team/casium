@@ -233,7 +233,7 @@ export default class ExecContext {
     Object.assign(this.dispatch, { run });
   }
 
-  public subscribe(listener: Callback, config: Config) {
+  public subscribe(listener: Callback, config?: Config) {
     return (this.stateMgr || this.parent).subscribe(listener, config || { path: this.path });
   }
 

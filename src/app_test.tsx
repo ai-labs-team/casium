@@ -1,10 +1,11 @@
-/* eslint-env node, mocha */
-/* eslint-disable react/prop-types */
-import React from 'react';
+import { expect } from 'chai';
+import { mount, shallow } from 'enzyme';
+import 'mocha';
 import { always, map, pick } from 'ramda';
+import * as React from 'react';
+import { commands, container, isolate } from './app';
 import Message from './message';
 import StateManager from './state_manager';
-import { isolate, container, commands } from './app';
 
 describe('app', () => {
 

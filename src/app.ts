@@ -91,7 +91,7 @@ const wrapView = ({ env, container }: { env: Environment, container: Container }
 
   return (props: object & { delegate?: DelegateDef } = {}) => React.createElement(ViewWrapper, {
     childProps: mergeProps(props), container, delegate: props.delegate || container.delegate, env
-  });
+  } as any);
 };
 
 /**
@@ -227,9 +227,9 @@ const consCommands = (model, msg, relay) => pipe(splitEvery(2), map(
  * [FooMessage, commands(Http.Post, (model, msg) => ({ url: '/foo', data: [model.someData, msg.otherData] }))]]
  * ```
  */
-export const commands = (...args) => {
+export const commands = (...args: any[]) => {
   if (args.length % 2 !== 0) {
     throw new TypeError('commands() must be called with an equal number of command constructors & data parameters');
   }
-  return (model, msg, relay) => [model, consCommands(model, msg, relay)(args)];
+  return (model, msg?, relay?) => [model, consCommands(model, msg, relay)(args)];
 };

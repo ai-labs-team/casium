@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@types/chai": "^4.0.4",
+    "@types/enzyme": "^3.1.1",
     "@types/mocha": "^2.2.43",
     "@types/ramda": "types/npm-ramda",
     "awesome-typescript-loader": "^3.2.3",
