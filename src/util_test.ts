@@ -1,7 +1,8 @@
-/* eslint-env node, mocha */
+import { expect } from 'chai';
+import 'mocha';
 import { is } from 'ramda';
 import Message from './message';
-import { getValidationFailures, merge, withProps, isMessage } from './util';
+import { getValidationFailures, isMessage, merge, withProps } from './util';
 
 describe('util', () => {
 
@@ -17,7 +18,7 @@ describe('util', () => {
       expect(merge({
         foo: { bar: true, baz: true },
         dib: false,
-      }, {
+      },           {
         foo: { bar: false },
       })).to.eql({
         foo: { bar: false, baz: true },
@@ -28,7 +29,7 @@ describe('util', () => {
     it('should merge deeply nested arrays', () => {
       expect(merge({
         foo: { list: [1, 3] },
-      }, {
+      },           {
         foo: { list: [2, 4] },
       })).to.eql({
         foo: { list: [1, 3, 2, 4] },
@@ -39,7 +40,7 @@ describe('util', () => {
       expect(merge({
         foo: 'hello',
         bar: 'there',
-      }, {
+      },           {
         foo: 'goodbye',
       })).to.eql({
         foo: 'goodbye',
@@ -70,8 +71,7 @@ describe('util', () => {
     const defaultComponent = props => props;
     const defaultProps = {};
 
-    it(`passes when fnMap is an object with functions for values
-      and component is a function that takes one argument`, () => {
+    it(`passes when fnMap is an object with functions & component is a function that takes 1 arg`, () => {
       expect(() => withProps(defaultFnMap, defaultComponent, defaultProps)).to.not.throw();
     });
 
@@ -158,7 +158,7 @@ describe('util', () => {
     it('does not throw on invalid values', () => {
       expect(() => isMessage(false)).not.to.throw;
       expect(() => isMessage(null)).not.to.throw;
-      expect(() => isMessage()).not.to.throw;
+      expect(() => isMessage(undefined)).not.to.throw;
     });
 
     it('accepts a Message', () => {

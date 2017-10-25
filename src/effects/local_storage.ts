@@ -1,6 +1,6 @@
-import { pipe, objOf, merge, always } from 'ramda';
-import { Read, Write, Delete, Clear } from '../commands/local_storage';
-import { safeParse, safeStringify, constructMessage } from '../util';
+import { always, merge, objOf, pipe } from 'ramda';
+import { Clear, Delete, Read, Write } from '../commands/local_storage';
+import { constructMessage, safeParse, safeStringify } from '../util';
 
 const get = (
   window &&
