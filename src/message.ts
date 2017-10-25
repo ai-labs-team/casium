@@ -1,4 +1,4 @@
-import deepFreeze from 'deep-freeze-strict';
+import * as deepFreeze from 'deep-freeze-strict';
 import { is, isEmpty, join, merge } from 'ramda';
 import { getValidationFailures, safeStringify } from './util';
 
@@ -33,6 +33,10 @@ export default class Message {
     }
   }
 
+  public map(data): Message {
+    return new (this.constructor as any)(merge(this.data, data));
+  }
+
   private check(data) {
     if (is(Object, data)) {
       return;
@@ -43,10 +47,6 @@ export default class Message {
       'but is',
       safeStringify(data),
     ].join(' '));
-  }
-
-  public map(data): Message {
-    return new (this.constructor as any)(merge(this.data, data));
   }
 }
 

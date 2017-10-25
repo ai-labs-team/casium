@@ -15,7 +15,7 @@ describe('http', () => {
     it('result does not accept a function', () => {
       expect(() => new Request({
         method: 'GET', url: '/', result: () => {}, error: TestMessage
-      })).to.throw(TypeError, /failed expectations in Request: \{result}/);
+      })).to.throw(TypeError, /failed expectations in Request: result/);
     });
   });
 
@@ -29,7 +29,7 @@ describe('http', () => {
     it('error does not accept a function', () => {
       expect(() => new Request({
         method: 'GET', url: '/', result: TestMessage, error: () => {}
-      })).to.throw(TypeError, /failed expectations in Request: \{error}/);
+      })).to.throw(TypeError, /failed expectations in Request: error/);
     });
   });
 });

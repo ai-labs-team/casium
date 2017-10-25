@@ -9,8 +9,8 @@ export default new Map([
   [PushHistory, ({ path, state }) => history.push(path, state || {})],
   [ReplaceHistory, ({ path, state }) => history.replace(path, state || {})],
   [Back, ({ state }) => history.goBack(state)],
-  [
-    Timeout,
-    ({ result, timeout }, dispatch) => setTimeout(() => pipe(constructMessage(result), dispatch)({}), timeout),
-  ],
+  [Timeout, ({ result, timeout }, dispatch) => setTimeout(
+    () => pipe(constructMessage(result), dispatch)({}),
+    timeout
+  )],
 ]);

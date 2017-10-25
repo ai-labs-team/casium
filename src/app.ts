@@ -1,6 +1,7 @@
 import {
-  always, constructN, curry, defaultTo, evolve, flip, identity, ifElse, is, map, merge, omit, pipe, splitEvery
+  always, constructN, curry, defaultTo, evolve, identity, ifElse, is, map, merge, nthArg, omit, pick, pipe, splitEvery
 } from 'ramda';
+
 import * as React from 'react';
 
 import effects from './effects';
@@ -51,7 +52,7 @@ type EnvDef = {
   stateManager?: () => StateManager
 };
 
-type DelegateDef = symbol | string;
+export type DelegateDef = symbol | string;
 type UpdateMapDef = [MessageConstructor, Updater][];
 type UpdateMap = Map<MessageConstructor, Updater>;
 
@@ -64,8 +65,8 @@ type ContainerDef = ContainerDefPartial & {
   attach?: { store: object, key?: string }
 };
 
-type Container = any;
-type Environment = any;
+export type Container = any;
+export type Environment = any;
 
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
@@ -97,7 +98,7 @@ const wrapView = ({ env, container }: { env: Environment, container: Container }
  * Maps default values of a container definition.
  */
 const mapDef: (def: ContainerDefPartial) => { update: UpdateMap, name: string } = pipe(
-  flip(merge)({ name: null, update: [] }),
+  merge({ name: null, update: [] }),
   evolve({ update: toMap, name: defaultTo('UnknownContainer') })
 );
 
@@ -196,24 +197,14 @@ export const container = withEnvironment(defaultEnv);
  * Calling `dispatch()` on the container will simply return any commands issued.
  */
 export const isolate = (ctr: Container, opts: any = {}) => {
-  const env = environment({
-    dispatcher: curry((_, __, msg) => msg),
-    effects: new Map([]),
-    log: () => {},
-    stateManager: opts.stateManager && always(opts.stateManager) || (() => new StateManager())
-  });
+  const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
+  const env = environment({ dispatcher: nthArg(2), effects: new Map([]), log: () => {}, stateManager });
 
-  const container = Object.assign(mapDef(ctr.identity()), {
-    accepts: msgType => container.update.has(msgType),
-  });
-  const parent = opts.relay ? { relay: always(opts.relay) } : null;
+  const container = Object.assign(mapDef(ctr.identity()), { accepts: always(true) });
+  const parent: any = opts.relay ? { relay: always(opts.relay) } : null;
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
-  return Object.assign(wrapView({ env, container }), {
-    dispatch: execContext.dispatch.bind(execContext),
-    push: execContext.push.bind(execContext),
-    state: execContext.state.bind(execContext)
-  });
+  return Object.assign(wrapView({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
 };
 
 const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), identity);

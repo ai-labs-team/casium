@@ -5,7 +5,9 @@
         "tslint-config-airbnb"
     ],
     "jsRules": {
+      "forin": false,
       "no-unused-expression": false,
+      "no-increment-decrement": false,
       "object-literal-sort-keys": false,
       "one-variable-per-declaration": false,
       "quotemark": [true, "single", "jsx-single", "avoid-escape"],
@@ -22,8 +24,11 @@
       }
     },
     "rules": {
+      "forin": false,
       "array-type": false,
+      "label-position": false,
       "object-literal-sort-keys": false,
+      "no-increment-decrement": false,
       "no-unused-expression": false,
       "one-variable-per-declaration": false,
       "quotemark": [true, "single", "jsx-single", "avoid-escape"],

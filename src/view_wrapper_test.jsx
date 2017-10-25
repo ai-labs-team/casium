@@ -13,11 +13,11 @@ describe('ViewWrapper', () => {
       let Container;
 
       beforeEach(() => {
-        Container = isolate(container({
+        Container = container({
           init: always({ foo: true }),
           update: [],
           view: ({ foo }) => <span>foo: { foo ? 'true' : 'false' }</span>,
-        }));
+        });
       });
 
       it('renders initial state by default', () => {
@@ -36,7 +36,7 @@ describe('ViewWrapper', () => {
       let Container;
 
       beforeEach(() => {
-        Container = isolate(container({
+        Container = container({
           init: always({ foo: true, notFoo: false }),
           update: [
             [Activate, (state, { foo }) => merge(state, { notFoo: foo === false })],
@@ -46,7 +46,7 @@ describe('ViewWrapper', () => {
               foo: { foo ? 'true' : 'false' }, notFoo: { notFoo ? 'true' : 'false' }
             </span>
           ),
-        }));
+        });
       });
 
       it('renders initial state by default', () => {

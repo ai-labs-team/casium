@@ -6,9 +6,9 @@
   version "6.0.89"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-6.0.89.tgz#154be0e6a823760cd6083aa8c48f952e2e63e0b0"
 
-"@types/ramda@^0.24.17":
-  version "0.24.17"
-  resolved "https://registry.yarnpkg.com/@types/ramda/-/ramda-0.24.17.tgz#9a399c69d102588dea1c6817e4401e8fa780e40b"
+"@types/ramda@types/npm-ramda":
+  version "0.24.3"
+  resolved "https://codeload.github.com/types/npm-ramda/tar.gz/573ab2ef2e7c0cb1ea9972ac8e04761c7907e3a9"
 
 abab@^1.0.3:
   version "1.0.4"

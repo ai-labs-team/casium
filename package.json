@@ -24,7 +24,7 @@
     "react": "15.5.4"
   },
   "devDependencies": {
-    "@types/ramda": "^0.24.17",
+    "@types/ramda": "types/npm-ramda",
     "awesome-typescript-loader": "^3.2.3",
     "babel-core": "6.18.2",
     "babel-eslint": "7.2.3",
