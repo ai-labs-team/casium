@@ -1,11 +1,16 @@
-import { pipe } from 'ramda';
 import createHistory from 'history/createBrowserHistory';
-import { PushHistory, ReplaceHistory, Back, Timeout } from '../commands/browser';
+import { pipe } from 'ramda';
+import { Back, PushHistory, ReplaceHistory, Timeout } from '../commands/browser';
+import Message from '../message';
 import { constructMessage } from '../util';
 
 export const history = createHistory();
 
-export default new Map([
+interface Constructor {
+  new(): Message;
+}
+
+export default new Map<Constructor, (data: any, dispatch: any) => any>([
   [PushHistory, ({ path, state }) => history.push(path, state || {})],
   [ReplaceHistory, ({ path, state }) => history.replace(path, state || {})],
   [Back, ({ state }) => history.goBack(state)],

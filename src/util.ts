@@ -1,9 +1,8 @@
 import {
-  pipe, curry, evolve, is, pickAll, keys, all, merge as _merge, values, both, propEq,
-  ifElse, identity, reduce, mergeDeepWith, union, map, flip, filter, not, isEmpty, nth,
-  zipWith, equals, either as or, both as and
+  all, both, curry, either as or, equals, evolve, filter, flip, identity, ifElse, is, isEmpty, keys,
+  map, merge as _merge, mergeDeepWith, not, nth, pickAll, pipe, propEq, reduce, union, values, zipWith
 } from 'ramda';
-import React, { Children } from 'react';
+import * as React from 'react';
 import Message from './message';
 
 /**
@@ -96,11 +95,11 @@ const assertValid = (fnMap, component) => {
  * ```
  */
 export const withProps = curry((fnMap, component, props) => {
-  assertValid(fnMap, component, props);
+  assertValid(fnMap, component);
   return component(merge(props, map(fn => fn(props), fnMap)));
 });
 
-export const cloneRecursive = (children, newProps) => Children.map(children, (child) => {
+export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
   const mapProps = (child) => {
     const props = is(Function, newProps) ? newProps(child) : newProps;
     const hasChildren = child.props && child.props.children;
@@ -108,11 +107,10 @@ export const cloneRecursive = (children, newProps) => Children.map(children, (ch
     const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
     return merge(props || {}, { children });
   };
-
   return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
 });
 
-export const clone = (children, newProps) => Children.map(children, child => (
+export const clone = (children, newProps) => React.Children.map(children, (child: React.ReactElement<any>) => (
   React.cloneElement(child, merge(React.isValidElement(child) ? newProps : {}, {
     children: child.props.children,
   }))
@@ -160,7 +158,8 @@ export const toArray = ifElse(is(Array), identity, Array.of);
 /**
  * Helper functions for reducing effect Maps into a single Map.
  */
-export const mergeMap = (first, second) => new Map([...first, ...second]);
+export const mergeMap = (first: Map<any, any>, second: Map<any, any>): Map<any, any> =>
+  new Map<any, any>(Array.from(first).concat(Array.from(second)));
 export const mergeMaps = reduce(mergeMap, new Map([]));
 
 /**
@@ -193,7 +192,7 @@ export const isMessage = val => val && val.prototype && val.prototype instanceof
 /**
  * Checks that a value is emittable as a message constructor
  */
-export const isEmittable = or(isMessage, and(is(Array), pipe(nth(0), isMessage)));
+export const isEmittable = or(isMessage, both(is(Array), pipe(nth(0), isMessage)));
 
 export const toEmittable = ifElse(is(Array), identity, type => [type, {}]);
 

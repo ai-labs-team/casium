@@ -1,4 +1,5 @@
-/* eslint-env node, mocha */
+import { expect } from 'chai';
+import 'mocha';
 import StateManager from './state_manager';
 
 describe('StateManager', () => {

@@ -1,4 +1,4 @@
-import { is, curry, flip } from 'ramda';
+import { curry, flip, is } from 'ramda';
 import Message from '../message';
 
 /**

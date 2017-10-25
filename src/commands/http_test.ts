@@ -1,4 +1,5 @@
-/* eslint-env node, mocha */
+import { expect } from 'chai';
+import 'mocha';
 import Message from '../message';
 import { Request } from './http';
 

@@ -1,13 +1,13 @@
-import { is, isNil, either as or } from 'ramda';
-import { isEmittable } from '../util';
+import { either as or, is, isNil } from 'ramda';
 import Message from '../message';
+import { isEmittable } from '../util';
 
 export class Read extends Message {
-  static expects = { key: is(String), result: isEmittable };
+  public static expects = { key: is(String), result: isEmittable };
 }
 
 export class Write extends Message {
-  static expects = {
+  public static expects = {
     expires: or(is(Date), isNil),
     key: is(String),
     path: or(is(String), isNil),
@@ -16,5 +16,5 @@ export class Write extends Message {
 }
 
 export class Delete extends Message {
-  static expects = { key: is(String) };
+  public static expects = { key: is(String) };
 }

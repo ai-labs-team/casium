@@ -1,6 +1,6 @@
-import { pipe, defaultTo } from 'ramda';
 import * as Cookies from 'js-cookie';
-import { Read, Write, Delete } from '../commands/cookies';
+import { defaultTo, pipe } from 'ramda';
+import { Delete, Read, Write } from '../commands/cookies';
 import { constructMessage } from '../util';
 
 export default new Map([
