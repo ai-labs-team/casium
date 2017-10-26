@@ -1,5 +1,6 @@
 import {
-  always, constructN, curry, defaultTo, evolve, identity, ifElse, is, map, merge, nthArg, omit, pick, pipe, splitEvery
+  always, constructN, curry, defaultTo, evolve, flatten, identity,
+  ifElse, is, map, merge, nthArg, omit, pick, pipe, splitEvery
 } from 'ramda';
 
 import * as React from 'react';
@@ -9,6 +10,7 @@ import dispatcher from './effects/dispatcher';
 import ExecContext from './exec_context';
 import Message from './message';
 import StateManager from './state_manager';
+import { result } from './util';
 import ViewWrapper from './view_wrapper';
 
 /**
@@ -91,7 +93,7 @@ const wrapView = ({ env, container }: { env: Environment, container: Container }
 
   return (props: object & { delegate?: DelegateDef } = {}) => React.createElement(ViewWrapper, {
     childProps: mergeProps(props), container, delegate: props.delegate || container.delegate, env
-  });
+  } as any);
 };
 
 /**
@@ -146,9 +148,9 @@ const defaultEnv = environment({ effects, dispatcher });
  * Creates a new container.
  *
  * @param  {Object} An object with the following functions:
- *         - `init`: Returns an update result, representing the initial value of the container's state.
+ *         - `init`: Returns an update result, representing the initial value of the container's model.
  *           See "Update Results" below for details.
- *         - `update`: A function that accepts the current state as an object,
+ *         - `update`: A function that accepts the current model as an object,
  *            and returns a `Map` pairing message types to handler functions.
  *            Each handler function accepts the message's data as a parameter,
  *            returns an update result. See "Update Results" below for details.
@@ -162,30 +164,30 @@ const defaultEnv = environment({ effects, dispatcher });
  * ### Update Results
  *
  * An update result is a value returned from dispatching a message. Update results are used
- * to update the containers's state, as well as return _command messages_, which represent
+ * to update the containers's model, as well as return _command messages_, which represent
  * side-effects that the container can perform, such as an HTTP request.
  *
  * Update results can be one of the following:
  *
- * - An object: to update the state without performing any actions — at a minimum, the
- *   current state must always be returned
- * - An array of `[state, message]`: to update the state _and_ perform an action, return an array
- *   with the state first, and a message object second,
- *   i.e. `[state, new Alert({ message: "Hello world!" })]`
- * - An array of `[state, [message]]`: to perform multiple actions, simply return an array of
+ * - An object: to update the model without performing any actions — at a minimum, the
+ *   current model must always be returned
+ * - An array of `[model, message]`: to update the model _and_ perform an action, return an array
+ *   with the model first, and a message object second,
+ *   i.e. `[model, new Alert({ message: "Hello world!" })]`
+ * - An array of `[model, [message]]`: to perform multiple actions, simply return an array of
  *   command messages
  *
  * @return {Object} returns an object with the following methods:
  *
- *  - `dispatch`: Accepts a message object to update the container's state
- *  - `state`: Returns the current state
+ *  - `dispatch`: Accepts a message object to update the container's model
+ *  - `state`: Returns the current model
  *  - `view`: A React wrapper component that can be rendered or embedded
  *    in another component
  *  - `reducer`: Returns a Redux-compatible reducer function. Optionally accepts a hash
  *    pairing action types to message types, to enable the container to respond to Redux actions,
  *    which will be mapped to messages.
- *  - `push`: Accepts a new state value to update the container.
- *  - `subscribe`: Accepts a callback which receives a copy of the state when it is updated.
+ *  - `push`: Accepts a new model value to update the container.
+ *  - `subscribe`: Accepts a callback which receives a copy of the model when it is updated.
  *  - `identity`: Returns an object containing the original values that created this container.
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
@@ -205,6 +207,27 @@ export const isolate = (ctr: Container, opts: any = {}) => {
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
   return Object.assign(wrapView({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
+};
+
+/**
+ * Helper function for sequencing multiple updaters together using left-to-right composition.
+ * Each subsequent updater will receive the model returned by the preceding updater, and command messages
+ * returned will be aggregated across all updaters. If any updater returns a function, that function
+ * will be treated as an updater.
+ */
+export const seq = (...updaters: Updater[]) => (model, message?, relay?): UpdateResult => {
+  let newModel = model, commands = [], newCommands = [], updateResult = null;
+
+  for (const updater of updaters) {
+    updateResult = updater;
+
+    while (is(Function, updateResult)) {
+      updateResult = updateResult(newModel, message, relay);
+    }
+    [newModel, newCommands] = result(updateResult);
+    commands = flatten(commands.concat(newCommands));
+  }
+  return [newModel, commands];
 };
 
 const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), identity);
@@ -227,9 +250,9 @@ const consCommands = (model, msg, relay) => pipe(splitEvery(2), map(
  * [FooMessage, commands(Http.Post, (model, msg) => ({ url: '/foo', data: [model.someData, msg.otherData] }))]]
  * ```
  */
-export const commands = (...args) => {
+export const commands = (...args: any[]) => {
   if (args.length % 2 !== 0) {
     throw new TypeError('commands() must be called with an equal number of command constructors & data parameters');
   }
-  return (model, msg, relay) => [model, consCommands(model, msg, relay)(args)];
+  return (model, msg?, relay?) => [model, consCommands(model, msg, relay)(args)];
 };

@@ -1,4 +1,5 @@
-/* eslint-env node, mocha */
+import { expect } from 'chai';
+import 'mocha';
 import { Cookies } from '../commands';
 import Message from '../message';
 

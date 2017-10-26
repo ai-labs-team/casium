@@ -1,9 +1,11 @@
-/* eslint-env node, mocha */
-/* eslint-disable react/prop-types */
+/* tslint:disable:variable-name */
+import { expect } from 'chai';
+import { shallow } from 'enzyme';
+import 'mocha';
 import { always, merge } from 'ramda';
-import React from 'react';
+import * as React from 'react';
+import { container } from './app';
 import { Activate } from './message';
-import { container, isolate } from './app';
 
 describe('ViewWrapper', () => {
 

@@ -1,4 +1,5 @@
-/* eslint-env node, mocha */
+import { expect } from 'chai';
+import 'mocha';
 import { is } from 'ramda';
 import Message from './message';
 
@@ -12,7 +13,7 @@ describe('Message', () => {
     it('freezes data', () => {
       const msg = new Message({ foo: true });
 
-      expect(() => { msg.rando = false; }).to.throw(TypeError);
+      expect(() => { (msg as any).rando = false; }).to.throw(TypeError);
       expect(() => { msg.data.foo = false; }).to.throw(TypeError);
       expect(() => { msg.data.bar = true; }).to.throw(TypeError);
 
@@ -20,7 +21,7 @@ describe('Message', () => {
     });
 
     it('validates its inputs', () => {
-      class Msg extends Message { static expects = { foo: is(Function) }; }
+      class Msg extends Message { public static expects = { foo: is(Function) }; }
 
       expect(() => new Msg({ foo: null })).to.throw(TypeError);
       expect(() => new Msg({})).to.throw(TypeError);
@@ -44,7 +45,7 @@ describe('Message', () => {
 
     it('throws on unmatched expectations', () => {
       class Foo extends Message {
-        static expects = { foo: is(String), bar: is(Number) };
+        public static expects = { foo: is(String), bar: is(Number) };
       }
       expect(() => new Foo({ foo: 'hello', bar: 1138 })).to.not.throw();
       expect(() => new Foo({ foo: 1138, bar: 1138 })).to.throw(TypeError);

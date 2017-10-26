@@ -3,12 +3,13 @@
     "node_modules"
   ],
   "compilerOptions": {
-    "declaration": false,
+    "declaration": true,
+    "declarationDir": "./dist/",
     "noResolve": false,
     "jsx": "react",
     "module": "commonjs",
     "target": "es5",
-    "allowJs": true,
+    "allowJs": false,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": false,

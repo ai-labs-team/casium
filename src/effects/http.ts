@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { pipe, identity } from 'ramda';
+import { identity, pipe } from 'ramda';
 import { Request } from '../commands/http';
 import { constructMessage } from '../util';
 

@@ -1,12 +1,12 @@
-var path = require('path');
-var webpack = require('webpack');
+const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
   entry: {
-    index: './src/index.js',
+    index: './src/index.ts',
     message: './src/message.ts',
-    commands: './src/commands/index.js',
-    effects: './src/effects/index.js'
+    commands: './src/commands/index.ts',
+    effects: './src/effects/index.ts'
   },
   output: {
     path: `${__dirname}/dist`,

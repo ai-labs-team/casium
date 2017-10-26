@@ -17,9 +17,9 @@ export default class Message {
   protected static defaults: object = {};
   protected static expects: object = {};
 
-  public data: object;
+  public data: any;
 
-  constructor(data: object = {}, opts: MessageOptions = {}) {
+  constructor(data: any = {}, opts: MessageOptions = {}) {
     const ctor = this.constructor as any;
     this.check(data);
     this.data = merge(ctor.defaults, data);

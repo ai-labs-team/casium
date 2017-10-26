@@ -1,9 +1,11 @@
+import * as deepFreeze from 'deep-freeze-strict';
 import {
-  pipe, curry, evolve, is, pickAll, keys, all, merge as _merge, values, both, propEq,
-  ifElse, identity, reduce, mergeDeepWith, union, map, flip, filter, not, isEmpty, nth,
-  zipWith, equals, either as or, both as and
+  all, always, both, cond, curry, either as or,
+  equals, evolve, filter, flip, identity, ifElse, is, isEmpty, keys, map,
+  merge as _merge, mergeDeepWith, not, nth, pickAll, pipe,
+  propEq, reduce, union, values, when, zipWith
 } from 'ramda';
-import React, { Children } from 'react';
+import * as React from 'react';
 import Message from './message';
 
 /**
@@ -96,7 +98,7 @@ const assertValid = (fnMap, component) => {
  * ```
  */
 export const withProps = curry((fnMap, component, props) => {
-  assertValid(fnMap, component, props);
+  assertValid(fnMap, component);
   return component(merge(props, map(fn => fn(props), fnMap)));
 });
 
@@ -108,7 +110,7 @@ export const withProps = curry((fnMap, component, props) => {
 * @return array of children objects, each with additional newProps
 **/
 
-export const cloneRecursive = (children, newProps) => Children.map(children, (child) => {
+export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
   const mapProps = (child) => {
     const props = is(Function, newProps) ? newProps(child) : newProps;
     const hasChildren = child.props && child.props.children;
@@ -116,7 +118,6 @@ export const cloneRecursive = (children, newProps) => Children.map(children, (ch
     const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
     return merge(props || {}, { children });
   };
-
   return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
 });
 
@@ -128,7 +129,7 @@ export const cloneRecursive = (children, newProps) => Children.map(children, (ch
 * @return array of children objects, each with additional newProps
 **/
 
-export const clone = (children, newProps) => Children.map(children, child => (
+export const clone = (children, newProps) => React.Children.map(children, (child: React.ReactElement<any>) => (
   React.cloneElement(child, merge(React.isValidElement(child) ? newProps : {}, {
     children: child.props.children,
   }))
@@ -180,7 +181,8 @@ export const toArray = ifElse(is(Array), identity, Array.of);
 /**
  * Helper functions for reducing effect Maps into a single Map.
  */
-export const mergeMap = (first, second) => new Map([...first, ...second]);
+export const mergeMap = (first: Map<any, any>, second: Map<any, any>): Map<any, any> =>
+  new Map<any, any>(Array.from(first).concat(Array.from(second)));
 export const mergeMaps = reduce(mergeMap, new Map([]));
 
 /**
@@ -213,7 +215,7 @@ export const isMessage = val => val && val.prototype && val.prototype instanceof
 /**
  * Checks that a value is emittable as a message constructor
  */
-export const isEmittable = or(isMessage, and(is(Array), pipe(nth(0), isMessage)));
+export const isEmittable = or(isMessage, both(is(Array), pipe(nth(0), isMessage)));
 
 /**
   * checks if a value is an array, if so then it is returned, if not it gets placed in an array
@@ -228,3 +230,19 @@ export const constructMessage = curry((msgType, data) => {
   const [type, extra] = toEmittable(msgType);
   return new type(merge(data, extra));
 });
+
+/**
+ * Freezes a value if that value is an object, otherwise return.
+ */
+const freezeObj = when(is(Object), deepFreeze);
+
+/**
+ * Maps an `init()` or `update()` return value to the proper format.
+ */
+export const result = cond([
+  [both(is(Array), propEq('length', 0)), () => { throw new TypeError('An empty array is an invalid value'); }],
+  [both(is(Array), propEq('length', 1)), ([state]) => [freezeObj(state), []]],
+  [is(Array), ([state, ...commands]) => [freezeObj(state), commands]],
+  [is(Object), state => [freezeObj(state), []]],
+  [always(true), (val) => { throw new TypeError('Unrecognized structure ' + safeStringify(val)); }],
+]);
