@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { mount, shallow } from 'enzyme';
 import 'mocha';
-import { always, evolve, identity, inc, map, mergeAll, not, pick } from 'ramda';
+import { always, evolve, identity, inc, map, mergeAll, not, pick, pipe, unapply } from 'ramda';
 import * as React from 'react';
 import { commands, container, isolate, seq } from './app';
 import Message from './message';
@@ -188,6 +188,15 @@ describe('app', () => {
 
     it('passes through all updater params', () => {
       const updater = seq((state, message, relay) => mergeAll([state, message, relay]));
+      expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
+        foo: true, bar: false, baz: true
+      }, []]);
+    });
+
+    it('keeps calling if a function is returned', () => {
+      const list = unapply(identity);
+      const updater = seq(pipe(list, mergeAll, always));
+
       expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
         foo: true, bar: false, baz: true
       }, []]);
