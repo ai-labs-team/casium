@@ -4,10 +4,10 @@ import Message from '../message';
 /**
  * Dispatches command messages.
  *
- * @param {Map} A map pairing command message constructors to effects handlers
- * @param {Function} dispatch A container-bound dispatch function for sending
+ * @param {Map} effects - A map pairing command message constructors to effects handlers
+ * @param {Function} dispatch - A container-bound dispatch function for sending
  *        effect results (where applicable) back to containers
- * @param {Message} msg A command message to dispatch
+ * @param {Message} msg - A command message to dispatch
  * @return {*} returns the result of calling the effect handler
  */
 export default curry((effects, dispatch, msg) => {

@@ -58,8 +58,8 @@ const error = curry((logger, ctx, msg, err) => logger(formatError(msg, ctx), err
 
 /**
  * Checks that a Message object is valid
- * @param  {Object} A ExecContext instance
- * @param {Object} A Message instance
+ * @param  {Object} exec - A ExecContext instance
+ * @param {Object} msg - A Message instance
  * @return {Object} Returns the message instance, otherwise throws an error if it is invalid
  */
 const checkMessage = (exec, msg) => {

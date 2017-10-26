@@ -4,30 +4,35 @@ import Message from './message';
 import { safeParse, safeStringify } from './util';
 
 type DevTools = {
-  messageCounter: number,
-  root?: any,
-  connected: boolean,
-  containers: any[],
-  contexts: object,
-  queue: string[],
-  next: () => number,
-  flush: () => void
+  messageCounter: number;
+  root?: any;
+  connected: boolean;
+  containers: any[];
+  contexts: object;
+  queue: string[];
+  next: () => number;
+  flush: () => void;
 };
 
 type DevToolsMessage = {
-  context: any,
-  container: any,
-  msg: Message,
-  prev?: object,
-  next: object,
-  path: any[],
-  cmds: any[]
+  context: any;
+  container: any;
+  msg: Message;
+  prev?: object;
+  next: object;
+  path: any[];
+  cmds: any[];
 };
 
-const session = Date.now() + Math.random().toString(36).substr(2);
-const send = (msg: string) => window.postMessage(msg, '*'), serialize = map(pipe(safeStringify, safeParse));
+const session =
+  Date.now() +
+  Math.random()
+    .toString(36)
+    .substr(2);
+const send = (msg: string) => window.postMessage(msg, '*'),
+  serialize = map(pipe(safeStringify, safeParse));
 
-const _ARCH_DEV_TOOLS_STATE: DevTools = (window as any)._ARCH_DEV_TOOLS_STATE = {
+const _ARCH_DEV_TOOLS_STATE: DevTools = ((window as any)._ARCH_DEV_TOOLS_STATE = {
   messageCounter: 0,
   root: null,
   connected: false,
@@ -40,10 +45,19 @@ const _ARCH_DEV_TOOLS_STATE: DevTools = (window as any)._ARCH_DEV_TOOLS_STATE = 
   flush() {
     this.queue.forEach(send);
     this.queue = []; // @TODO: Maybe wait for an ACK before flushing
-  },
-};
+  }
+});
 
-export const cmdName = (cmd) => {
+/**
+*
+* cmdName takes a command message and returns the constructor.name value or '??'
+*
+* @params {Function} cmd - a command Message
+* @return cmd.constructor.name or '??'
+*
+**/
+
+export const cmdName = cmd => {
   let mod, name, cls;
 
   for (mod in commands) {
@@ -54,11 +68,11 @@ export const cmdName = (cmd) => {
       }
     }
   }
-  return cmd && cmd.constructor && cmd.constructor.name || '??';
+  return (cmd && cmd.constructor && cmd.constructor.name) || '??';
 };
 
 const inBoundMsgHandler = (message: object & { data: any }) => {
-  const data = message && message.data || {};
+  const data = (message && message.data) || {};
 
   if (data.from === 'ArchDevToolsPageScript' && data.state === 'initialized') {
     _ARCH_DEV_TOOLS_STATE.connected = true;
@@ -80,7 +94,21 @@ const inBoundMsgHandler = (message: object & { data: any }) => {
 
 window.addEventListener('message', inBoundMsgHandler, false);
 
-export const intercept = stateManager => _ARCH_DEV_TOOLS_STATE.root = stateManager;
+/**
+* ??
+**/
+
+export const intercept = stateManager => (_ARCH_DEV_TOOLS_STATE.root = stateManager);
+
+/**
+*
+* @param  {state} context - the current state of the app
+* @param {Object} msg - A message instance
+* @param {Object} prev - ??
+* @param {Object} next - ??
+* @param {String} path - ??
+* @param {??} cmds -
+**/
 
 export const notify = ({ context, msg, prev, next, path, cmds }: DevToolsMessage) => {
   const { container } = context;
@@ -94,12 +122,13 @@ export const notify = ({ context, msg, prev, next, path, cmds }: DevToolsMessage
     path,
     from: 'Arch',
     relay: context.relay(),
-    message: msg && msg.constructor && msg.constructor.name || `Init (${container.name})`,
+    message: (msg && msg.constructor && msg.constructor.name) || `Init (${container.name})`,
     data: msg && msg.data,
-    commands: pipe(flatten, filter(is(Object)), map(cmd => [cmdName(cmd), cmd.data]))(cmds),
+    commands: pipe(flatten, filter(is(Object)), map(cmd => [cmdName(cmd), cmd.data]))(cmds)
   } as any).toString();
 
-  _ARCH_DEV_TOOLS_STATE.containers.includes(container) || _ARCH_DEV_TOOLS_STATE.containers.push(container);
+  _ARCH_DEV_TOOLS_STATE.containers.includes(container) ||
+    _ARCH_DEV_TOOLS_STATE.containers.push(container);
   _ARCH_DEV_TOOLS_STATE.contexts[context.id] = context;
 
   if (!_ARCH_DEV_TOOLS_STATE.connected) {

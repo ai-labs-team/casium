@@ -18,7 +18,7 @@ export class PushHistory extends Message {
 export class Back extends Message {}
 
 /**
-*
+* Timout adds browser timeout functionality and verifies timout is a number
 **/
 
 export class Timeout extends Message {

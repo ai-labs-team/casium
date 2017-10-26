@@ -100,6 +100,14 @@ export const withProps = curry((fnMap, component, props) => {
   return component(merge(props, map(fn => fn(props), fnMap)));
 });
 
+/**
+* Merges new props into each child from a children array and also into nested children arrays
+*
+* @params {Array{}} children - array of children elements
+* @params {Object} newProps - props to pass on to children elements
+* @return array of children objects, each with additional newProps
+**/
+
 export const cloneRecursive = (children, newProps) => Children.map(children, (child) => {
   const mapProps = (child) => {
     const props = is(Function, newProps) ? newProps(child) : newProps;
@@ -112,11 +120,23 @@ export const cloneRecursive = (children, newProps) => Children.map(children, (ch
   return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
 });
 
+/**
+* Merges new props into each child from a children array
+*
+* @params {Array{}} children - array of children elements
+* @params {Object} newProps
+* @return array of children objects, each with additional newProps
+**/
+
 export const clone = (children, newProps) => Children.map(children, child => (
   React.cloneElement(child, merge(React.isValidElement(child) ? newProps : {}, {
     children: child.props.children,
   }))
 ));
+
+/**
+* prevents default action of events then returns the event object
+**/
 
 export const suppressEvent = (e) => {
   e.preventDefault();
@@ -194,6 +214,10 @@ export const isMessage = val => val && val.prototype && val.prototype instanceof
  * Checks that a value is emittable as a message constructor
  */
 export const isEmittable = or(isMessage, and(is(Array), pipe(nth(0), isMessage)));
+
+/**
+  * checks if a value is an array, if so then it is returned, if not it gets placed in an array
+  */
 
 export const toEmittable = ifElse(is(Array), identity, type => [type, {}]);
 

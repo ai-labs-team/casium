@@ -6,6 +6,10 @@ const inList = flip(contains);
 export type Callback = (...args: any[]) => any;
 export type Config = object & { path: string[] };
 
+/**
+* StateManager adds and removes event listeners
+**/
+
 export default class StateManager {
 
   public state: object = {};

@@ -2,6 +2,10 @@ import { is, complement as not, isNil } from 'ramda';
 import Message from '../message';
 import { isEmittable } from '../util';
 
+/**
+* These classes are used to handle the specified interactions with local storage. 
+**/
+
 export class Read extends Message {
   static expects = { key: is(String), result: isEmittable };
 }
