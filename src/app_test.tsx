@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { mount, shallow } from 'enzyme';
 import 'mocha';
-import { always, evolve, identity, inc, map, not, pick } from 'ramda';
+import { always, evolve, identity, inc, map, mergeAll, not, pick } from 'ramda';
 import * as React from 'react';
 import { commands, container, isolate, seq } from './app';
 import Message from './message';
@@ -184,6 +184,13 @@ describe('app', () => {
         { foo: true, bar: 42 },
         [new Cmd({ first: 1 }), new Cmd2({ second: 2 })]
       ]);
+    });
+
+    it('passes through all updater params', () => {
+      const updater = seq((state, message, relay) => mergeAll([state, message, relay]));
+      expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
+        foo: true, bar: false, baz: true
+      }, []]);
     });
   });
 });
