@@ -5,8 +5,8 @@ import {
 
 import * as React from 'react';
 
+import dispatcher from './dispatcher';
 import effects from './effects';
-import dispatcher from './effects/dispatcher';
 import ExecContext from './exec_context';
 import Message from './message';
 import StateManager from './state_manager';
