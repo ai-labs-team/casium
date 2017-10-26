@@ -1,6 +1,9 @@
+import * as deepFreeze from 'deep-freeze-strict';
 import {
-  all, both, curry, either as or, equals, evolve, filter, flip, identity, ifElse, is, isEmpty, keys,
-  map, merge as _merge, mergeDeepWith, not, nth, pickAll, pipe, propEq, reduce, union, values, zipWith
+  all, always, both, cond, curry, either as or,
+  equals, evolve, filter, flip, identity, ifElse, is, isEmpty, keys, map,
+  merge as _merge, mergeDeepWith, not, nth, pickAll, pipe,
+  propEq, reduce, union, values, when, zipWith
 } from 'ramda';
 import * as React from 'react';
 import Message from './message';
@@ -203,3 +206,19 @@ export const constructMessage = curry((msgType, data) => {
   const [type, extra] = toEmittable(msgType);
   return new type(merge(data, extra));
 });
+
+/**
+ * Freezes a value if that value is an object, otherwise return.
+ */
+const freezeObj = when(is(Object), deepFreeze);
+
+/**
+ * Maps an `init()` or `update()` return value to the proper format.
+ */
+export const result = cond([
+  [both(is(Array), propEq('length', 0)), () => { throw new TypeError('An empty array is an invalid value'); }],
+  [both(is(Array), propEq('length', 1)), ([state]) => [freezeObj(state), []]],
+  [is(Array), ([state, ...commands]) => [freezeObj(state), commands]],
+  [is(Object), state => [freezeObj(state), []]],
+  [always(true), (val) => { throw new TypeError('Unrecognized structure ' + safeStringify(val)); }],
+]);

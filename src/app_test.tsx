@@ -1,15 +1,17 @@
 import { expect } from 'chai';
 import { mount, shallow } from 'enzyme';
 import 'mocha';
-import { always, map, pick } from 'ramda';
+import { always, evolve, identity, inc, map, not, pick } from 'ramda';
 import * as React from 'react';
-import { commands, container, isolate } from './app';
+import { commands, container, isolate, seq } from './app';
 import Message from './message';
 import StateManager from './state_manager';
 
 describe('app', () => {
 
   class Cmd extends Message {}
+  class Cmd2 extends Message {}
+
   class Msg extends Message {}
   class Msg2 extends Message {}
 
@@ -145,25 +147,43 @@ describe('app', () => {
 
       expect(map(pick(['type', 'value']), log)).to.deep.equal([
         { value: false, type: 'click' },
-        { value: true, type: 'click' },
+        { value: true, type: 'click' }
       ]);
     });
   });
-});
 
-describe('commands', () => {
+  describe('commands', () => {
+    it('should return the model', () => {
+      expect(commands()({ foo: 'bar' })).to.deep.equal([{ foo: 'bar' }, []]);
+    });
 
-  class Cmd extends Message {}
-  class Cmd2 extends Message {}
+    it('should construct commands from parameters', () => {
+      expect(commands(Cmd, { first: 1 }, Cmd2, { second: 2 })({ foo: 'bar' })).to.deep.equal([
+        { foo: 'bar' },
+        [new Cmd({ first: 1 }), new Cmd2({ second: 2 })]
+      ]);
+    });
 
-  it('should return model', () => {
-    expect(commands()({ foo: 'bar' })).to.deep.equal([{ foo: 'bar' }, []]);
+    it('should map command data from parameters', () => {
+      expect(commands(Cmd, identity)({ foo: 'bar' })).to.deep.equal([
+        { foo: 'bar' },
+        [new Cmd({ foo: 'bar' })]
+      ]);
+    });
   });
 
-  it('should construct commands from parameters', () => {
-    expect(commands(Cmd, { first: 1 }, Cmd2, { second: 2 })({ foo: 'bar' })).to.deep.equal([
-      { foo: 'bar' },
-      [new Cmd({ first: 1 }), new Cmd2({ second: 2 })],
-    ]);
+  describe('seq', () => {
+    it('maps model changes across multiple updaters', () => {
+      const updater = seq(evolve({ foo: not }), evolve({ bar: inc }));
+      expect(updater({ foo: false, bar: 41 })).to.deep.equal([{ foo: true, bar: 42 }, []]);
+    });
+
+    it('aggregates commands across multiple updaters', () => {
+      const updater = seq(commands(Cmd, { first: 1 }), commands(Cmd2, { second: 2 }));
+      expect(updater({ foo: true, bar: 42 })).to.deep.equal([
+        { foo: true, bar: 42 },
+        [new Cmd({ first: 1 }), new Cmd2({ second: 2 })]
+      ]);
+    });
   });
 });

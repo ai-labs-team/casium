@@ -1,14 +1,13 @@
-import * as deepFreeze from 'deep-freeze-strict';
 import {
-  always, both, complement as not, cond, curry, defaultTo, filter, flatten, flip,
-  identity, ifElse, is, map, merge, mergeAll, nth, pick, pickBy, pipe, prop, propEq, values
+  always, complement as not, curry, defaultTo, filter, flatten, flip, identity, is, map,
+  merge, mergeAll, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
 import { Container, DelegateDef, Environment, PARENT } from './app';
 import { cmdName, intercept, notify } from './dev_tools';
 import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
-import { constructMessage, isEmittable, safeStringify, suppressEvent, toEmittable, trap } from './util';
+import { constructMessage, isEmittable, result, safeStringify, suppressEvent, toEmittable, trap } from './util';
 
 const update = flip(merge);
 
@@ -86,22 +85,6 @@ const attachStore = (config, container) => {
   config.store.subscribe(pipe(getState, update(container.state()), container.push));
   return getState();
 };
-
-/**
- * Freezes a value if that value is an object, otherwise return.
- */
-const freezeObj = ifElse(is(Object), deepFreeze, identity);
-
-/**
- * Maps an `init()` or `update()` return value to the proper format.
- */
-const result = cond([
-  [both(is(Array), propEq('length', 0)), () => { throw new TypeError('An empty array is an invalid value'); }],
-  [both(is(Array), propEq('length', 1)), ([state]) => [freezeObj(state), []]],
-  [is(Array), ([state, ...commands]) => [freezeObj(state), commands]],
-  [is(Object), state => [freezeObj(state), []]],
-  [always(true), (val) => { throw new TypeError('Unrecognized structure ' + safeStringify(val)); }],
-]);
 
 /**
  * Maps a state & a message to a new state and optional command (or list of commands).
