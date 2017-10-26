@@ -6,7 +6,8 @@ module.exports = {
     index: './src/index.ts',
     message: './src/message.ts',
     commands: './src/commands/index.ts',
-    effects: './src/effects/index.ts'
+    effects: './src/effects/index.ts',
+    dispatcher: './src/dispatcher.ts'
   },
   output: {
     path: `${__dirname}/dist`,

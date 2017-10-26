@@ -1,5 +1,5 @@
 import { curry, flip, is } from 'ramda';
-import Message from '../message';
+import Message from './message';
 
 /**
  * Dispatches command messages.
