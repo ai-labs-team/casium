@@ -6,6 +6,12 @@ type MessageOptions = {
   shallow?: boolean;
 };
 
+/**
+* Message is the base class for all messages that are passed by the system to trigger updates to
+* the view. Message has logic that checks to make sure that what is passed is formatted correctly
+* (as an object) and that the value types match.
+**/
+
 export default class Message {
 
   protected static defaults: object = {};
@@ -49,5 +55,8 @@ export default class Message {
     ].join(' '));
   }
 }
+/**
+* Activate is simply an Activate message
+**/
 
 export class Activate extends Message {}
