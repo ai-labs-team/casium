@@ -98,12 +98,12 @@ describe('app', () => {
       const log = [];
 
       const ctr = isolate(container({
-        update: new Map([
+        update: [
           [InputEvent, (state, input) => {
             log.push(input);
             return state;
           }],
-        ]),
+        ],
 
         view: ({ emit }) => (
           <div><input type='text' onChange={emit(InputEvent)} /></div>
@@ -128,12 +128,12 @@ describe('app', () => {
       const ctr = isolate(container({
         init: always({ checked: false }),
 
-        update: new Map([
+        update: [
           [CheckboxEvent, (state, input) => {
             log.push(input);
             return { checked: !state.checked };
           }],
-        ]),
+        ],
 
         view: ({ emit, checked }) => (
           <div><input type='checkbox' checked={checked} onClick={emit(CheckboxEvent)} /></div>

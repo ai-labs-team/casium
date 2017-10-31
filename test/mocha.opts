@@ -1,0 +1,3 @@
+--require ts-node/register
+--require jsdom-global/register
+src/**/*_test.{ts,tsx}

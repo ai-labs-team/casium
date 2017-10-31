@@ -2,7 +2,7 @@ import * as deepFreeze from 'deep-freeze-strict';
 import { is, isEmpty, join, merge } from 'ramda';
 import { getValidationFailures, safeStringify } from './util';
 
-type MessageOptions = {
+export type MessageOptions = {
   shallow?: boolean;
 };
 

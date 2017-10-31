@@ -9,7 +9,7 @@ type DevTools = {
   connected: boolean,
   containers: any[],
   contexts: object,
-  queue: string[],
+  queue: any[],
   next: () => number,
   flush: () => void
 };
@@ -24,10 +24,11 @@ type DevToolsMessage = {
   cmds: any[]
 };
 
+let send = (msg: any) => {};
 const session = Date.now() + Math.random().toString(36).substr(2);
-const send = (msg: string) => window.postMessage(msg, '*'), serialize = map(pipe(safeStringify, safeParse));
+const serialize = map(pipe(safeStringify, safeParse));
 
-const _ARCH_DEV_TOOLS_STATE: DevTools = (window as any)._ARCH_DEV_TOOLS_STATE = {
+export const _ARCH_DEV_TOOLS_STATE: DevTools = {
   messageCounter: 0,
   root: null,
   connected: false,
@@ -78,8 +79,6 @@ const inBoundMsgHandler = (message: object & { data: any }) => {
   }
 };
 
-window.addEventListener('message', inBoundMsgHandler, false);
-
 export const intercept = stateManager => _ARCH_DEV_TOOLS_STATE.root = stateManager;
 
 export const notify = ({ context, msg, prev, next, path, cmds }: DevToolsMessage) => {
@@ -97,15 +96,21 @@ export const notify = ({ context, msg, prev, next, path, cmds }: DevToolsMessage
     message: msg && msg.constructor && msg.constructor.name || `Init (${container.name})`,
     data: msg && msg.data,
     commands: pipe(flatten, filter(is(Object)), map(cmd => [cmdName(cmd), cmd.data]))(cmds),
-  } as any).toString();
+  } as any);
 
   _ARCH_DEV_TOOLS_STATE.containers.includes(container) || _ARCH_DEV_TOOLS_STATE.containers.push(container);
   _ARCH_DEV_TOOLS_STATE.contexts[context.id] = context;
 
   if (!_ARCH_DEV_TOOLS_STATE.connected) {
-    _ARCH_DEV_TOOLS_STATE.queue.push(serialized as string);
+    _ARCH_DEV_TOOLS_STATE.queue.push(serialized);
   } else {
     _ARCH_DEV_TOOLS_STATE.flush();
     send(serialized);
   }
 };
+
+if (typeof window !== 'undefined') {
+  send = (msg: any) => window.postMessage(msg, '*');
+  window.addEventListener('message', inBoundMsgHandler, false);
+  Object.assign(window as any, { _ARCH_DEV_TOOLS_STATE });
+}

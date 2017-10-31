@@ -6,7 +6,7 @@ import ErrorComponent from './components/error';
 import ExecContext from './exec_context';
 import { Activate } from './message';
 
-type ViewWrapperProps = {
+export type ViewWrapperProps = {
   childProps: any,
   container: Container,
   delegate: DelegateDef,
@@ -37,7 +37,7 @@ export default class ViewWrapper extends React.Component<ViewWrapperProps, any> 
 
   public execContext?: ExecContext = null;
 
-  public subscriptions: any[] = [];
+  public unsubscribe: () => any;
 
   public getChildContext() {
     return { execContext: this.execContext };
@@ -52,7 +52,7 @@ export default class ViewWrapper extends React.Component<ViewWrapperProps, any> 
       throw new Error(msg);
     }
     this.execContext = new ExecContext({ env, parent, container, delegate });
-    this.subscriptions = [this.execContext.subscribe(this.setState.bind(this))];
+    this.unsubscribe = this.execContext.subscribe(this.setState.bind(this));
 
     if (container.accepts(Activate)) {
       this.execContext.dispatch(new Activate(omit(['emit'], childProps), { shallow: true }));
@@ -63,7 +63,7 @@ export default class ViewWrapper extends React.Component<ViewWrapperProps, any> 
   }
 
   public componentWillUnmount() {
-    this.subscriptions.forEach(unSub => unSub());
+    this.unsubscribe();
   }
 
   public unstable_handleError(e) {
@@ -77,7 +77,7 @@ export default class ViewWrapper extends React.Component<ViewWrapperProps, any> 
       return <ErrorComponent message={this.state.componentError.toString()} />;
     }
     // tslint:disable-next-line:variable-name
-    const Child = this.props.container.view, ctx = this.execContext;
+    const Child = (this.props.container as any).view, ctx = this.execContext;
     const props = mergeAll([this.props.childProps, ctx.state(), { emit: ctx.emit.bind(ctx) }]);
     return <Child {...props} />;
   }

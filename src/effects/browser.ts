@@ -1,14 +1,9 @@
-import createHistory from 'history/createBrowserHistory';
+import * as History from 'history';
 import { pipe } from 'ramda';
 import { Back, PushHistory, ReplaceHistory, Timeout } from '../commands/browser';
-import Message from '../message';
-import { constructMessage } from '../util';
+import { constructMessage, Constructor } from '../util';
 
-export const history = createHistory();
-
-interface Constructor {
-  new(): Message;
-}
+export const history = typeof window === 'undefined' ? History.createMemoryHistory() : History.createBrowserHistory();
 
 export default new Map<Constructor, (data: any, dispatch: any) => any>([
   [PushHistory, ({ path, state }) => history.push(path, state || {})],

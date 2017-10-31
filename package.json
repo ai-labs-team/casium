@@ -7,12 +7,12 @@
   "author": "Nate Abele <natea@advisorinnovationlabs.com>",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "webpack",
+    "build": "tsc",
     "lint": "NODE_ENV=test tslint -c tslint.json \"src/**/*.{js,ts,jsx,tsx}\"",
     "lint-fix": "NODE_ENV=test tslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
-    "unit-test": "mocha-webpack \"src/**/*_test.{js,ts,jsx,tsx}\"",
-    "debug-tests": "node --inspect-brk ./node_modules/mocha-webpack/bin/mocha-webpack \"src/**/*_test.{js,ts,jsx,tsx}\""
+    "unit-test": "mocha --opts test/mocha.opts",
+    "debug-tests": "node --inspect-brk ./node_modules/.bin/mocha --opts test/mocha.opts"
   },
   "dependencies": {
     "axios": "0.16.1",
@@ -53,11 +53,12 @@
     "jsdom": "11.2.0",
     "jsdom-global": "3.0.2",
     "jss": "8.1.0",
-    "mocha": "3.4.1",
+    "mocha": "^4.0.1",
     "mocha-webpack": "^1.0.0-rc.1",
     "react-addons-test-utils": "15.3.2",
     "react-dom": "15.5.4",
     "react-test-renderer": "15.5.4",
+    "ts-node": "^3.3.0",
     "tslint": "^5.7.0",
     "tslint-config-airbnb": "^5.3.0",
     "typescript": "^2.5.3",

@@ -6,6 +6,7 @@
     ],
     "jsRules": {
       "forin": false,
+      "only-arrow-functions": false,
       "no-unused-expression": false,
       "no-increment-decrement": false,
       "object-literal-sort-keys": false,
@@ -27,6 +28,7 @@
       "forin": false,
       "array-type": false,
       "label-position": false,
+      "only-arrow-functions": false,
       "object-literal-sort-keys": false,
       "no-increment-decrement": false,
       "no-unused-expression": false,

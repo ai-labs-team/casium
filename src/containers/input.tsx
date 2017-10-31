@@ -1,13 +1,13 @@
-import { assoc, omit } from 'ramda';
+import { assoc, defaultTo, omit, path, pipe } from 'ramda';
 import * as React from 'react';
 
-import { container, PARENT } from '../app';
+import { container, Container, PARENT } from '../app';
 import Message from '../message';
 import { cloneRecursive, withProps } from '../util';
 
 export class Change extends Message {}
 
-const name = ({ children: { props } }) => props.name || 'unknownInput';
+const name = pipe(path(['children', 'props', 'name']), defaultTo('unknownInput'));
 
 export default container({
   name: 'InputContainer',
@@ -27,4 +27,4 @@ export default container({
       })}
     </span>
   )),
-});
+}) as Container;

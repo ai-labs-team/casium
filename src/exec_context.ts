@@ -11,7 +11,7 @@ import { constructMessage, isEmittable, result, safeStringify, suppressEvent, to
 
 const update = flip(merge);
 
-type ExecContextDef = {
+export type ExecContextDef = {
   env: Environment,
   container: Container,
   parent?: ExecContext | { relay: object, state?: (cfg?: object) => object, path?: string[] },

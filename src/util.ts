@@ -8,6 +8,10 @@ import {
 import * as React from 'react';
 import Message from './message';
 
+export interface Constructor {
+  new(): Message;
+}
+
 /**
  * Deep-merges two objects, overwriting left-hand keys with right-hand keys, unionizing arrays.
  *
@@ -202,7 +206,7 @@ export const toEmittable = ifElse(is(Array), identity, type => [type, {}]);
 /**
  * Maps an emittable and message data to a message.
  */
-export const constructMessage = curry((msgType, data) => {
+export const constructMessage = curry((msgType: Constructor, data) => {
   const [type, extra] = toEmittable(msgType);
   return new type(merge(data, extra));
 });
