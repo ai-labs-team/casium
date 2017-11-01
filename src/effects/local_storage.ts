@@ -5,7 +5,7 @@ import { constructMessage, safeParse, safeStringify } from '../util';
 const get = (() => (
   typeof window === 'undefined' ? always('<running outside browser context>') :
     window && window.localStorage && window.localStorage.getItem.bind(window.localStorage)
-)());
+))();
 
 export default new Map([
   [Read, ({ key, result }, dispatch) => pipe(
