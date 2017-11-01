@@ -262,7 +262,7 @@ export const union = (fn?: any) => (model, message = {}, relay = {}) => (fn || i
 
 const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), identity);
 const consCommands = (model, msg, relay) => pipe(splitEvery(2), map(
-  ([cmd, data]) => new (cmd as any)(mapData(model, msg, relay)(data))
+  ([cmd, data]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null
 ));
 
 /**

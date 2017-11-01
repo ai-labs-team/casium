@@ -167,6 +167,13 @@ describe('app', () => {
         [new Cmd({ foo: 'bar' })]
       ]);
     });
+
+    it('allows empty command values', () => {
+      expect(commands(Cmd, { here: true }, false && Cmd, { gone: true })({})).to.deep.equal([
+        {},
+        [new Cmd({ here: true }), null]
+      ]);
+    });
   });
 
   describe('seq', () => {
