@@ -1,5 +1,5 @@
 import {
-  always, constructN, curry, defaultTo, evolve, flatten, identity,
+  always, constructN, curry, defaultTo, evolve, flatten, identity as id,
   ifElse, is, map, merge, nthArg, omit, pick, pipe, splitEvery
 } from 'ramda';
 
@@ -88,7 +88,7 @@ export type IsolatedContainer<M> = Container<M> & { dispatch: any };
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
  */
-const toMap = ifElse(is(Array), constructN(1, Map as any), identity);
+const toMap = ifElse(is(Array), constructN(1, Map as any), id);
 
 /**
  * Wraps a container's view to extract container-specific props and inject `emit()` helper
@@ -251,16 +251,17 @@ export function seq<M>(...updaters: Updater<M>[]) {
 // Or, takes a function, in which case the result is merged into the current model
 // It would be cool to do a reduce-y type thing where if a mapper returns a function,
 // it keeps calling until it returns a value
-export const mapModel = mapper => (model, message, relay) => {
+
+export const mapModel = <M>(mapper: any) => (model: M, message?: GenericObject, relay?: GenericObject) => {
   const update = fn => fn(model, message, relay);
   return merge(model, is(Function, mapper) ? update(mapper) : map(update, mapper));
 };
 
-export const relay = (fn?: any) => (_, __, val) => fn ? fn(val) : val;
-export const message = (fn?: any) => (_, val) => fn ? fn(val) : val;
-export const union = (fn?: any) => (model, message = {}, relay = {}) => (fn || identity)({ model, message, relay });
+export const relay = (fn?: any) => (_, __, val) => (fn || id)(val);
+export const message = (fn?: any) => (_, val) => (fn || id)(val);
+export const union = (fn?: any) => (model, message = {}, relay = {}) => (fn || id)({ model, message, relay });
 
-const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), identity);
+const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), id);
 const consCommands = (model, msg, relay) => pipe(splitEvery(2), map(
   ([cmd, data]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null
 ));
