@@ -1,5 +1,6 @@
 {
-  "exclude": ["node_modules"],
+  "include": ["./src/**/*"],
+  "exclude": ["node_modules", "**/*_test.ts", "**/*_test.tsx"],
   "compilerOptions": {
     "declaration": true,
     "declarationDir": "./dist/",
@@ -18,8 +19,5 @@
     "outDir": "./dist/",
     "lib": ["es7", "es2015", "dom"],
     "types": ["node"]
-  },
-  "include": [
-    "./src/**/*"
-  ]
+  }
 }
