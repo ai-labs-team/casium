@@ -6,9 +6,9 @@ import ErrorComponent from './components/error';
 import ExecContext from './exec_context';
 import { Activate } from './message';
 
-export type ViewWrapperProps = {
-  childProps: any,
-  container: Container,
+export type ViewWrapperProps<M> = {
+  childProps: M & { emit: (...args: any[]) => any },
+  container: Container<M>,
   delegate: DelegateDef,
   env: Environment
 };
@@ -20,7 +20,7 @@ export type ViewWrapperProps = {
  * This component looks for `execContext` in its parent context, and propagates
  * itself with `execContext` in its children's contexts.
  */
-export default class ViewWrapper extends React.Component<ViewWrapperProps, any> {
+export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>, any> {
 
   public static contextTypes = { execContext: PropTypes.object };
 
@@ -35,7 +35,7 @@ export default class ViewWrapper extends React.Component<ViewWrapperProps, any> 
 
   public static defaultProps = { delegate: null };
 
-  public execContext?: ExecContext = null;
+  public execContext?: ExecContext<M> = null;
 
   public unsubscribe: () => any;
 

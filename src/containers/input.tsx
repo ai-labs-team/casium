@@ -27,4 +27,4 @@ export default container({
       })}
     </span>
   )),
-}) as Container;
+}) as Container<any>;

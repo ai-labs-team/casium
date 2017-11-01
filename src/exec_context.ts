@@ -11,10 +11,10 @@ import { constructMessage, isEmittable, result, safeStringify, suppressEvent, to
 
 const update = flip(merge);
 
-export type ExecContextDef = {
+export type ExecContextDef<M> = {
   env: Environment,
-  container: Container,
-  parent?: ExecContext | { relay: object, state?: (cfg?: object) => object, path?: string[] },
+  container: Container<M>,
+  parent?: ExecContext<M> | { relay: () => object, state?: (cfg?: object) => object, path?: string[] },
   delegate?: DelegateDef
 };
 
@@ -36,7 +36,7 @@ const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, e
  * @return {Boolean} Returns true if the container (or an ancestor) has an update handler matching
  *         the given constructor, otherwise false.
  */
-const handlesMsg = (exec: ExecContext) =>
+const handlesMsg = <M>(exec: ExecContext<M>) =>
   pipe(toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), exec));
 
 /**
@@ -119,7 +119,7 @@ const mapEvent = curry((extra: object & { preventDefault?: boolean }, event: Eve
 /**
  * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
  */
-const checkCmdMsgs = curry((exec: ExecContext, cmd: Message) => {
+const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
   const unhandled = pipe(prop('data'), values, filter(isEmittable), filter(not(handlesMsg(exec) as any)));
   const msgs = unhandled(cmd);
 
@@ -161,21 +161,21 @@ const dispatchAction = (exec, messageTypes, action) => {
  *           is invoked
  *         - dispatch: Accepts a message to dispatch to the container
  */
-export default class ExecContext {
+export default class ExecContext<M> {
 
   public id: string = Math.round(Math.random() * Math.pow(2, 50)).toString();
 
   public stateMgr?: StateManager = null;
-  public parent?: ExecContext = null;
+  public parent?: ExecContext<M> = null;
   public delegate?: DelegateDef = null;
   public path: string[] = [];
   public env?: Environment = null;
-  public container?: Container = null;
+  public container?: Container<any> = null;
 
   protected errLog;
   protected getState: (params?: object) => object = null;
 
-  constructor({ env, container, parent, delegate }: ExecContextDef) {
+  constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
     const stateMgr = parent && parent.state ? null : intercept(env.stateManager(container));
     const delegatePath = (delegate && delegate !== PARENT) ? delegate : [];
     const path = (parent && parent.path || []).concat(delegatePath as string[]);
@@ -193,7 +193,7 @@ export default class ExecContext {
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
         const initial = hasStore ? attachStore(container.attach, container) : (this.getState() || {});
-        run(null, result(container.init(initial) || {}));
+        run(null, result(container.init(initial, parent && parent.relay() || {}) || {}));
       }
       return fn.call(this, ...args);
     };

@@ -3,7 +3,7 @@ import * as commands from './commands';
 import Message from './message';
 import { safeParse, safeStringify } from './util';
 
-type DevTools = {
+export type DevTools = {
   messageCounter: number,
   root?: any,
   connected: boolean,

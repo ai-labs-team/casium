@@ -25,58 +25,65 @@ export interface MessageConstructor {
 
 export type MessageOrEmpty = Message | false | null | undefined;
 
-export type UpdateResult = any |
-  [any] |
-  [any, MessageOrEmpty] |
-  [any, MessageOrEmpty, MessageOrEmpty] |
-  [any, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
-  [any, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
-  [any, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
+export type UpdateResult<M> = M |
+  [M] |
+  [M, MessageOrEmpty] |
+  [M, MessageOrEmpty, MessageOrEmpty] |
+  [M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
+  [M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
+  [M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
   [
-    any, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
+    M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
     MessageOrEmpty, MessageOrEmpty
   ] |
   [
-    any, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
+    M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
     MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty
   ] |
   [
-    any, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
+    M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
     MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty
   ];
 
-export type Updater = (...args: any[]) => UpdateResult;
+export type GenericObject = { [key: string]: any };
+export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
 
-export type EnvDef = {
+export type EnvDefPartial = {
   dispatcher: any;
-  effects: UpdateMap;
   log?: (...args: any[]) => any | void;
-  stateManager?: () => StateManager
+  stateManager?: (container?: Container<GenericObject>) => StateManager;
+};
+
+export type EnvDef = EnvDefPartial & {
+  effects: UpdateMap<GenericObject>;
+};
+
+export type Environment = EnvDefPartial & {
+  identity: () => EnvDef;
 };
 
 export type DelegateDef = symbol | string;
-export type UpdateMapDef = [MessageConstructor, Updater][];
-export type UpdateMap = Map<MessageConstructor, Updater>;
+export type UpdateMapDef<M> = [MessageConstructor, Updater<M>][];
+export type UpdateMap<M> = Map<MessageConstructor, Updater<M>>;
 
-export type ContainerDefPartial = { update?: UpdateMapDef, name?: string };
-export type ContainerDefMapped = { update: UpdateMap, name: string };
-export type ContainerPartial = {
+export type ContainerDefPartial<M> = { update?: UpdateMapDef<M>, name?: string };
+export type ContainerDefMapped<M> = { update: UpdateMap<M>, name: string };
+export type ContainerPartial<M> = {
   delegate?: DelegateDef;
-  init?: (...args: any[]) => UpdateResult;
+  init?: (model: M, relay: object) => UpdateResult<M>;
   relay?: { [key: string]: (model: object, relay: object) => object };
   view?: ContainerView;
   attach?: { store: object, key?: string }
 };
-export type ContainerDef = ContainerDefPartial & ContainerPartial;
+export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
 
-export type ContainerViewProps = any & { emit: any };
+export type ContainerViewProps = GenericObject & { emit: any };
 export type ContainerView = (props?: ContainerViewProps) => any;
-export type Container = ContainerView & ContainerPartial & ContainerDefMapped & {
+export type Container<M> = ContainerView & ContainerPartial<M> & ContainerDefMapped<M> & {
   accepts: (m: MessageConstructor) => boolean,
-  identity: () => ContainerDef
+  identity: () => ContainerDef<M>
 };
-export type IsolatedContainer = Container & { dispatch: any };
-export type Environment = any;
+export type IsolatedContainer<M> = Container<M> & { dispatch: any };
 
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
@@ -95,7 +102,7 @@ const toMap = ifElse(is(Array), constructN(1, Map as any), identity);
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView: (defs: { env: Environment, container: Container }) => any = ({ env, container }) => {
+const wrapView: <M>(defs: { env: Environment, container: Container<M> }) => any = ({ env, container }) => {
   /* eslint-disable react/prop-types */
   const mergeProps = pipe(defaultTo({}), omit(['delegate']));
 
@@ -107,7 +114,7 @@ const wrapView: (defs: { env: Environment, container: Container }) => any = ({ e
 /**
  * Maps default values of a container definition.
  */
-const mapDef: (def: ContainerDefPartial) => ContainerDefMapped = pipe(
+const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
   merge({ name: null, update: [] }),
   evolve({ update: toMap, name: defaultTo('UnknownContainer') })
 );
@@ -142,12 +149,12 @@ export const environment = ({ effects, dispatcher, log = null, stateManager = nu
  * @param  {Object} container The container definition
  * @return {Component} Returns a renderable React component
  */
-export const withEnvironment = curry((env: EnvDef, def: ContainerDef): Container => {
-  let container;
+export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>): Container<M> => {
+  let ctr;
   const { freeze, assign, defineProperty } = Object;
-  const fns = { identity: () => merge({}, def), accepts: msgType => container.update.has(msgType) };
-  container = assign(mapDef(def), fns);
-  return freeze(defineProperty(assign(wrapView({ env, container }), fns), 'name', { value: container.name }));
+  const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
+  ctr = assign(mapDef(def), fns);
+  return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 });
 
 const defaultEnv: Environment = environment({ effects, dispatcher });
@@ -200,17 +207,17 @@ const defaultEnv: Environment = environment({ effects, dispatcher });
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
-export const container: (def: ContainerDef) => Container = withEnvironment(defaultEnv);
+export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(defaultEnv);
 
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
  * Calling `dispatch()` on the container will simply return any commands issued.
  */
-export const isolate = (ctr: Container, opts: any = {}): IsolatedContainer => {
+export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer<M> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
   const env = environment({ dispatcher: nthArg(2), effects: new Map([]), log: () => {}, stateManager });
 
-  const container = Object.assign(mapDef(ctr.identity()), { accepts: always(true) }) as Container;
+  const container = Object.assign(mapDef(ctr.identity()), { accepts: always(true) }) as Container<M>;
   const parent: any = opts.relay ? { relay: always(opts.relay) } : null;
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
@@ -223,8 +230,8 @@ export const isolate = (ctr: Container, opts: any = {}): IsolatedContainer => {
  * returned will be aggregated across all updaters. If any updater returns a function, that function
  * will be treated as an updater.
  */
-export function seq(...updaters: Updater[]) {
-  return function (model: any, message?: any, relay?: any): UpdateResult {
+export function seq<M>(...updaters: Updater<M>[]) {
+  return function (model: M, message?: object, relay?: object): UpdateResult<M> {
     let newModel = model, commands = [], newCommands = [], updateResult = null;
 
     for (const updater of updaters) {
@@ -236,7 +243,7 @@ export function seq(...updaters: Updater[]) {
       [newModel, newCommands] = result(updateResult);
       commands = flatten(commands.concat(newCommands));
     }
-    return [newModel, commands] as UpdateResult;
+    return [newModel, commands] as UpdateResult<M>;
   };
 }
 
@@ -273,7 +280,7 @@ const consCommands = (model, msg, relay) => pipe(splitEvery(2), map(
  * [FooMessage, commands(Http.Post, (model, msg) => ({ url: '/foo', data: [model.someData, msg.otherData] }))]]
  * ```
  */
-export const commands = (...args: any[]) => {
+export const commands = <M>(...args: any[]): Updater<M> => {
   if (args.length % 2 !== 0) {
     throw new TypeError('commands() must be called with an equal number of command constructors & data parameters');
   }
