@@ -42,10 +42,7 @@ describe('app', () => {
 
     it('throws on constructor dispatch', () => {
       const ctr = isolate(container({ update: [] }));
-      expect(() => ctr.dispatch(Msg)).to.throw(
-        TypeError,
-        /Attempted to dispatch message constructor/
-      );
+      expect(() => ctr.dispatch(Msg)).to.throw(TypeError, /Attempted to dispatch message constructor/);
     });
 
     it('throws on invalid update return values', () => {
