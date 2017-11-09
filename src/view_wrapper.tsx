@@ -29,7 +29,10 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
   public static propTypes = {
     childProps: PropTypes.object.isRequired,
     container: PropTypes.object.isRequired,
-    delegate: PropTypes.oneOfType([PropTypes.string, PropTypes.symbol]),
+    delegate: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.symbol,
+      PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.number, PropTypes.string]))]),
     env: PropTypes.object.isRequired
   };
 
