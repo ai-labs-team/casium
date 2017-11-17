@@ -41,7 +41,7 @@ export const _ARCH_DEV_TOOLS_STATE: DevTools = {
   flush() {
     this.queue.forEach(send);
     this.queue = []; // @TODO: Maybe wait for an ACK before flushing
-  },
+  }
 };
 
 export const cmdName = (cmd) => {
@@ -61,15 +61,12 @@ export const cmdName = (cmd) => {
 const inBoundMsgHandler = (message: object & { data: any }) => {
   const data = message && message.data || {};
 
-  if (data.from === 'ArchDevToolsPageScript' && data.state === 'initialized') {
+  if (data.from === 'CasiumDevToolsPageScript' && data.state === 'initialized') {
     _ARCH_DEV_TOOLS_STATE.connected = true;
     _ARCH_DEV_TOOLS_STATE.flush();
   }
 
-  if (data.from !== 'ArchDevToolsPanel') {
-    return;
-  }
-  if (!_ARCH_DEV_TOOLS_STATE.root) {
+  if (data.from !== 'CasiumDevToolsPanel' || !_ARCH_DEV_TOOLS_STATE.root) {
     return;
   }
   const sel = data.selected;

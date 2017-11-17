@@ -1,15 +1,15 @@
-# The Axiom Front-End Architecture
+# Casium — An application architecture for React
 
-The Axiom Front-End Architecture is a _data_ and _effects_ management system that helps you manage the complexity of large React applications reliabily and predictably.
+The Casium Front-End Architecture is a _data_ and _effects_ management system that helps you manage the complexity of large React applications reliabily and predictably.
 
 It does this by modeling the state of your application (yes, all of it) as a single, immutable value, and handling side-effects in application logic with _messages_. If this reminds you of [Redux](http://redux.js.org/), that might be because both are derived from [The Elm Architecture](https://guide.elm-lang.org/architecture/). However, this library attempts to hew more closely to Elm's design in order to gain [more of Elm's advantages](https://www.youtube.com/watch?v=XsNk5aOpqUc&t=16m24s), and to provide a better, more cohesive developer experience.
 
 ## Application structure
 
-Applications implemented on the architecture are organized into two different types of React components:
+Applications implemented on Casium are organized into two different types of React components:
 
  - **Views** (or view components), which are implemented as [pure functions](https://www.reactenlightenment.com/react-state/8.4.html)
- - **Containers** (or container components), which are implemented using a builder function exported by the architecture
+ - **Containers** (or container components), which are implemented using a builder function exported by Casium
 
 In other words...
 
@@ -24,8 +24,8 @@ The basic implementation of a container looks like this:
 ```javascript
 import React from 'react';
 
-import Message from 'architecture/message';
-import { container } from 'architecture/app';
+import Message from 'casium/message';
+import { container } from 'casium/app';
 
 class Increment extends Message {}
 class Decrement extends Message {}
@@ -190,16 +190,16 @@ Think of it like a bank ledger: the current balance is just a sum of all the tra
 
 So, how do we make our state predictable again? With more messages, of course!
 
-Up until now, we've been both producing (in the view) and consuming (in the update) our own messages. _Command messages_ (or just _commands_) are a new type of message: we produce them, but they're consumed by the architecture, in the background, away from our application code. The architecture _manages_ our effects for us. We use these commands any time we want to read, write, or execute something outside of our state, like HTTP calls, cookies, etc.
+Up until now, we've been both producing (in the view) and consuming (in the update) our own messages. _Command messages_ (or just _commands_) are a new type of message: we produce them, but they're consumed by Casium, in the background, away from our application code. Casium _manages_ our effects for us. We use these commands any time we want to read, write, or execute something outside of our state, like HTTP calls, cookies, etc.
 
 As with state modifications, commands are returned by update handlers. This allows our update handlers to be [pure, stateless, side-effect-free functions](https://softwareengineering.stackexchange.com/questions/254304/what-is-referential-transparency): they always return the same value for the given inputs.
 
-Further, they don't _do_ things: the simply return values that _represent_ doing things. Let's test-drive this by implementing a button to save the counter to local storage. We'll start by importing the necessary commands. The architecture comes pre-packaged with commands for most common operations.
+Further, they don't _do_ things: the simply return values that _represent_ doing things. Let's test-drive this by implementing a button to save the counter to local storage. We'll start by importing the necessary commands. Casium comes pre-packaged with commands for most common operations.
 
-We can import and use these commands to tell the architecture what effects we want, and the architecture will handle them for us:
+We can import and use these commands to tell Casium what effects we want, and Casium will handle them for us:
 
 ```javascript
-import { LocalStorage } from 'architecture/commands';
+import { LocalStorage } from 'casium/commands';
 ```
 
 This imports a module object with a few different classes for our consumption.
@@ -250,7 +250,7 @@ Here, we're returning a new instance of the `LocalStorage.Write` command message
 
 This is all well and good for fire-and-forget operations like writing to local storage, but what about _reading_? What about commands that do things where we care about the result?
 
-We handle this by giving the command a _result message_. These are normal messages that we implement and handle ourselves, just like the ones emitted from the view. We pass one of these messages to the command in a `result` key, and the architecture will send that message back to our view when the command has executed.
+We handle this by giving the command a _result message_. These are normal messages that we implement and handle ourselves, just like the ones emitted from the view. We pass one of these messages to the command in a `result` key, and Casium will send that message back to our view when the command has executed.
 
 This extends the cycle of our data flow like so:
 
@@ -301,9 +301,9 @@ Altogether, our app should look something like this:
 ```javascript
 import React from 'react';
 
-import Message from 'architecture/message';
-import { container } from 'architecture/app';
-import { LocalStorage } from 'architecture/commands';
+import Message from 'casium/message';
+import { container } from 'casium/app';
+import { LocalStorage } from 'casium/commands';
 
 class Increment extends Message { static defaults = { step: 1 } }
 class Decrement extends Message { static defaults = { step: 1 } }
@@ -365,7 +365,7 @@ export default container({
 **@TODO**: Explanation on extending commands...
 
 ```javascript
-import { Post, formData } from 'architecture/commands/http';
+import { Post, formData } from 'casium/commands/http';
 
 export default class SignIn extends Post {
 
@@ -404,7 +404,7 @@ As we talked about, all changes in the application are handled by _messages_. Me
 Here's what an example unit test for the first draft of our counter container might look like. Note that we're not making any assertions about the view, just the updates and the state of the container.
 
 ```javascript
-import { isolate } from 'architecture/app';
+import { isolate } from 'casium/app';
 import CounterContainer, { Increment, Decrement } from './';
 
 describe('CounterContainer', () => {

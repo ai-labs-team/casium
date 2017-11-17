@@ -1,9 +1,10 @@
 {
-  "name": "architecture",
+  "name": "casium",
   "version": "1.0.0",
-  "description": "Advisor Innovation Labs front-end application architecture",
-  "module": "dist/index.js",
-  "repository": "https://github.com/ai-labs-team/architecture.git",
+  "description": "Casium — An application architecture for React",
+  "module": "./dist/index.js",
+  "types": "./dist/main.d.ts",
+  "repository": "https://github.com/ai-labs-team/casium.git",
   "author": "Nate Abele <natea@advisorinnovationlabs.com>",
   "license": "Apache-2.0",
   "scripts": {
