@@ -1,5 +1,5 @@
 import {
-  always, constructN, curry, defaultTo, evolve, flatten, identity,
+  always, constructN, curry, defaultTo, evolve, flatten, identity as id,
   ifElse, is, map, merge, nthArg, omit, pick, pipe, splitEvery
 } from 'ramda';
 
@@ -88,7 +88,7 @@ export type IsolatedContainer<M> = Container<M> & { dispatch: any };
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
  */
-const toMap = ifElse(is(Array), constructN(1, Map as any), identity);
+const toMap = ifElse(is(Array), constructN(1, Map as any), id);
 
 /**
  * Wraps a container's view to extract container-specific props and inject `emit()` helper
@@ -247,22 +247,28 @@ export function seq<M>(...updaters: Updater<M>[]) {
   };
 }
 
-// Works sorta like evolve(), but each key takes an updater signature function
-// Or, takes a function, in which case the result is merged into the current model
-// It would be cool to do a reduce-y type thing where if a mapper returns a function,
-// it keeps calling until it returns a value
-export const mapModel = mapper => (model, message, relay) => {
-  const update = fn => fn(model, message, relay);
-  return merge(model, is(Function, mapper) ? update(mapper) : map(update, mapper));
-};
+export type ModelMapperFn<M> = (model: M, message?: GenericObject, relay?: GenericObject) => M;
+export type ModelMapper<M> = ModelMapperFn<M> | { [key: string]: ModelMapperFn<M> };
 
-export const relay = (fn?: any) => (_, __, val) => fn ? fn(val) : val;
-export const message = (fn?: any) => (_, val) => fn ? fn(val) : val;
-export const union = (fn?: any) => (model, message = {}, relay = {}) => (fn || identity)({ model, message, relay });
+/**
+ * Accepts a mapper that transforms a model. The mapper can be an updater, or an object that pairs
+ * keys to updater-signature functions that return a value. The returned values are then paired to the
+ * mapper's keys and merged into the model.
+ */
+export const mapModel = <M>(mapper: ModelMapper<M>) =>
+  (model: M, message?: GenericObject, relay?: GenericObject): UpdateResult<M> => {
+    const update = fn => fn(model, message, relay);
+    return merge(model, is(Function, mapper) ? update(mapper) : map(update, mapper));
+  };
 
-const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), identity);
+export const relay = <M>(fn?: (r: any) => UpdateResult<M>) => pipe(nthArg(2), (fn || id));
+export const message = <M>(fn?: (m: any) => UpdateResult<M>) => pipe(nthArg(1), (fn || id));
+export const union = <M>(fn?: (u: { model: M, message?: any, relay?: any }) => UpdateResult<M>) =>
+  (model: M, message = {}, relay = {}) => (fn || id)({ model, message, relay });
+
+const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), id);
 const consCommands = (model, msg, relay) => pipe(splitEvery(2), map(
-  ([cmd, data]) => new (cmd as any)(mapData(model, msg, relay)(data))
+  ([cmd, data]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null
 ));
 
 /**

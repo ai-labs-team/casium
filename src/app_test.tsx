@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { mount, shallow } from 'enzyme';
 import 'mocha';
-import { always, evolve, identity, inc, map, mergeAll, not, pick, pipe, unapply } from 'ramda';
+import { always, evolve, identity, inc, map, mergeAll, not, pick, pipe, prop, unapply } from 'ramda';
 import * as React from 'react';
-import { commands, Container, container, isolate, seq } from './app';
+import { commands, Container, container, isolate, mapModel, message, seq } from './app';
 import Message from './message';
 import StateManager from './state_manager';
 
@@ -42,10 +42,7 @@ describe('app', () => {
 
     it('throws on constructor dispatch', () => {
       const ctr = isolate(container({ update: [] }));
-      expect(() => ctr.dispatch(Msg)).to.throw(
-        TypeError,
-        /Attempted to dispatch message constructor/
-      );
+      expect(() => ctr.dispatch(Msg)).to.throw(TypeError, /Attempted to dispatch message constructor/);
     });
 
     it('throws on invalid update return values', () => {
@@ -170,6 +167,13 @@ describe('app', () => {
         [new Cmd({ foo: 'bar' })]
       ]);
     });
+
+    it('allows empty command values', () => {
+      expect(commands(Cmd, { here: true }, false && Cmd, { gone: true })({})).to.deep.equal([
+        {},
+        [new Cmd({ here: true }), null]
+      ]);
+    });
   });
 
   describe('seq', () => {
@@ -200,6 +204,34 @@ describe('app', () => {
       expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
         foo: true, bar: false, baz: true
       }, []]);
+    });
+  });
+
+  describe('mapModel', () => {
+    it('maps new model values by pairing keys to updaters', () => {
+      const updater = mapModel({ foo: pipe(prop('bar'), not) });
+      expect(updater({ foo: false, bar: false })).to.deep.equal({ foo: true, bar: false });
+    });
+
+    it('works with parameter helpers', () => {
+      const updater = mapModel({ form: message(pick(['email', 'password'])) });
+      const result = updater(
+        { form: {}, misc: 'things' },
+        { email: 'foo@bar.com', password: 'passw0rd', other: 'values' }
+      );
+      expect(result).to.deep.equal({ form: { email: 'foo@bar.com', password: 'passw0rd' }, misc: 'things' });
+    });
+
+    it('works with parameter helpers, v2', () => {
+      const updater = mapModel(message(
+        ({ value }) => value ? { rememberMe: true, form: { email: value } } : { rememberMe: false }
+      ));
+      expect(updater({ rememberMe: null, form: {} }, { value: 'foo@bar.com' })).to.deep.equal({
+        rememberMe: true, form: { email: 'foo@bar.com' }
+      });
+      expect(updater({ rememberMe: null, form: {} }, { value: '' })).to.deep.equal({
+        rememberMe: false, form: {}
+      });
     });
   });
 });

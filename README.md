@@ -1,4 +1,4 @@
-# Casium — An application architecture for React
+# Casium: An application architecture for React
 
 The Casium Front-End Architecture is a _data_ and _effects_ management system that helps you manage the complexity of large React applications reliabily and predictably.
 
