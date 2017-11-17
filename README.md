@@ -1,4 +1,4 @@
-# Casium: A Front-end Architecture for React
+# Casium: An application architecture for React
 
 The Axiom Front-End Architecture is a _data_ and _effects_ management system that helps you manage the complexity of large React applications reliabily and predictably.
 
