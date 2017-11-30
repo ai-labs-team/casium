@@ -20,7 +20,7 @@ import ViewWrapper from './view_wrapper';
 export const PARENT = Symbol.for('@delegate/parent');
 
 export interface MessageConstructor {
-  new(): Message;
+  new(data?: any, opts?: any): Message;
 }
 
 export type MessageOrEmpty = Message | false | null | undefined;

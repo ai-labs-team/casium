@@ -4,7 +4,7 @@ import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { always, merge } from 'ramda';
 import * as React from 'react';
-import { container, isolate, PARENT } from './app';
+import { container, PARENT } from './app';
 import { Activate, Deactivate, Refresh } from './message';
 
 describe('ViewWrapper', () => {
