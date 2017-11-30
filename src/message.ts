@@ -51,3 +51,5 @@ export default class Message {
 }
 
 export class Activate extends Message {}
+export class Refresh extends Message {}
+export class Deactivate extends Message {}

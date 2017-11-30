@@ -1,10 +1,10 @@
 import * as PropTypes from 'prop-types';
-import { keys, merge, mergeAll, omit, pick } from 'ramda';
+import { equals, keys, merge, mergeAll, omit, pick } from 'ramda';
 import * as React from 'react';
 import { Container, DelegateDef, Environment } from './app';
 import ErrorComponent from './components/error';
 import ExecContext from './exec_context';
-import { Activate } from './message';
+import { Activate, Deactivate, Refresh } from './message';
 
 export type ViewWrapperProps<M> = {
   childProps: M & { emit: (...args: any[]) => any },
@@ -65,7 +65,18 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
     this.setState(this.execContext.push(merge(state, pick(keys(state), childProps))));
   }
 
+  public componentWillReceiveProps(nextProps) {
+    const nextChildProps = nextProps.childProps;
+    const { container, childProps } = this.props;
+    if (!equals(nextChildProps, childProps) && container.accepts(Refresh)) {
+      this.execContext.dispatch(new Refresh(omit(['emit'], nextChildProps), { shallow: true }));
+    }
+  }
+
   public componentWillUnmount() {
+    if (this.props.container.accepts(Deactivate)) {
+      this.execContext.dispatch(new Deactivate({ shallow: true }));
+    }
     this.unsubscribe();
   }
 
