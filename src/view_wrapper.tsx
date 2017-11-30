@@ -1,10 +1,10 @@
 import * as PropTypes from 'prop-types';
-import { keys, merge, mergeAll, omit, pick } from 'ramda';
+import { equals, keys, merge, mergeAll, omit, pick } from 'ramda';
 import * as React from 'react';
-import { Container, DelegateDef, Environment } from './app';
+import { Container, DelegateDef, Environment, MessageConstructor } from './app';
 import ErrorComponent from './components/error';
 import ExecContext from './exec_context';
-import { Activate } from './message';
+import { Activate, Deactivate, Refresh } from './message';
 
 export type ViewWrapperProps<M> = {
   childProps: M & { emit: (...args: any[]) => any },
@@ -20,6 +20,7 @@ export type ViewWrapperProps<M> = {
  * This component looks for `execContext` in its parent context, and propagates
  * itself with `execContext` in its children's contexts.
  */
+
 export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps<M>, any> {
 
   public static contextTypes = { execContext: PropTypes.object };
@@ -46,6 +47,13 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
     return { execContext: this.execContext };
   }
 
+  public dispatchLifecycleMessage<M extends MessageConstructor>(message: M, props: any): boolean {
+    const { container, childProps } = props;
+    return container.accepts(message) &&
+      this.execContext.dispatch(new message(omit(['emit'], childProps), { shallow: true })) &&
+      true;
+  }
+
   public componentWillMount() {
     const parent = this.context.execContext;
     const { container, delegate, env, childProps } = this.props;
@@ -57,15 +65,24 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
     this.execContext = new ExecContext({ env, parent, container, delegate });
     this.unsubscribe = this.execContext.subscribe(this.setState.bind(this));
 
-    if (container.accepts(Activate)) {
-      this.execContext.dispatch(new Activate(omit(['emit'], childProps), { shallow: true }));
+    if (this.dispatchLifecycleMessage(Activate, this.props)) {
       return;
     }
+
     const state = this.execContext.state();
     this.setState(this.execContext.push(merge(state, pick(keys(state), childProps))));
   }
 
+  public componentWillReceiveProps(nextProps) {
+    const nextChildProps = nextProps.childProps;
+    const { childProps } = this.props;
+    if (!equals(nextChildProps, childProps)) {
+      this.dispatchLifecycleMessage(Refresh, nextProps);
+    }
+  }
+
   public componentWillUnmount() {
+    this.dispatchLifecycleMessage(Deactivate, this.props);
     this.unsubscribe();
   }
 
