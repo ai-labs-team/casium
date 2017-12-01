@@ -1,20 +1,23 @@
 import {
   always, complement as not, curry, defaultTo, filter, flatten, flip, identity, is, map,
-  merge, mergeAll, nth, pick, pickBy, pipe, prop, values
+  merge, mergeAll, mergeDeepWithKey, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
-import { Container, DelegateDef, Environment, PARENT } from './app';
+import { Container, DelegateDef, Environment, environment, PARENT } from './app';
 import { cmdName, intercept, notify } from './dev_tools';
 import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
-import { constructMessage, isEmittable, result, safeStringify, suppressEvent, toEmittable, trap } from './util';
+import {
+  constructMessage, isEmittable, mergeMap, result, safeStringify,
+  suppressEvent, toEmittable, trap
+} from './util';
 
 const update = flip(merge);
 
 export type ExecContextDef<M> = {
   env: Environment,
   container: Container<M>,
-  parent?: ExecContext<M> | { relay: () => object, state?: (cfg?: object) => object, path?: string[] },
+  parent?: ExecContext<M>,
   delegate?: DelegateDef
 };
 
@@ -198,11 +201,29 @@ export default class ExecContext<M> {
       return fn.call(this, ...args);
     };
 
+    const mergedContainerEnv = (parent?: ExecContext<M>, env?: Environment): Environment => {
+      if (!env && !parent) {
+        throw new Error('YOU ARE A MORON');
+      }
+
+      if (!env) {
+        return parent.env;
+      }
+
+      if (!parent || !parent.env) {
+        return env;
+      }
+
+      const mergeEffects = (k, l, r) => k === 'effects' ? mergeMap(l, r) : r;
+      return environment(mergeDeepWithKey(mergeEffects, parent.env.identity(), env.identity()));
+    };
+
+    const contaierEnv = mergedContainerEnv(parent, env);
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
-    const errLog = error(env.log);
+    const errLog = error(contaierEnv.log);
 
     freeze(assign(this, {
-      env,
+      env: contaierEnv,
       path,
       parent,
       errLog,
