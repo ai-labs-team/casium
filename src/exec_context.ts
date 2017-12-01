@@ -202,7 +202,7 @@ export default class ExecContext<M> {
     };
 
     const mergedContainerEnv = (parent?: ExecContext<M>, env?: Environment): Environment => {
-      if (!env && !parent) {
+      if (!env && (!parent || !parent.env)) {
         throw new Error('YOU ARE A MORON');
       }
 
