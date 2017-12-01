@@ -1,6 +1,6 @@
 {
   "name": "casium",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Casium — An application architecture for React",
   "module": "./dist/index.js",
   "types": "./dist/main.d.ts",
@@ -8,6 +8,7 @@
   "author": "Nate Abele <natea@advisorinnovationlabs.com>",
   "license": "Apache-2.0",
   "scripts": {
+    "peers": "install-self-peers -- --ignore-scripts",
     "build": "tsc",
     "lint": "NODE_ENV=test tslint -c tslint.json \"src/**/*.{js,ts,jsx,tsx}\"",
     "lint-fix": "NODE_ENV=test tslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
@@ -15,16 +16,8 @@
     "unit-test": "mocha --opts test/mocha.opts",
     "debug-tests": "node --inspect-brk ./node_modules/.bin/mocha --opts test/mocha.opts"
   },
-  "dependencies": {
-    "axios": "0.16.1",
-    "deep-freeze-strict": "1.1.1",
-    "history": "4.6.1",
-    "js-cookie": "2.1.4",
-    "prop-types": "15.5.10",
-    "ramda": "0.24.0",
-    "react": "15.5.4"
-  },
   "devDependencies": {
+    "@team-griffin/install-self-peers": "^1.1.1",
     "@types/chai": "^4.0.4",
     "@types/enzyme": "^3.1.1",
     "@types/mocha": "^2.2.43",
@@ -68,5 +61,14 @@
     "webpack": "3.5.6",
     "webpack-merge": "4.1.0",
     "webpack-node-externals": "1.6.0"
+  },
+  "peerDependencies": {
+    "axios": "^0.16.0",
+    "deep-freeze-strict": "^1.1.0",
+    "history": "^4.6.0",
+    "js-cookie": "^2.1.4",
+    "prop-types": "^15.0.0-0 || ^16.0.0-0",
+    "ramda": "^0.25.0",
+    "react": "^15.0.0-0"
   }
 }
