@@ -3,7 +3,7 @@ import {
   merge, mergeAll, mergeDeepWithKey, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
-import { Container, DelegateDef, Environment, environment, PARENT } from './app';
+import { Container, defaultLog, DelegateDef, Environment, environment, PARENT } from './app';
 import { cmdName, intercept, notify } from './dev_tools';
 import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
@@ -232,12 +232,12 @@ export default class ExecContext<M> {
       return environment(mergeDeepWithKey(mergeEffects, parent.env.identity(), env.identity()));
     };
 
-    const contaierEnv = mergeContainerEnv(parent, env);
+    const containerEnv = mergeContainerEnv(parent, env);
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
-    const errLog = contaierEnv && error(contaierEnv.log) || (() => { });
+    const errLog = containerEnv && error(containerEnv.log) || defaultLog;
 
     freeze(assign(this, {
-      env: contaierEnv,
+      env: containerEnv,
       path,
       parent,
       errLog,

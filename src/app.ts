@@ -119,6 +119,8 @@ const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
   evolve({ update: toMap, name: defaultTo('UnknownContainer') })
 );
 
+export const defaultLog = console.error.bind(console);
+
 /**
  * Creates an execution environment for a container by providing it with a set of effects
  * handlers and an effect dispatcher.
@@ -138,7 +140,7 @@ const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
 export const environment = ({ effects, dispatcher, log = null, stateManager = null }: EnvDef): Environment => ({
   dispatcher: dispatcher(effects),
   identity: () => ({ effects, dispatcher, log, stateManager }),
-  log: log || console.error.bind(console),
+  log: log || defaultLog,
   stateManager: stateManager || (() => new StateManager())
 });
 
