@@ -10,7 +10,7 @@ export type ViewWrapperProps<M> = {
   childProps: M & { emit: (...args: any[]) => any },
   container: Container<M>,
   delegate: DelegateDef,
-  env: Environment
+  env?: Environment
 };
 
 /**
@@ -34,10 +34,10 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
       PropTypes.string,
       PropTypes.symbol,
       PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.number, PropTypes.string]))]),
-    env: PropTypes.object.isRequired
+    env: PropTypes.object,
   };
 
-  public static defaultProps = { delegate: null };
+  public static defaultProps = { delegate: null, env: null };
 
   public execContext?: ExecContext<M> = null;
 
