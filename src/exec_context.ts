@@ -162,7 +162,6 @@ const configureStateManager = (container: Container<any>, env?: Environment): St
   if (!env) {
     return intercept(new StateManager());
   }
-
   return intercept(env.stateManager(container));
 };
 
@@ -203,13 +202,7 @@ export default class ExecContext<M> {
     const run = (msg, [next, cmds]) => {
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds });
       this.push(next);
-
-      if (!this.env && cmds) {
-        throw new Error(`An environment is needed in ${this.container.name}`
-                        + `or one of it's parents in order to dispatch commands`);
-      }
-
-      return env ? this.commands(msg, cmds) : true;
+      return this.env ? this.commands(msg, cmds) : true;
     };
 
     const initialize = fn => (...args) => {
