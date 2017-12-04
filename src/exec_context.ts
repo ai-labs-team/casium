@@ -152,6 +152,21 @@ const dispatchAction = (exec, messageTypes, action) => {
 };
 
 /**
+ * Checks if an enviroment has been boud to a container, and if not returns a default
+ * StateManager
+ *
+ * @param  {Object} container the container being bound to an ExecContext
+ * @param  {Object} env the Environment bound to a container
+ */
+const configureStateManager = (container: Container<any>, env?: Environment): StateManager => {
+  if (!env) {
+    return intercept(new StateManager());
+  }
+
+  return intercept(env.stateManager(container));
+};
+
+/**
  * Binds together a container, environment, and a state manager to handles message execution within a
  * container.
  *
@@ -179,7 +194,7 @@ export default class ExecContext<M> {
   protected getState: (params?: object) => object = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
-    const stateMgr = parent && parent.state ? null : intercept(env.stateManager(container));
+    const stateMgr = parent && parent.state ? null : configureStateManager(container, env);
     const delegatePath = (delegate && delegate !== PARENT) ? delegate : [];
     const path = (parent && parent.path || []).concat(delegatePath as string[]);
     const { freeze, assign } = Object;
@@ -187,6 +202,7 @@ export default class ExecContext<M> {
 
     const run = (msg, [next, cmds]) => {
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds });
+      console.log(next);
       this.push(next);
       return this.commands(msg, cmds);
     };
@@ -220,7 +236,7 @@ export default class ExecContext<M> {
 
     const contaierEnv = mergeContainerEnv(parent, env);
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
-    const errLog = error(contaierEnv.log);
+    const errLog = contaierEnv && error(contaierEnv.log) || (() => { });
 
     freeze(assign(this, {
       env: contaierEnv,
@@ -250,9 +266,6 @@ export default class ExecContext<M> {
   }
 
   public commands(msg, cmds) {
-    if (!this.env) {
-      throw new Error('An enviroment is needed in order to dispatch commands');
-    }
     return pipe(flatten, filter(is(Object)), map(
       trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.dispatch)))
     ))(cmds);
