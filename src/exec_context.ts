@@ -15,7 +15,7 @@ import {
 const update = flip(merge);
 
 export type ExecContextDef<M> = {
-  env: Environment,
+  env?: Environment,
   container: Container<M>,
   parent?: ExecContext<M>,
   delegate?: DelegateDef
@@ -201,9 +201,9 @@ export default class ExecContext<M> {
       return fn.call(this, ...args);
     };
 
-    const mergedContainerEnv = (parent?: ExecContext<M>, env?: Environment): Environment => {
+    const mergeContainerEnv = (parent?: ExecContext<M>, env?: Environment): Environment => {
       if (!env && (!parent || !parent.env)) {
-        throw new Error('YOU ARE A MORON');
+        return null;
       }
 
       if (!env) {
@@ -218,7 +218,7 @@ export default class ExecContext<M> {
       return environment(mergeDeepWithKey(mergeEffects, parent.env.identity(), env.identity()));
     };
 
-    const contaierEnv = mergedContainerEnv(parent, env);
+    const contaierEnv = mergeContainerEnv(parent, env);
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
     const errLog = error(contaierEnv.log);
 
@@ -250,6 +250,9 @@ export default class ExecContext<M> {
   }
 
   public commands(msg, cmds) {
+    if (!this.env) {
+      throw new Error('An enviroment is needed in order to dispatch commands');
+    }
     return pipe(flatten, filter(is(Object)), map(
       trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.dispatch)))
     ))(cmds);
