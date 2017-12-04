@@ -152,7 +152,7 @@ const dispatchAction = (exec, messageTypes, action) => {
 };
 
 /**
- * Checks if an enviroment has been bound to a container, and if not returns a default
+ * Checks if an enviroment has been boud to a container, and if not returns a default
  * StateManager
  *
  * @param  {Object} container the container being bound to an ExecContext
@@ -234,7 +234,7 @@ export default class ExecContext<M> {
 
     const containerEnv = mergeContainerEnv(parent, env);
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
-    const errLog = containerEnv && error(containerEnv.log) || defaultLog;
+    const errLog = containerEnv && error(containerEnv.log) || error(defaultLog);
 
     freeze(assign(this, {
       env: containerEnv,
