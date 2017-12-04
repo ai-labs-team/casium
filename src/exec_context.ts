@@ -152,7 +152,7 @@ const dispatchAction = (exec, messageTypes, action) => {
 };
 
 /**
- * Checks if an enviroment has been boud to a container, and if not returns a default
+ * Checks if an enviroment has been bound to a container, and if not returns a default
  * StateManager
  *
  * @param  {Object} container the container being bound to an ExecContext
