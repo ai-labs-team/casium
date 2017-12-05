@@ -4,8 +4,9 @@ import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { always, merge, pipe } from 'ramda';
 import * as React from 'react';
-import { container, environment, PARENT, withEnvironment } from './app';
+import { container, PARENT, withEnvironment } from './app';
 import dispatcher from './dispatcher';
+import { environment } from './environment';
 import Message, { Activate, Deactivate, Refresh } from './message';
 import { constructMessage, isEmittable } from './util';
 

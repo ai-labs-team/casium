@@ -3,8 +3,9 @@ import {
   merge, mergeAll, mergeDeepWithKey, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
-import { Container, defaultEnv, DelegateDef, Environment, environment, PARENT } from './app';
+import { Container, DelegateDef, PARENT } from './app';
 import { cmdName, intercept, notify } from './dev_tools';
+import { defaultEnv, environment, Environment } from './environment';
 import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
 import {

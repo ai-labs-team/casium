@@ -5,8 +5,7 @@ import {
 
 import * as React from 'react';
 
-import dispatcher from './dispatcher';
-import effects from './effects';
+import { defaultEnv, environment, Environment } from './environment';
 import ExecContext from './exec_context';
 import Message from './message';
 import StateManager from './state_manager';
@@ -47,20 +46,6 @@ export type UpdateResult<M> = M |
 
 export type GenericObject = { [key: string]: any };
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
-
-export type EnvDefPartial = {
-  dispatcher: any;
-  log?: (...args: any[]) => any | void;
-  stateManager?: (container?: Container<GenericObject>) => StateManager;
-};
-
-export type EnvDef = EnvDefPartial & {
-  effects: UpdateMap<GenericObject>;
-};
-
-export type Environment = EnvDefPartial & {
-  identity: () => EnvDef;
-};
 
 export type DelegateDef = symbol | string;
 export type UpdateMapDef<M> = [MessageConstructor, Updater<M>][];
@@ -119,31 +104,6 @@ const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
   evolve({ update: toMap, name: defaultTo('UnknownContainer') })
 );
 
-export const defaultLog = console.error.bind(console);
-
-/**
- * Creates an execution environment for a container by providing it with a set of effects
- * handlers and an effect dispatcher.
- *
- * @param  {Map} effects A map pairing message classes to handler functions for that
- *               message type.
- * @param  {Function} dispatcher A message dispatcher function that accepts an effect
- *               map, a container message dispatcher (i.e. the update loop), and a message to
- *               dispatch. Should be a curried function.
- * @param  {Function} stateManager A function that returns a new instance of `StateManager`.
- * @return {Object} Returns an environment object with the following functions:
- *         - dispatcher: A curried function that accepts a container-bound message dispatcher
- *           and a command message
- *         - stateManager: A StateManager factory function
- *         - identity: Returns the parameters that created this environment
- */
-export const environment = ({ effects, dispatcher, log = null, stateManager = null }: EnvDef): Environment => ({
-  dispatcher: dispatcher(effects),
-  identity: () => ({ effects, dispatcher, log, stateManager }),
-  log: log || defaultLog,
-  stateManager: stateManager || (() => new StateManager())
-});
-
 /**
  * Creates a container bound to an execution environment
  *
@@ -158,8 +118,6 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
   ctr = assign(mapDef(def), fns);
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 });
-
-export const defaultEnv: Environment = environment({ effects, dispatcher });
 
 /**
  * Creates a new container.
@@ -209,7 +167,7 @@ export const defaultEnv: Environment = environment({ effects, dispatcher });
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
-export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(null);
+export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(defaultEnv);
 
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
