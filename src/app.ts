@@ -87,7 +87,7 @@ const toMap = ifElse(is(Array), constructN(1, Map as any), id);
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView: <M>(defs: { env?: Environment, container: Container<M> }) => any = ({ env, container }) => {
+const wrapView: <M>(defs: { env: Environment, container: Container<M> }) => any = ({ env, container }) => {
   /* eslint-disable react/prop-types */
   const mergeProps = pipe(defaultTo({}), omit(['delegate']));
 
