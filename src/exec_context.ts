@@ -1,20 +1,23 @@
 import {
   always, complement as not, curry, defaultTo, filter, flatten, flip, identity, is, map,
-  merge, mergeAll, nth, pick, pickBy, pipe, prop, values
+  merge, mergeAll, mergeDeepWithKey, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
-import { Container, DelegateDef, Environment, PARENT } from './app';
+import { Container, defaultLog, DelegateDef, Environment, environment, PARENT } from './app';
 import { cmdName, intercept, notify } from './dev_tools';
 import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
-import { constructMessage, isEmittable, result, safeStringify, suppressEvent, toEmittable, trap } from './util';
+import {
+  constructMessage, isEmittable, mergeMap, result, safeStringify,
+  suppressEvent, toEmittable, trap
+} from './util';
 
 const update = flip(merge);
 
 export type ExecContextDef<M> = {
-  env: Environment,
+  env?: Environment,
   container: Container<M>,
-  parent?: ExecContext<M> | { relay: () => object, state?: (cfg?: object) => object, path?: string[] },
+  parent?: ExecContext<M>,
   delegate?: DelegateDef
 };
 
@@ -149,6 +152,20 @@ const dispatchAction = (exec, messageTypes, action) => {
 };
 
 /**
+ * Checks if an enviroment has been boud to a container, and if not returns a default
+ * StateManager
+ *
+ * @param  {Object} container the container being bound to an ExecContext
+ * @param  {Object} env the Environment bound to a container
+ */
+const configureStateManager = (container: Container<any>, env?: Environment): StateManager => {
+  if (!env) {
+    return intercept(new StateManager());
+  }
+  return intercept(env.stateManager(container));
+};
+
+/**
  * Binds together a container, environment, and a state manager to handles message execution within a
  * container.
  *
@@ -176,7 +193,7 @@ export default class ExecContext<M> {
   protected getState: (params?: object) => object = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
-    const stateMgr = parent && parent.state ? null : intercept(env.stateManager(container));
+    const stateMgr = parent && parent.state ? null : configureStateManager(container, env);
     const delegatePath = (delegate && delegate !== PARENT) ? delegate : [];
     const path = (parent && parent.path || []).concat(delegatePath as string[]);
     const { freeze, assign } = Object;
@@ -185,7 +202,7 @@ export default class ExecContext<M> {
     const run = (msg, [next, cmds]) => {
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds });
       this.push(next);
-      return this.commands(msg, cmds);
+      return this.env ? this.commands(msg, cmds) : true;
     };
 
     const initialize = fn => (...args) => {
@@ -198,11 +215,29 @@ export default class ExecContext<M> {
       return fn.call(this, ...args);
     };
 
+    const mergeContainerEnv = (parent?: ExecContext<M>, env?: Environment): Environment => {
+      if (!env && (!parent || !parent.env)) {
+        return null;
+      }
+
+      if (!env) {
+        return parent.env;
+      }
+
+      if (!parent || !parent.env) {
+        return env;
+      }
+
+      const mergeEffects = (k, l, r) => k === 'effects' ? mergeMap(l, r) : r;
+      return environment(mergeDeepWithKey(mergeEffects, parent.env.identity(), env.identity()));
+    };
+
+    const containerEnv = mergeContainerEnv(parent, env);
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
-    const errLog = error(env.log);
+    const errLog = containerEnv && error(containerEnv.log) || error(defaultLog);
 
     freeze(assign(this, {
-      env,
+      env: containerEnv,
       path,
       parent,
       errLog,

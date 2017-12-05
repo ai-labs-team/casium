@@ -102,7 +102,7 @@ const toMap = ifElse(is(Array), constructN(1, Map as any), id);
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView: <M>(defs: { env: Environment, container: Container<M> }) => any = ({ env, container }) => {
+const wrapView: <M>(defs: { env?: Environment, container: Container<M> }) => any = ({ env, container }) => {
   /* eslint-disable react/prop-types */
   const mergeProps = pipe(defaultTo({}), omit(['delegate']));
 
@@ -118,6 +118,8 @@ const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
   merge({ name: null, update: [] }),
   evolve({ update: toMap, name: defaultTo('UnknownContainer') })
 );
+
+export const defaultLog = console.error.bind(console);
 
 /**
  * Creates an execution environment for a container by providing it with a set of effects
@@ -138,7 +140,7 @@ const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
 export const environment = ({ effects, dispatcher, log = null, stateManager = null }: EnvDef): Environment => ({
   dispatcher: dispatcher(effects),
   identity: () => ({ effects, dispatcher, log, stateManager }),
-  log: log || console.error.bind(console),
+  log: log || defaultLog,
   stateManager: stateManager || (() => new StateManager())
 });
 
@@ -157,7 +159,7 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 });
 
-const defaultEnv: Environment = environment({ effects, dispatcher });
+export const defaultEnv: Environment = environment({ effects, dispatcher });
 
 /**
  * Creates a new container.
@@ -207,7 +209,7 @@ const defaultEnv: Environment = environment({ effects, dispatcher });
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
-export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(defaultEnv);
+export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(null);
 
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
