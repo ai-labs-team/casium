@@ -3,18 +3,24 @@ import {
   merge, mergeAll, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
-import { Container, DelegateDef, Environment, PARENT } from './app';
+import { Container, DelegateDef, PARENT } from './app';
 import { cmdName, intercept, notify } from './dev_tools';
+import { Environment, mergeEnv } from './environment';
 import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
-import { constructMessage, isEmittable, result, safeStringify, suppressEvent, toEmittable, trap } from './util';
+import {
+  constructMessage, isEmittable, result, safeStringify,
+  suppressEvent, toEmittable, trap
+} from './util';
 
 const update = flip(merge);
 
+export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) => object, path?: string[] };
+
 export type ExecContextDef<M> = {
-  env: Environment,
+  env?: Environment,
   container: Container<M>,
-  parent?: ExecContext<M> | { relay: () => object, state?: (cfg?: object) => object, path?: string[] },
+  parent?: ExecContext<M> | ExecContextPartial,
   delegate?: DelegateDef
 };
 
@@ -176,7 +182,8 @@ export default class ExecContext<M> {
   protected getState: (params?: object) => object = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
-    const stateMgr = parent && parent.state ? null : intercept(env.stateManager(container));
+    const containerEnv = mergeEnv(parent, env);
+    const stateMgr = parent && parent.state ? null : intercept(containerEnv.stateManager(container));
     const delegatePath = (delegate && delegate !== PARENT) ? delegate : [];
     const path = (parent && parent.path || []).concat(delegatePath as string[]);
     const { freeze, assign } = Object;
@@ -199,10 +206,10 @@ export default class ExecContext<M> {
     };
 
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
-    const errLog = error(env.log);
+    const errLog = error(containerEnv.log);
 
     freeze(assign(this, {
-      env,
+      env: containerEnv,
       path,
       parent,
       errLog,

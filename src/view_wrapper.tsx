@@ -1,8 +1,9 @@
 import * as PropTypes from 'prop-types';
 import { equals, keys, merge, mergeAll, omit, pick } from 'ramda';
 import * as React from 'react';
-import { Container, DelegateDef, Environment, MessageConstructor } from './app';
+import { Container, DelegateDef, MessageConstructor } from './app';
 import ErrorComponent from './components/error';
+import { Environment } from './environment';
 import ExecContext from './exec_context';
 import { Activate, Deactivate, Refresh } from './message';
 
@@ -10,7 +11,7 @@ export type ViewWrapperProps<M> = {
   childProps: M & { emit: (...args: any[]) => any },
   container: Container<M>,
   delegate: DelegateDef,
-  env: Environment
+  env?: Environment
 };
 
 /**
@@ -34,7 +35,7 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
       PropTypes.string,
       PropTypes.symbol,
       PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.number, PropTypes.string]))]),
-    env: PropTypes.object.isRequired
+    env: PropTypes.object.isRequired,
   };
 
   public static defaultProps = { delegate: null };

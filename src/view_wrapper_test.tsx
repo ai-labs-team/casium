@@ -2,10 +2,13 @@
 import { expect } from 'chai';
 import { mount, shallow } from 'enzyme';
 import 'mocha';
-import { always, merge } from 'ramda';
+import { always, merge, pipe } from 'ramda';
 import * as React from 'react';
-import { container, PARENT } from './app';
-import { Activate, Deactivate, Refresh } from './message';
+import { container, PARENT, withEnvironment } from './app';
+import dispatcher from './dispatcher';
+import { environment } from './environment';
+import Message, { Activate, Deactivate, Refresh } from './message';
+import { constructMessage, isEmittable } from './util';
 
 describe('ViewWrapper', () => {
 
@@ -130,6 +133,58 @@ describe('ViewWrapper', () => {
         expect(wrapper.html().includes('"bar":true')).to.be.true;
         wrapper.setProps({ foo: false });
         expect(wrapper.html().includes('"bar":false')).to.be.true;
+      });
+
+    });
+  });
+
+  describe('Commands', () => {
+
+    describe('ContainerA environment should casscade to ContainerB', () => {
+      let ContainerB, ContainerA;
+
+      beforeEach(() => {
+        class TestCommand extends Message {
+          public static expects = {
+            result: isEmittable,
+          };
+        }
+
+        class TestCommandResult extends Message {}
+
+        const testEffect = new Map([
+          [TestCommand, ({ result }, dispatch) => pipe(constructMessage(result), dispatch)({})]
+        ]);
+
+        ContainerB = container({
+          init: state => merge(state, { bar: true }),
+          delegate: PARENT,
+          update: [
+            [Activate, state => [
+              merge(state, { bar: false }),
+              new TestCommand({ result: TestCommandResult }),
+            ]],
+            [TestCommandResult, state => merge(state, { bar: true })]
+          ],
+          view: () => (
+            <span></span>
+          ),
+        });
+
+        ContainerA = withEnvironment(environment({ effects: testEffect, dispatcher }),{
+          init: always({ foo: true }),
+          view: state => (
+            <span>
+              <div>{JSON.stringify(state)}</div>
+              <ContainerB />
+            </span>
+          ),
+        });
+      });
+
+      it('updates bar from true to false, and then back to true', () => {
+        const wrapper = mount(<ContainerA />);
+        expect(wrapper.html().includes('"bar":true')).to.be.true;
       });
 
     });
