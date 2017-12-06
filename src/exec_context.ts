@@ -1,24 +1,26 @@
 import {
   always, complement as not, curry, defaultTo, filter, flatten, flip, identity, is, map,
-  merge, mergeAll, mergeDeepWithKey, nth, pick, pickBy, pipe, prop, values
+  merge, mergeAll, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
 import { Container, DelegateDef, PARENT } from './app';
 import { cmdName, intercept, notify } from './dev_tools';
-import { defaultEnv, environment, Environment } from './environment';
+import { Environment, mergeEnv } from './environment';
 import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
 import {
-  constructMessage, isEmittable, mergeMap, result, safeStringify,
+  constructMessage, isEmittable, result, safeStringify,
   suppressEvent, toEmittable, trap
 } from './util';
 
 const update = flip(merge);
 
+export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) => object, path?: string[] };
+
 export type ExecContextDef<M> = {
   env?: Environment,
   container: Container<M>,
-  parent?: ExecContext<M> | { relay: () => object, state?: (cfg?: object) => object, path?: string[] },
+  parent?: ExecContext<M> | ExecContextPartial,
   delegate?: DelegateDef
 };
 
@@ -180,22 +182,7 @@ export default class ExecContext<M> {
   protected getState: (params?: object) => object = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
-    const mergeContainerEnv = (
-      parent?: ExecContext<M> | { relay: () => object, state?: (cfg?: object) => object, path?: string[] },
-      env?: Environment): Environment => {
-      if (env && parent instanceof ExecContext) {
-        const mergeEffects = (k, l, r) => k === 'effects' ? mergeMap(l, r) : r;
-        return environment(mergeDeepWithKey(mergeEffects, parent.env.identity(), env.identity()));
-      } else if (!env && parent instanceof ExecContext) {
-        return parent.env;
-      } else if (env && !parent) {
-        return env;
-      }
-
-      return defaultEnv;
-    };
-
-    const containerEnv = mergeContainerEnv(parent, env);
+    const containerEnv = mergeEnv(parent, env);
     const stateMgr = parent && parent.state ? null : intercept(containerEnv.stateManager(container));
     const delegatePath = (delegate && delegate !== PARENT) ? delegate : [];
     const path = (parent && parent.path || []).concat(delegatePath as string[]);

@@ -1,7 +1,10 @@
+import { mergeDeepWithKey } from 'ramda';
 import { Container, GenericObject, UpdateMap } from './app';
 import dispatcher from './dispatcher';
 import effects from './effects';
+import ExecContext, { ExecContextPartial } from './exec_context';
 import StateManager from './state_manager';
+import { mergeMap } from './util';
 
 export type EnvDefPartial = {
   dispatcher: any;
@@ -39,5 +42,20 @@ export const environment = ({ effects, dispatcher, log = null, stateManager = nu
   log: log || console.error.bind(console),
   stateManager: stateManager || (() => new StateManager())
 });
+
+export const mergeEnv = <M>(
+  parent?: ExecContext<M> | ExecContextPartial,
+  env?: Environment): Environment => {
+  if (env && parent instanceof ExecContext) {
+    const mergeEffects = (k, l, r) => k === 'effects' ? mergeMap(l, r) : r;
+    return environment(mergeDeepWithKey(mergeEffects, parent.env.identity(), env.identity()));
+  } else if (!env && parent instanceof ExecContext) {
+    return parent.env;
+  } else if (env && !parent) {
+    return env;
+  }
+
+  return defaultEnv;
+};
 
 export const defaultEnv: Environment = environment({ effects, dispatcher });
