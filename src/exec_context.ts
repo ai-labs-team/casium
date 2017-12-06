@@ -18,7 +18,7 @@ const update = flip(merge);
 export type ExecContextDef<M> = {
   env?: Environment,
   container: Container<M>,
-  parent?: ExecContext<M>,
+  parent?: ExecContext<M> | { relay: () => object, state?: (cfg?: object) => object, path?: string[] },
   delegate?: DelegateDef
 };
 
@@ -180,11 +180,13 @@ export default class ExecContext<M> {
   protected getState: (params?: object) => object = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
-    const mergeContainerEnv = (parent?: ExecContext<M>, env?: Environment): Environment => {
-      if (env && parent) {
+    const mergeContainerEnv = (
+      parent?: ExecContext<M> | { relay: () => object, state?: (cfg?: object) => object, path?: string[] },
+      env?: Environment): Environment => {
+      if (env && parent instanceof ExecContext) {
         const mergeEffects = (k, l, r) => k === 'effects' ? mergeMap(l, r) : r;
         return environment(mergeDeepWithKey(mergeEffects, parent.env.identity(), env.identity()));
-      } else if (!env && parent) {
+      } else if (!env && parent instanceof ExecContext) {
         return parent.env;
       } else if (env && !parent) {
         return env;
