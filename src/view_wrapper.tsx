@@ -1,5 +1,5 @@
 import * as PropTypes from 'prop-types';
-import { equals, keys, merge, omit, pick } from 'ramda';
+import { equals, keys, merge, mergeAll, omit, pick } from 'ramda';
 import * as React from 'react';
 import { Container, DelegateDef, MessageConstructor } from './app';
 import ErrorComponent from './components/error';
@@ -99,7 +99,7 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
     }
     // tslint:disable-next-line:variable-name
     const Child = (this.props.container as any).view, ctx = this.execContext;
-    const props = merge([this.props.childProps, ctx.state(), { emit: ctx.emit.bind(ctx), relay: ctx.relay() }]);
+    const props = mergeAll([this.props.childProps, ctx.state(), { emit: ctx.emit.bind(ctx), relay: ctx.relay() }]);
     return <Child {...props} />;
   }
 }
