@@ -60,7 +60,7 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
     const { container, delegate, env, childProps } = this.props;
 
     if (delegate && !parent) {
-      const msg = `Attempting to delegate state property '${delegate}' with no parent container`;
+      const msg = `Attempting to delegate state property '${delegate.toString()}' with no parent container`;
       console.warn(msg); // tslint:disable-line:no-console
     }
     this.execContext = new ExecContext({ env, parent, container, delegate });
