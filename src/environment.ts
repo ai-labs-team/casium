@@ -46,12 +46,12 @@ export const environment = ({ effects, dispatcher, log = null, stateManager = nu
 export const mergeEnv = <M>(
   parent?: ExecContext<M> | ExecContextPartial,
   env?: Environment): Environment => {
-  if (env && parent instanceof ExecContext) {
+  if (env && parent instanceof ExecContext && parent.env) {
     const mergeEffects = (k, l, r) => k === 'effects' ? mergeMap(l, r) : r;
     return environment(mergeDeepWithKey(mergeEffects, parent.env.identity(), env.identity()));
-  } else if (!env && parent instanceof ExecContext) {
+  } else if (!env && parent instanceof ExecContext && parent.env) {
     return parent.env;
-  } else if (env && !parent) {
+  } else if (env && (!parent || !(parent instanceof ExecContext) || !parent.env)) {
     return env;
   }
 
