@@ -1,6 +1,6 @@
 {
   "name": "casium",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "description": "Casium — An application architecture for React",
   "module": "./dist/index.js",
   "types": "./dist/main.d.ts",
@@ -13,13 +13,13 @@
     "lint": "NODE_ENV=test tslint -c tslint.json \"src/**/*.{js,ts,jsx,tsx}\"",
     "lint-fix": "NODE_ENV=test tslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
-    "unit-test": "mocha --opts test/mocha.opts",
+    "unit-test": "mocha -r test/setup.js --opts test/mocha.opts",
     "debug-tests": "node --inspect-brk ./node_modules/.bin/mocha --opts test/mocha.opts"
   },
   "devDependencies": {
     "@team-griffin/install-self-peers": "^1.1.1",
     "@types/chai": "^4.0.4",
-    "@types/enzyme": "^3.1.1",
+    "@types/enzyme": "^3.1.6",
     "@types/mocha": "^2.2.43",
     "@types/ramda": "types/npm-ramda",
     "awesome-typescript-loader": "^3.2.3",
@@ -39,7 +39,8 @@
     "chai": "4.1.2",
     "chai-enzyme": "0.8.0",
     "cheerio": "1.0.0-rc.1",
-    "enzyme": "2.9.1",
+    "enzyme": "3.2.0",
+    "enzyme-adapter-react-16": "^1.1.1",
     "eslint-import-resolver-webpack": "0.8.3",
     "eslint-plugin-import": "2.7.0",
     "eslint-plugin-jsx-a11y": "5.1.1",
@@ -49,9 +50,9 @@
     "jss": "8.1.0",
     "mocha": "^4.0.1",
     "mocha-webpack": "^1.0.0-rc.1",
-    "react-addons-test-utils": "15.3.2",
-    "react-dom": "15.5.4",
-    "react-test-renderer": "15.5.4",
+    "react-addons-test-utils": "15.6.2",
+    "react-dom": "16.2.0",
+    "react-test-renderer": "16.2.0",
     "ts-node": "^3.3.0",
     "tslint": "^5.7.0",
     "tslint-config-airbnb": "^5.3.0",
@@ -69,6 +70,6 @@
     "js-cookie": "^2.1.4",
     "prop-types": "^15.0.0-0 || ^16.0.0-0",
     "ramda": "^0.25.0",
-    "react": "^15.0.0-0"
+    "react": "^16.2.0"
   }
 }
