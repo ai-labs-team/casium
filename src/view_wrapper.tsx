@@ -74,11 +74,11 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
     this.setState(this.execContext.push(merge(state, pick(keys(state), childProps))));
   }
 
-  public componentWillReceiveProps(nextProps) {
-    const nextChildProps = nextProps.childProps;
+  public componentDidUpdate(prevProps) {
+    const prevChildProps = prevProps.childProps;
     const { childProps } = this.props;
-    if (!equals(nextChildProps, childProps)) {
-      this.dispatchLifecycleMessage(Refresh, nextProps);
+    if (!equals(prevChildProps, childProps)) {
+      this.dispatchLifecycleMessage(Refresh, this.props);
     }
   }
 
