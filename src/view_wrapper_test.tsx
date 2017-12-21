@@ -66,7 +66,7 @@ describe('ViewWrapper', () => {
     });
   });
 
-  describe('componentWillRecieveProps', () => {
+  describe('componentDidUpdate', () => {
 
     describe('updating prop values with refresh', () => {
       let Container;
