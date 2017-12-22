@@ -51,7 +51,7 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
   public dispatchLifecycleMessage<M extends MessageConstructor>(message: M, props: any): boolean {
     const { container, childProps } = props;
     return container.accepts(message) &&
-      this.execContext.dispatch(new message(omit(['emit'], childProps), { shallow: true })) &&
+      this.execContext.dispatch(new message(omit(['emit', 'children'], childProps), { shallow: true })) &&
       true;
   }
 
@@ -77,7 +77,8 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
   public componentDidUpdate(prevProps) {
     const prevChildProps = prevProps.childProps;
     const { childProps } = this.props;
-    if (!equals(prevChildProps, childProps)) {
+    const omitChildren = omit(['children']);
+    if (!equals(omitChildren(prevChildProps), omitChildren(childProps))) {
       this.dispatchLifecycleMessage(Refresh, this.props);
     }
   }
