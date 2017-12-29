@@ -132,9 +132,9 @@ export const suppressEvent = (e) => {
  * Logs a value with a message and returns the value. Good for inspecting complex
  * function pipelines.
  */
-export const log = curry((msg, val) => {
+export const log = curry((msg, val, ...extra) => {
   // tslint:disable-next-line:no-console
-  console.log(msg, val);
+  console.log(msg, val, ...extra);
   return val;
 });
 
