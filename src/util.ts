@@ -1,9 +1,9 @@
 import * as deepFreeze from 'deep-freeze-strict';
 import {
   all, always, both, cond, curry, either as or,
-  equals, evolve, filter, flip, identity, ifElse, is, isEmpty, keys, map,
+  equals, evolve, filter, flip, identity, ifElse, is, keys, map,
   merge as _merge, mergeDeepWith, not, nth, pickAll, pipe,
-  propEq, reduce, union, values, when, zipWith
+  propEq, reduce, union, when, zipWith
 } from 'ramda';
 import * as React from 'react';
 import Message from './message';
@@ -62,22 +62,6 @@ export const getValidationFailures = spec => pipe(
   keys
 );
 
-const isFunctionWithNumArgs = numArgs => both(is(Function), propEq('length', numArgs));
-
-const isObjectAndAllValuesAreFunctions = both(
-  is(Object),
-  pipe(values, all(is(Function)))
-);
-
-const assertValid = (fnMap, component) => {
-  const spec = { fnMap: isObjectAndAllValuesAreFunctions, component: isFunctionWithNumArgs(1) };
-  const failures = getValidationFailures(spec)({ fnMap, component });
-
-  if (!isEmpty(failures)) {
-    throw new TypeError('withProps failed on types: ' + failures.join(', '));
-  }
-};
-
 /**
  * Accepts an object of key/function pairs and a pure component function, and returns
  * a new pure component that will generate and inject new props into the pass component
@@ -101,10 +85,11 @@ const assertValid = (fnMap, component) => {
  * <Name first="Bob" last="Loblaw" />
  * ```
  */
-export const withProps = curry((fnMap, component, props) => {
-  assertValid(fnMap, component);
-  return component(merge(props, map(fn => fn(props), fnMap)));
-});
+export const withProps = curry((
+  fnMap: { [key: string]: (props: object) => any },
+  component: React.StatelessComponent<any>,
+  props: object
+): JSX.Element => component(merge(props, map(fn => fn(props), fnMap))));
 
 export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
   const mapProps = (child) => {
@@ -148,7 +133,9 @@ export const log = curry((msg, val) => {
  *                    of calling the wrapped function, otherwise returns the result of
  *                    passing the error (along with the arguments) to the handler.
  */
-export const trap = curry((handler, fn) => ((...args) => {
+export type Trap = <T, U>(handler: (...args: any[]) => T, fn: (...args: any[]) => U) => (...args: any[]) => T | U;
+
+export const trap: Trap = curry((handler, fn) => ((...args) => {
   try {
     return fn(...args);
   } catch (e) {
