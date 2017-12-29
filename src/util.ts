@@ -145,21 +145,20 @@ export const trap: Trap = curry((handler, fn) => ((...args) => {
 
 /**
  * Converts a value to an array... unless it's already an array, then it just returns it.
- * @type {[type]}
  */
 export const toArray = ifElse(is(Array), identity, Array.of);
 
 /**
  * Helper functions for reducing effect Maps into a single Map.
  */
-export const mergeMap = (first: Map<any, any>, second: Map<any, any>): Map<any, any> =>
-  new Map<any, any>(Array.from(first).concat(Array.from(second)));
+export const mergeMap = <T, U>(first: Map<T, U>, second: Map<T, U>): Map<T, U> =>
+  new Map(Array.from(first).concat(Array.from(second) as [T, U][]));
 export const mergeMaps = reduce(mergeMap, new Map([]));
 
 /**
- * Safely stringifies a JavaScript value to prevent error-ception in `app.result()`.
+ * Safely stringifies a JavaScript value to prevent error-ception.
  */
-export const safeStringify = (val) => {
+export const safeStringify = (val: any): string => {
   try {
     return JSON.stringify(val);
   } catch (e) {
@@ -170,7 +169,7 @@ export const safeStringify = (val) => {
 /**
  * Safely parses a JavaScript value to prevent error-ception.
  */
-export const safeParse = (val) => {
+export const safeParse = (val: string): any | undefined => {
   try {
     return JSON.parse(val);
   } catch (e) {
