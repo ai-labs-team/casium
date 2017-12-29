@@ -87,34 +87,6 @@ describe('util', () => {
       };
       expect(() => withProps(fnMap, defaultComponent, defaultProps)).to.not.throw();
     });
-
-    it('fails when fnMap is object with undefined field', () => {
-      expect(() => withProps({ a: undefined }, defaultComponent, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
-    it('fails when fnMap is object with null field', () => {
-      expect(() => withProps({ a: null }, defaultComponent, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
-    it('fails when fnMap is object with one string field and some function fields', () => {
-      const fnMap = {
-        a: () => {},
-        b: 'GOTCHA! (not)',
-        c: one => (one),
-      };
-      expect(() => withProps(fnMap, defaultComponent, defaultProps)).to.throw(TypeError, /withProps failed/);
-    });
-
-    it('fails when fnMap is object with one string field', () => {
-      const fnMap = {
-        a: 'GOTCHA! (not)',
-      };
-      expect(() => withProps(fnMap, defaultComponent, defaultProps)).to.throw(TypeError, /withProps failed/);
-    });
   });
 
   describe('isMessage', () => {
