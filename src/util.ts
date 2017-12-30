@@ -1,9 +1,9 @@
 import * as deepFreeze from 'deep-freeze-strict';
 import {
   all, always, both, cond, curry, either as or,
-  equals, evolve, filter, flip, identity, ifElse, is, isEmpty, keys, map,
+  equals, evolve, filter, flip, identity, ifElse, is, keys, map,
   merge as _merge, mergeDeepWith, not, nth, pickAll, pipe,
-  propEq, reduce, union, values, when, zipWith
+  propEq, reduce, union, when, zipWith
 } from 'ramda';
 import * as React from 'react';
 import Message from './message';
@@ -62,22 +62,6 @@ export const getValidationFailures = spec => pipe(
   keys
 );
 
-const isFunctionWithNumArgs = numArgs => both(is(Function), propEq('length', numArgs));
-
-const isObjectAndAllValuesAreFunctions = both(
-  is(Object),
-  pipe(values, all(is(Function)))
-);
-
-const assertValid = (fnMap, component) => {
-  const spec = { fnMap: isObjectAndAllValuesAreFunctions, component: isFunctionWithNumArgs(1) };
-  const failures = getValidationFailures(spec)({ fnMap, component });
-
-  if (!isEmpty(failures)) {
-    throw new TypeError('withProps failed on types: ' + failures.join(', '));
-  }
-};
-
 /**
  * Accepts an object of key/function pairs and a pure component function, and returns
  * a new pure component that will generate and inject new props into the pass component
@@ -101,10 +85,11 @@ const assertValid = (fnMap, component) => {
  * <Name first="Bob" last="Loblaw" />
  * ```
  */
-export const withProps = curry((fnMap, component, props) => {
-  assertValid(fnMap, component);
-  return component(merge(props, map(fn => fn(props), fnMap)));
-});
+export const withProps = curry((
+  fnMap: { [key: string]: (props: object) => any },
+  component: React.StatelessComponent<any>,
+  props: object
+): JSX.Element => component(merge(props, map(fn => fn(props), fnMap))));
 
 export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
   const mapProps = (child) => {
@@ -148,7 +133,9 @@ export const log = curry((msg, val, ...extra) => {
  *                    of calling the wrapped function, otherwise returns the result of
  *                    passing the error (along with the arguments) to the handler.
  */
-export const trap = curry((handler, fn) => ((...args) => {
+export type Trap = <T, U>(handler: (...args: any[]) => T, fn: (...args: any[]) => U) => (...args: any[]) => T | U;
+
+export const trap: Trap = curry((handler, fn) => ((...args) => {
   try {
     return fn(...args);
   } catch (e) {
@@ -158,21 +145,20 @@ export const trap = curry((handler, fn) => ((...args) => {
 
 /**
  * Converts a value to an array... unless it's already an array, then it just returns it.
- * @type {[type]}
  */
 export const toArray = ifElse(is(Array), identity, Array.of);
 
 /**
  * Helper functions for reducing effect Maps into a single Map.
  */
-export const mergeMap = (first: Map<any, any>, second: Map<any, any>): Map<any, any> =>
-  new Map<any, any>(Array.from(first).concat(Array.from(second)));
+export const mergeMap = <T, U>(first: Map<T, U>, second: Map<T, U>): Map<T, U> =>
+  new Map(Array.from(first).concat(Array.from(second) as [T, U][]));
 export const mergeMaps = reduce(mergeMap, new Map([]));
 
 /**
- * Safely stringifies a JavaScript value to prevent error-ception in `app.result()`.
+ * Safely stringifies a JavaScript value to prevent error-ception.
  */
-export const safeStringify = (val) => {
+export const safeStringify = (val: any): string => {
   try {
     return JSON.stringify(val);
   } catch (e) {
@@ -183,7 +169,7 @@ export const safeStringify = (val) => {
 /**
  * Safely parses a JavaScript value to prevent error-ception.
  */
-export const safeParse = (val) => {
+export const safeParse = (val: string): any | undefined => {
   try {
     return JSON.parse(val);
   } catch (e) {

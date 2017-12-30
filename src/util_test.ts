@@ -75,42 +75,6 @@ describe('util', () => {
       expect(() => withProps(defaultFnMap, defaultComponent, defaultProps)).to.not.throw();
     });
 
-    it('fails when fnMap is null', () => {
-      expect(() => withProps(null, defaultComponent, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
-    it('fails when fnMap is a truthy non-object', () => {
-      expect(() => withProps(true, defaultComponent, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
-    it('fails when component is null', () => {
-      expect(() => withProps(defaultFnMap, null, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
-    it('fails when component is a function that takes 0 arguments', () => {
-      expect(() => withProps(defaultFnMap, () => {}, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
-    it('fails when component is a function that takes 2 arguments', () => {
-      expect(() => withProps(defaultFnMap, (one, two) => one + two, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
-    it('fails when component is an object with length property', () => {
-      expect(() => withProps(defaultFnMap, { length: 1 }, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
     it('succeeds when fnMap is empty object', () => {
       expect(() => withProps({}, defaultComponent, defaultProps)).to.not.throw();
     });
@@ -122,34 +86,6 @@ describe('util', () => {
         c: one => one,
       };
       expect(() => withProps(fnMap, defaultComponent, defaultProps)).to.not.throw();
-    });
-
-    it('fails when fnMap is object with undefined field', () => {
-      expect(() => withProps({ a: undefined }, defaultComponent, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
-    it('fails when fnMap is object with null field', () => {
-      expect(() => withProps({ a: null }, defaultComponent, defaultProps)).to.throw(
-        TypeError, /withProps failed/
-      );
-    });
-
-    it('fails when fnMap is object with one string field and some function fields', () => {
-      const fnMap = {
-        a: () => {},
-        b: 'GOTCHA! (not)',
-        c: one => (one),
-      };
-      expect(() => withProps(fnMap, defaultComponent, defaultProps)).to.throw(TypeError, /withProps failed/);
-    });
-
-    it('fails when fnMap is object with one string field', () => {
-      const fnMap = {
-        a: 'GOTCHA! (not)',
-      };
-      expect(() => withProps(fnMap, defaultComponent, defaultProps)).to.throw(TypeError, /withProps failed/);
     });
   });
 

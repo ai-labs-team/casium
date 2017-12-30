@@ -175,7 +175,7 @@ export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironm
  */
 export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer<M> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
-  const env = environment({ dispatcher: nthArg(2), effects: new Map([]), log: () => {}, stateManager });
+  const env = environment({ dispatcher: nthArg(2), effects: new Map(), log: () => {}, stateManager });
 
   const container = Object.assign(mapDef(ctr.identity()), { accepts: always(true) }) as Container<M>;
   const parent: any = opts.relay ? { relay: always(opts.relay) } : null;

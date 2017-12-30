@@ -1,5 +1,5 @@
 import {
-  always, complement as not, curry, defaultTo, filter, flatten, flip, identity, is, map,
+  always, complement as not, concat, curry, defaultTo, filter, flatten, flip, identity, is, map,
   merge, mergeAll, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
@@ -10,7 +10,7 @@ import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
 import {
   constructMessage, isEmittable, result, safeStringify,
-  suppressEvent, toEmittable, trap
+  suppressEvent, toArray, toEmittable, trap
 } from './util';
 
 const update = flip(merge);
@@ -174,7 +174,7 @@ export default class ExecContext<M> {
   public stateMgr?: StateManager = null;
   public parent?: ExecContext<M> = null;
   public delegate?: DelegateDef = null;
-  public path: string[] = [];
+  public path: (string | symbol)[] = [];
   public env?: Environment = null;
   public container?: Container<any> = null;
 
@@ -184,8 +184,7 @@ export default class ExecContext<M> {
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
     const containerEnv = mergeEnv(parent, env);
     const stateMgr = parent && parent.state ? null : intercept(containerEnv.stateManager(container));
-    const delegatePath = (delegate && delegate !== PARENT) ? delegate : [];
-    const path = (parent && parent.path || []).concat(delegatePath as string[]);
+    const path = concat(parent && parent.path || [], (delegate && delegate !== PARENT) ? toArray(delegate) : []);
     const { freeze, assign } = Object;
     let hasInitialized = false;
 
@@ -256,12 +255,7 @@ export default class ExecContext<M> {
   }
 
   /**
-   * Converts a container's relay map definition to a function that return's the container's relay value.
-   *
-   * @param  {Object} The `name: () => value` relay map for a container
-   * @param  {Object} The container to map
-   * @return {Object} Converts the relay map to `name: value` by passing the state and parent relay values
-   *         to each relay function.
+   * Returns the container's relay value, based on the state of the current model.
    */
   public relay() {
     const { parent, container } = this, inherited = parent && parent.relay() || {};
