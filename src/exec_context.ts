@@ -8,7 +8,7 @@ import { cmdName, intercept, notify } from './dev_tools';
 import { Environment, mergeEnv } from './environment';
 import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
-import { result, safeStringify, suppressEvent, trap, toArray } from './util';
+import { result, safeStringify, suppressEvent, toArray, trap } from './util';
 
 const update = flip(merge);
 
@@ -274,9 +274,9 @@ export default class ExecContext<M> {
    */
   public emit(msgType) {
     const em = Message.toEmittable(msgType),
-          [type, extra] = em,
-          ctr = this.container.name,
-          name = type && type.name || '??';
+      [type, extra] = em,
+      ctr = this.container.name,
+      name = type && type.name || '??';
 
     if (handlesMsg(this)(em)) {
       return pipe(defaultTo({}), mapEvent(extra), Message.construct(type), this.dispatch);
