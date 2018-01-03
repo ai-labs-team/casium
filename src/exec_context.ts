@@ -1,14 +1,14 @@
 import {
-  always, complement as not, curry, defaultTo, filter, flatten, flip, identity, is, map,
+  always, complement as not, concat, curry, defaultTo, filter, flatten, flip, identity, is, map,
   merge, mergeAll, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
 import { Container, DelegateDef, PARENT } from './app';
 import { cmdName, intercept, notify } from './dev_tools';
 import { Environment, mergeEnv } from './environment';
-import Message, { MessageConstructor } from './message';
+import Message from './message';
 import StateManager, { Callback, Config } from './state_manager';
-import { result, safeStringify, suppressEvent, trap } from './util';
+import { result, safeStringify, suppressEvent, trap, toArray } from './util';
 
 const update = flip(merge);
 
