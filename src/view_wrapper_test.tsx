@@ -8,7 +8,6 @@ import { container, PARENT, withEnvironment } from './app';
 import dispatcher from './dispatcher';
 import { environment } from './environment';
 import Message, { Activate, Deactivate, Refresh } from './message';
-import { constructMessage, isEmittable } from './util';
 
 describe('ViewWrapper', () => {
 
@@ -21,7 +20,7 @@ describe('ViewWrapper', () => {
         Container = container({
           init: always({ foo: true }),
           update: [],
-          view: ({ foo }) => <span>foo: { foo ? 'true' : 'false' }</span>,
+          view: ({ foo }: any) => <span>foo: { foo ? 'true' : 'false' }</span>,
         });
       });
 
@@ -41,7 +40,7 @@ describe('ViewWrapper', () => {
       let Container;
 
       beforeEach(() => {
-        Container = container({
+        Container = container<any>({
           init: always({ foo: true, notFoo: false }),
           update: [
             [Activate, (state, { foo }) => merge(state, { notFoo: foo === false })],
@@ -103,7 +102,7 @@ describe('ViewWrapper', () => {
       let ContainerB, ContainerA;
 
       beforeEach(() => {
-        ContainerB = container({
+        ContainerB = container<any>({
           init: state => merge(state, { bar: true }),
           delegate: PARENT,
           update: [
@@ -114,7 +113,7 @@ describe('ViewWrapper', () => {
           ),
         });
 
-        ContainerA = container({
+        ContainerA = container<any>({
           init: always({ foo: true }),
           update: [
             [Refresh, (state, { foo }) => merge(state, { foo })],
@@ -145,15 +144,13 @@ describe('ViewWrapper', () => {
 
       beforeEach(() => {
         class TestCommand extends Message {
-          public static expects = {
-            result: isEmittable,
-          };
+          public static expects = { result: Message.isEmittable };
         }
 
         class TestCommandResult extends Message {}
 
         const testEffect = new Map([
-          [TestCommand, ({ result }, dispatch) => pipe(constructMessage(result), dispatch)({})]
+          [TestCommand, ({ result }, dispatch) => pipe(Message.construct(result), dispatch)({})]
         ]);
 
         ContainerB = container({
@@ -171,7 +168,7 @@ describe('ViewWrapper', () => {
           ),
         });
 
-        ContainerA = withEnvironment(environment({ effects: testEffect, dispatcher }),{
+        ContainerA = withEnvironment(environment({ effects: testEffect, dispatcher }), {
           init: always({ foo: true }),
           view: state => (
             <span>

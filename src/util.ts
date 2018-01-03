@@ -1,16 +1,9 @@
 import * as deepFreeze from 'deep-freeze-strict';
 import {
-  all, always, both, cond, curry, either as or,
-  equals, evolve, filter, flip, identity, ifElse, is, keys, map,
-  merge as _merge, mergeDeepWith, not, nth, pickAll, pipe,
-  propEq, reduce, union, when, zipWith
+  all, always, both, cond, curry, equals, evolve, filter, flip, identity, ifElse, is, keys, map,
+  merge as _merge, mergeDeepWith, not, nth, pickAll, pipe, propEq, reduce, union, when, zipWith
 } from 'ramda';
 import * as React from 'react';
-import Message from './message';
-
-export interface Constructor {
-  new(): Message;
-}
 
 /**
  * Deep-merges two objects, overwriting left-hand keys with right-hand keys, unionizing arrays.
@@ -176,26 +169,6 @@ export const safeParse = (val: string): any | undefined => {
     return undefined;
   }
 };
-
-/**
- * Checks that a value is a message constructor.
- */
-export const isMessage = val => val && val.prototype && val.prototype instanceof Message;
-
-/**
- * Checks that a value is emittable as a message constructor
- */
-export const isEmittable = or(isMessage, both(is(Array), pipe(nth(0), isMessage)));
-
-export const toEmittable = ifElse(is(Array), identity, type => [type, {}]);
-
-/**
- * Maps an emittable and message data to a message.
- */
-export const constructMessage = curry((msgType: Constructor, data) => {
-  const [type, extra] = toEmittable(msgType);
-  return new type(merge(data, extra));
-});
 
 /**
  * Freezes a value if that value is an object, otherwise return.

@@ -4,7 +4,7 @@ import { compareOffsets } from './util';
 const inList = flip(contains);
 
 export type Callback = (...args: any[]) => any;
-export type Config = object & { path: (string | symbol)[] };
+export type Config = object & { path: string[] };
 
 export default class StateManager {
 

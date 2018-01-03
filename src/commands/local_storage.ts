@@ -1,9 +1,8 @@
 import { complement as not, is, isNil } from 'ramda';
 import Message from '../message';
-import { isEmittable } from '../util';
 
 export class Read extends Message {
-  public static expects = { key: is(String), result: isEmittable };
+  public static expects = { key: is(String), result: Message.isEmittable };
 }
 
 export class Write extends Message {

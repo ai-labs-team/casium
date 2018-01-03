@@ -1,17 +1,14 @@
 import {
-  always, complement as not, concat, curry, defaultTo, filter, flatten, flip, identity, is, map,
+  always, complement as not, curry, defaultTo, filter, flatten, flip, identity, is, map,
   merge, mergeAll, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
 import { Container, DelegateDef, PARENT } from './app';
 import { cmdName, intercept, notify } from './dev_tools';
 import { Environment, mergeEnv } from './environment';
-import Message from './message';
+import Message, { MessageConstructor } from './message';
 import StateManager, { Callback, Config } from './state_manager';
-import {
-  constructMessage, isEmittable, result, safeStringify,
-  suppressEvent, toArray, toEmittable, trap
-} from './util';
+import { result, safeStringify, suppressEvent, trap } from './util';
 
 const update = flip(merge);
 
@@ -43,7 +40,7 @@ const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, e
  *         the given constructor, otherwise false.
  */
 const handlesMsg = <M>(exec: ExecContext<M>) =>
-  pipe(toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), exec));
+  pipe(Message.toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), exec));
 
 /**
  * Formats a message for showing an error that occurred as the result of a command
@@ -126,7 +123,7 @@ const mapEvent = curry((extra: object & { preventDefault?: boolean }, event: Eve
  * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
  */
 const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
-  const unhandled = pipe(prop('data'), values, filter(isEmittable), filter(not(handlesMsg(exec) as any)));
+  const unhandled = pipe(prop('data'), values, filter(Message.isEmittable), filter(not(handlesMsg(exec) as any)));
   const msgs = unhandled(cmd);
 
   if (!msgs.length) {
@@ -250,7 +247,7 @@ export default class ExecContext<M> {
     return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
   }
 
-  public state(cfg?: object) {
+  public state(cfg?: object): object {
     return this.getState(cfg);
   }
 
@@ -276,10 +273,13 @@ export default class ExecContext<M> {
    * Returns a function that wraps a DOM event in a message and dispatches it to the attached container.
    */
   public emit(msgType) {
-    const em = toEmittable(msgType), [type, extra] = em, ctr = this.container.name, name = type && type.name || '??';
+    const em = Message.toEmittable(msgType),
+          [type, extra] = em,
+          ctr = this.container.name,
+          name = type && type.name || '??';
 
     if (handlesMsg(this)(em)) {
-      return pipe(defaultTo({}), mapEvent(extra), constructMessage(type), this.dispatch);
+      return pipe(defaultTo({}), mapEvent(extra), Message.construct(type), this.dispatch);
     }
     throw new Error(`Messages of type '${name}' are not handled by container '${ctr}' or any of its ancestors`);
   }

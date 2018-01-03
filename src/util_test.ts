@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import 'mocha';
 import { is } from 'ramda';
-import Message from './message';
-import { getValidationFailures, isMessage, merge, withProps } from './util';
+import { getValidationFailures, merge, withProps } from './util';
 
 describe('util', () => {
 
@@ -86,31 +85,6 @@ describe('util', () => {
         c: one => one,
       };
       expect(() => withProps(fnMap, defaultComponent, defaultProps)).to.not.throw();
-    });
-  });
-
-  describe('isMessage', () => {
-
-    it('does not throw on invalid values', () => {
-      expect(() => isMessage(false)).not.to.throw;
-      expect(() => isMessage(null)).not.to.throw;
-      expect(() => isMessage(undefined)).not.to.throw;
-    });
-
-    it('accepts a Message', () => {
-      class CoolMessage extends Message {}
-      expect(isMessage(CoolMessage)).to.be.true;
-    });
-
-    it('does not accept a function', () => {
-      expect(isMessage(() => {})).to.be.false;
-    });
-
-    it('accepts a subclass of a subclass of a subclass of Message', () => {
-      class SubClass extends Message {}
-      class SubSubClass extends SubClass {}
-      class SubSubSubClass extends SubSubClass {}
-      expect(isMessage(SubSubSubClass)).to.be.true;
     });
   });
 
