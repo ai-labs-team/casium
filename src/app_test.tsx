@@ -5,7 +5,7 @@ import { always, evolve, identity, inc, map, mergeAll, not, pick, pipe, prop, un
 import * as React from 'react';
 import { commands, Container, container, isolate, mapModel, message, seq } from './app';
 import Message from './message';
-import StateManager from './state_manager';
+import StateManager from './runtime/state_manager';
 
 describe('app', () => {
 

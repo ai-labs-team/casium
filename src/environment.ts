@@ -2,9 +2,9 @@ import { mergeDeepWithKey } from 'ramda';
 import { Container } from './app';
 import dispatcher from './dispatcher';
 import effects from './effects';
-import ExecContext, { ExecContextPartial } from './exec_context';
 import { MessageConstructor } from './message';
-import StateManager from './state_manager';
+import ExecContext, { ExecContextPartial } from './runtime/exec_context';
+import StateManager from './runtime/state_manager';
 import { mergeMap } from './util';
 
 export type EnvDefPartial = {

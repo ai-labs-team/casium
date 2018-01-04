@@ -4,8 +4,8 @@ import * as React from 'react';
 import { Container, DelegateDef, Emitter } from './app';
 import ErrorComponent from './components/error';
 import { Environment } from './environment';
-import ExecContext from './exec_context';
 import { Activate, Deactivate, MessageConstructor, Refresh } from './message';
+import ExecContext from './runtime/exec_context';
 
 export type ViewWrapperProps<M> = {
   childProps: M & { emit: Emitter };
