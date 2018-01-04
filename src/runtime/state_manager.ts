@@ -1,5 +1,5 @@
 import { both, contains, defaultTo, flip, lensPath, nth, pipe, set, view, when } from 'ramda';
-import { compareOffsets } from './util';
+import { compareOffsets } from '../util';
 
 const inList = flip(contains);
 

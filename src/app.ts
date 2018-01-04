@@ -6,9 +6,9 @@ import {
 import * as React from 'react';
 
 import { defaultEnv, environment, Environment } from './environment';
-import ExecContext from './exec_context';
 import Message, { MessageConstructor } from './message';
-import StateManager from './state_manager';
+import ExecContext from './runtime/exec_context';
+import StateManager from './runtime/state_manager';
 import { result } from './util';
 import ViewWrapper from './view_wrapper';
 

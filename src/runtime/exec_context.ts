@@ -3,12 +3,12 @@ import {
   merge, mergeAll, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
-import { Container, DelegateDef, PARENT } from './app';
-import { cmdName, intercept, notify } from './dev_tools';
-import { Environment, mergeEnv } from './environment';
-import Message from './message';
+import { Container, DelegateDef, PARENT } from '../app';
+import { cmdName, intercept, notify } from '../dev_tools';
+import { Environment, mergeEnv } from '../environment';
+import Message, { MessageConstructor } from '../message';
+import { result, safeStringify, suppressEvent, toArray, trap } from '../util';
 import StateManager, { Callback, Config } from './state_manager';
-import { result, safeStringify, suppressEvent, toArray, trap } from './util';
 
 const update = flip(merge);
 
@@ -224,17 +224,22 @@ export default class ExecContext<M> {
   }
 
   public dispatch(message: Message) {
-    return trap(this.errLog(null), (msg) => {
-      const msgType = msg.constructor, updater = this.container.update.get(msgType);
-      const dispatch = (this.dispatch as any), { parent, getState, relay } = this;
-      return updater ? dispatch.run(msg, mapMessage(updater, getState(), msg, relay())) : parent.dispatch(msg);
-    })(checkMessage(this, message));
+    return trap(this.errLog(null), this.internalDispatch.bind(this))(checkMessage(this, message));
   }
 
   public commands(msg, cmds) {
     return pipe(flatten, filter(is(Object)), map(
       trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.dispatch)))
     ))(cmds);
+  }
+
+  /**
+   * Updates the subscriptions attached to the container.
+   */
+  public subscriptions(model: M) {
+    const ctr = this.container;
+    // tslint:disable
+    console.log('Subscriptions', !ctr.subscriptions && [] || ctr.subscriptions(model, this.relay()));
   }
 
   public push(val, config?: object & { path: any[] }) {
@@ -282,5 +287,11 @@ export default class ExecContext<M> {
       return pipe(defaultTo({}), mapEvent(extra), Message.construct(type), this.dispatch);
     }
     throw new Error(`Messages of type '${name}' are not handled by container '${ctr}' or any of its ancestors`);
+  }
+
+  private internalDispatch(msg: Message) {
+    const { dispatch, parent, getState, relay } = this;
+    const msgType = msg.constructor as MessageConstructor, updater = this.container.update.get(msgType);
+    return updater ? (dispatch as any).run(msg, mapMessage(updater, getState(), msg, relay())) : parent.dispatch(msg);
   }
 }
