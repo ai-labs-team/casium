@@ -1,12 +1,37 @@
 import * as deepFreeze from 'deep-freeze-strict';
-import { is, isEmpty, join, merge } from 'ramda';
+import { both, curry, either as or, identity, ifElse, is, isEmpty, join, merge, nth, pipe } from 'ramda';
 import { getValidationFailures, safeStringify } from './util';
+
+export interface MessageConstructor {
+  new(data?: any, opts?: any): Message;
+}
 
 export type MessageOptions = {
   shallow?: boolean;
 };
 
 export default class Message {
+  // tslint:disable member-ordering
+
+  /**
+   * Maps an emittable and message data to a message.
+   */
+  public static construct = curry((msgType: MessageConstructor, data: any) => {
+    const [type, extra] = Message.toEmittable(msgType);
+    return new type(merge(data, extra));
+  });
+
+  /**
+   * Checks that a value is a message constructor.
+   */
+  public static is = val => val && val.prototype && val.prototype instanceof Message;
+
+  /**
+   * Checks that a value is emittable as a message constructor
+   */
+  public static isEmittable = or(Message.is, both(is(Array), pipe(nth(0), Message.is)));
+
+  public static toEmittable = ifElse(is(Array), identity, type => [type, {}]);
 
   protected static defaults: object = {};
   protected static expects: object = {};

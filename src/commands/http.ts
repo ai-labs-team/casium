@@ -1,6 +1,5 @@
 import { either as or, is, keys } from 'ramda';
 import Message from '../message';
-import { isEmittable } from '../util';
 
 export class Request extends Message {
   public static defaults = { method: null, url: null, data: {}, params: {}, headers: {} };
@@ -10,8 +9,8 @@ export class Request extends Message {
     data: or(is(String), is(Object)),
     params: is(Object),
     headers: is(Object),
-    result: isEmittable,
-    error: isEmittable,
+    result: Message.isEmittable,
+    error: Message.isEmittable,
   };
 }
 

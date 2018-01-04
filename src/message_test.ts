@@ -5,6 +5,31 @@ import Message from './message';
 
 describe('Message', () => {
 
+  describe('is', () => {
+
+    it('does not throw on invalid values', () => {
+      expect(() => Message.is(false)).not.to.throw;
+      expect(() => Message.is(null)).not.to.throw;
+      expect(() => Message.is(undefined)).not.to.throw;
+    });
+
+    it('accepts a Message', () => {
+      class CoolMessage extends Message {}
+      expect(Message.is(CoolMessage)).to.be.true;
+    });
+
+    it('does not accept a function', () => {
+      expect(Message.is(() => {})).to.be.false;
+    });
+
+    it('accepts a subclass of a subclass of a subclass of Message', () => {
+      class SubClass extends Message {}
+      class SubSubClass extends SubClass {}
+      class SubSubSubClass extends SubSubClass {}
+      expect(Message.is(SubSubSubClass)).to.be.true;
+    });
+  });
+
   describe('#constructor', () => {
     it('populates data on init', () => {
       expect((new Message({ foo: true })).data).to.deep.equal({ foo: true });
