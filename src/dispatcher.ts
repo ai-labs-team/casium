@@ -1,5 +1,21 @@
-import { curry, flip, is } from 'ramda';
-import Message from './message';
+import { cond, curry, flip, is, pipe, prop, T } from 'ramda';
+import Message, { MessageConstructor } from './message';
+import StateManager from './runtime/state_manager';
+import { EffectType, ProcessState } from './subscription';
+import { safeStringify } from './util';
+
+export type EffectMap = Map<MessageConstructor, (...args: any[]) => any>;
+
+const unbox = cond([
+  [is(Message), pipe(prop('data'), Array.of)],
+  [is(ProcessState), Array.of],
+  [T, () => null]
+]);
+
+export const handler = curry((effects: EffectMap, msg: Message) => {
+  const key = msg && msg[EffectType] || (msg.constructor as MessageConstructor);
+  return effects.get(key) && key || Array.from(effects.keys()).find(flip(is)(msg));
+});
 
 /**
  * Dispatches command messages.
@@ -10,16 +26,15 @@ import Message from './message';
  * @param {Message} msg A command message to dispatch
  * @return {*} returns the result of calling the effect handler
  */
-export default curry((effects, dispatch, msg) => {
-  const ctor = msg && msg.constructor;
+export default curry((effects: EffectMap, stateManager: StateManager, dispatch, msg: Message) => {
+  const ctor = msg && msg.constructor, data = unbox(msg), callback = effects.get(handler(effects, msg));
 
-  if (!is(Message, msg)) {
-    throw new Error(`Message of type '${ctor && ctor.name}' is not an instance of Message`);
+  if (!data) {
+    throw new Error(`Message '${safeStringify(msg)}' of type '${ctor && ctor.name}' is not acceptable`);
   }
-  const handler = effects.get(ctor) || effects.get(Array.from(effects.keys()).find(flip(is)(msg)));
+  if (!callback) {
+    throw new Error(`Unhandled command or subscription message type '${ctor && ctor.name}'`);
+  }
 
-  if (!handler) {
-    throw new Error(`Unhandled command message type '${ctor && ctor.name}'`);
-  }
-  return handler(msg.data, dispatch);
+  return callback(...unbox(msg), dispatch, stateManager);
 });

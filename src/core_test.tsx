@@ -3,7 +3,7 @@ import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { always, evolve, identity, inc, map, mergeAll, not, pick, pipe, prop, unapply } from 'ramda';
 import * as React from 'react';
-import { commands, Container, container, isolate, mapModel, message, seq } from './app';
+import { commands, container, isolate, mapModel, message, seq } from './core';
 import Message from './message';
 import StateManager from './runtime/state_manager';
 
@@ -69,6 +69,9 @@ describe('app', () => {
         new Cmd({ bar: false }),
       ]);
     });
+
+    describe('subscriptions', () => {
+    });
   });
 
   describe('emit()', () => {
@@ -122,7 +125,7 @@ describe('app', () => {
       class CheckboxEvent extends Message {}
       const log = [];
 
-      const ctr: Container<any> = isolate(container({
+      const ctr = isolate(container<any>({
         init: always({ checked: false }),
 
         update: [

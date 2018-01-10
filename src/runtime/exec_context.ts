@@ -1,25 +1,25 @@
 import {
-  always, complement as not, concat, curry, defaultTo, filter, flatten, flip, identity, is, map,
+  always, complement as not, concat, curry, defaultTo, equals, filter, flatten, identity, is, keys, map,
   merge, mergeAll, nth, pick, pickBy, pipe, prop, values
 } from 'ramda';
 
-import { Container, DelegateDef, PARENT } from '../app';
+import { Container, DelegateDef, PARENT } from '../core';
 import { cmdName, intercept, notify } from '../dev_tools';
-import { Environment, mergeEnv } from '../environment';
+import * as Environment from '../environment';
 import Message, { MessageConstructor } from '../message';
-import { result, safeStringify, suppressEvent, toArray, trap } from '../util';
+import { mapResult, replace, safeStringify, suppressEvent, toArray, trap } from '../util';
 import StateManager, { Callback, Config } from './state_manager';
-
-const update = flip(merge);
 
 export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) => object, path?: string[] };
 
 export type ExecContextDef<M> = {
-  env?: Environment,
+  env?: Environment.Environment,
   container: Container<M>,
   parent?: ExecContext<M> | ExecContextPartial,
   delegate?: DelegateDef
 };
+
+const { assign, freeze } = Object;
 
 /**
  * Walk up a container hierarchy looking for a value.
@@ -85,7 +85,7 @@ const checkMessage = (exec, msg) => {
  */
 const attachStore = (config, container) => {
   const getState = () => (config.key && prop(config.key) || identity)(config.store.getState());
-  config.store.subscribe(pipe(getState, update(container.state()), container.push));
+  config.store.subscribe(pipe(getState, replace(container.state()), container.push));
   return getState();
 };
 
@@ -100,7 +100,7 @@ const mapMessage = (handler, state, msg, relay) => {
   if (!handler || !is(Function, handler)) {
     throw new TypeError(`Invalid handler for message type '${msg.constructor.name}'`);
   }
-  return result(handler(state, msg.data, relay));
+  return mapResult(handler(state, msg.data, relay));
 };
 
 /**
@@ -146,9 +146,16 @@ const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
  * @param  {Object} action A Redux action
  */
 const dispatchAction = (exec, messageTypes, action) => {
-  if (action && action.type && messageTypes[action.type]) {
-    exec.dispatch(new messageTypes[action.type](action));
-  }
+  action && action.type && messageTypes[action.type] && exec.dispatch(new messageTypes[action.type](action));
+};
+
+/**
+ * Groups subscriptions by the effect handler constructor.
+ */
+const groupEffects = keyFn => (prev, current) => {
+  const key = keyFn(current);
+  prev.set(key, concat(prev.get(key) || [], [current]));
+  return prev;
 };
 
 /**
@@ -166,28 +173,34 @@ const dispatchAction = (exec, messageTypes, action) => {
  */
 export default class ExecContext<M> {
 
+  /**
+   * Returns true
+   */
+  public static isPartial: (ctx: ExecContext<any> | ExecContextPartial) => boolean = pipe(keys, equals(['relay']));
+
   public id: string = Math.round(Math.random() * Math.pow(2, 50)).toString();
 
-  public stateMgr?: StateManager = null;
   public parent?: ExecContext<M> = null;
   public delegate?: DelegateDef = null;
   public path: (string | symbol)[] = [];
-  public env?: Environment = null;
+  public env?: Environment.Environment = null;
   public container?: Container<any> = null;
 
   protected errLog;
   protected getState: (params?: object) => object = null;
+  protected stateMgr?: StateManager = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
-    const containerEnv = mergeEnv(parent, env);
-    const stateMgr = parent && parent.state ? null : intercept(containerEnv.stateManager(container));
+    const ctrEnv = Environment.merge(parent, env);
     const path = concat(parent && parent.path || [], (delegate && delegate !== PARENT) ? toArray(delegate) : []);
-    const { freeze, assign } = Object;
     let hasInitialized = false;
 
     const run = (msg, [next, cmds]) => {
-      notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds });
+      const subs = !container.subscriptions && [] || toArray(container.subscriptions(next, this.relay()));
+      const stateMgr = this.getStateManager(), grouped = subs.reduce(groupEffects(ctrEnv.handler), new Map());
+      notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
+      stateMgr.run(this, grouped, this.env.dispatcher(stateMgr, this.dispatch));
       return this.commands(msg, cmds);
     };
 
@@ -196,31 +209,27 @@ export default class ExecContext<M> {
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
         const initial = hasStore ? attachStore(container.attach, container) : (this.getState() || {});
-        run(null, result(container.init(initial, parent && parent.relay() || {}) || {}));
+        run(null, mapResult(container.init(initial, parent && parent.relay() || {}) || {}));
       }
       return fn.call(this, ...args);
     };
 
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
-    const errLog = error(containerEnv.log);
+    const errLog = error(ctrEnv.log);
+    const isRoot: boolean = !parent || ExecContext.isPartial(parent);
+    const stateMgr: StateManager = isRoot ? intercept(ctrEnv.stateManager(container)) : null;
+    const getState = stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path });
 
     freeze(assign(this, {
-      env: containerEnv,
-      path,
-      parent,
-      errLog,
-      delegate,
-      stateMgr,
-      container,
-      getState: stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path }),
+      env: ctrEnv, path, parent, errLog, delegate, stateMgr, container, getState,
       ...wrapInit(['dispatch', 'push', 'subscribe', 'state', 'relay'])(this.constructor.prototype),
     }));
 
-    Object.assign(this.dispatch, { run });
+    assign(this.dispatch, { run });
   }
 
   public subscribe(listener: Callback, config?: Config) {
-    return (this.stateMgr || this.parent).subscribe(listener, config || { path: this.path });
+    return this.getStateManager().subscribe(listener, config || { path: this.path });
   }
 
   public dispatch(message: Message) {
@@ -229,17 +238,8 @@ export default class ExecContext<M> {
 
   public commands(msg, cmds) {
     return pipe(flatten, filter(is(Object)), map(
-      trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.dispatch)))
+      trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.getStateManager(), this.dispatch)))
     ))(cmds);
-  }
-
-  /**
-   * Updates the subscriptions attached to the container.
-   */
-  public subscriptions(model: M) {
-    const ctr = this.container;
-    // tslint:disable
-    console.log('Subscriptions', !ctr.subscriptions && [] || ctr.subscriptions(model, this.relay()));
   }
 
   public push(val, config?: object & { path: any[] }) {
@@ -287,6 +287,15 @@ export default class ExecContext<M> {
       return pipe(defaultTo({}), mapEvent(extra), Message.construct(type), this.dispatch);
     }
     throw new Error(`Messages of type '${name}' are not handled by container '${ctr}' or any of its ancestors`);
+  }
+
+  public destroy() {
+    this.getStateManager().stop(this);
+  }
+
+  private getStateManager(): StateManager {
+    const parent = this.parent as ExecContext<M>;
+    return this.stateMgr || parent.getStateManager && parent.getStateManager();
   }
 
   private internalDispatch(msg: Message) {

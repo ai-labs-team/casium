@@ -5,11 +5,11 @@ import {
 
 import * as React from 'react';
 
-import { defaultEnv, environment, Environment } from './environment';
+import { create, Environment, root } from './environment';
 import Message, { MessageConstructor } from './message';
 import ExecContext from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
-import { result } from './util';
+import { mapResult } from './util';
 import ViewWrapper from './view_wrapper';
 
 /**
@@ -61,13 +61,15 @@ export type ContainerPartial<M> = {
 export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
 
 export type Emitter = (msg: MessageConstructor | [MessageConstructor, GenericObject]) => any;
-export type ContainerViewProps<M> = M & { emit: Emitter };
+export type ContainerViewProps<M> = M & { emit: Emitter, relay: GenericObject };
 export type ContainerView<M> = (props?: ContainerViewProps<M>) => any;
 export type Container<M> = ContainerView<M> & ContainerPartial<M> & ContainerDefMapped<M> & {
   accepts: (m: MessageConstructor) => boolean;
   identity: () => ContainerDef<M>;
 };
 export type IsolatedContainer<M> = Container<M> & { dispatch: any };
+
+const { freeze, assign, defineProperty } = Object;
 
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
@@ -112,7 +114,6 @@ const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
  */
 export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>): Container<M> => {
   let ctr;
-  const { freeze, assign, defineProperty } = Object;
   const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
   ctr = assign(mapDef(def), fns);
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
@@ -166,7 +167,7 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
-export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(defaultEnv);
+export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(root);
 
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
@@ -174,13 +175,13 @@ export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironm
  */
 export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer<M> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
-  const env = environment({ dispatcher: nthArg(2), effects: new Map(), log: () => {}, stateManager });
+  const env = create({ dispatcher: nthArg(3), effects: new Map(), log: () => {}, stateManager });
 
-  const container = Object.assign(mapDef(ctr.identity()), { accepts: always(true) }) as Container<M>;
+  const container = assign(mapDef(ctr.identity()), { accepts: always(true) }) as Container<M>;
   const parent: any = opts.relay ? { relay: always(opts.relay) } : null;
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
-  return Object.assign(wrapView({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
+  return assign(wrapView({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
 };
 
 /**
@@ -190,19 +191,11 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
  * will be treated as an updater.
  */
 export function seq<M>(...updaters: Updater<M>[]) {
-  return function (model: M, message?: GenericObject, relay?: GenericObject): UpdateResult<M> {
-    let newModel = model, commands = [], newCommands = [], updateResult = null;
-
-    for (const updater of updaters) {
-      updateResult = updater;
-
-      while (is(Function, updateResult)) {
-        updateResult = updateResult(newModel, message, relay);
-      }
-      [newModel, newCommands] = result(updateResult);
-      commands = flatten(commands.concat(newCommands));
-    }
-    return [newModel, commands] as UpdateResult<M>;
+  return function (model: M, msg?: GenericObject, relay?: GenericObject): UpdateResult<M> {
+    let reduce;
+    const merge = ([{}, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
+    reduce = (prev, cur) => is(Function, cur) ? reduce(prev, cur(prev[0], msg, relay)) : merge(prev, mapResult(cur));
+    return updaters.reduce(reduce, [model, []]) as UpdateResult<M>;
   };
 }
 

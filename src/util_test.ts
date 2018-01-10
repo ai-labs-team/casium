@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import 'mocha';
 import { is } from 'ramda';
-import { getValidationFailures, merge, withProps } from './util';
+import { getValidationFailures, mergeDeep, withProps } from './util';
 
 describe('util', () => {
 
@@ -14,10 +14,10 @@ describe('util', () => {
 
   describe('merge', () => {
     it('should merge deeply nested objects', () => {
-      expect(merge({
+      expect(mergeDeep({
         foo: { bar: true, baz: true },
         dib: false,
-      },           {
+      },               {
         foo: { bar: false },
       })).to.eql({
         foo: { bar: false, baz: true },
@@ -26,9 +26,9 @@ describe('util', () => {
     });
 
     it('should merge deeply nested arrays', () => {
-      expect(merge({
+      expect(mergeDeep({
         foo: { list: [1, 3] },
-      },           {
+      },               {
         foo: { list: [2, 4] },
       })).to.eql({
         foo: { list: [1, 3, 2, 4] },
@@ -36,10 +36,10 @@ describe('util', () => {
     });
 
     it('should merge top-level items', () => {
-      expect(merge({
+      expect(mergeDeep({
         foo: 'hello',
         bar: 'there',
-      },           {
+      },               {
         foo: 'goodbye',
       })).to.eql({
         foo: 'goodbye',
