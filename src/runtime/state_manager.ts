@@ -1,25 +1,31 @@
 import { both, contains, defaultTo, flip, lensPath, nth, pipe, set, view, when } from 'ramda';
-import { compareOffsets } from '../util';
+import { MessageConstructor } from '../message';
+import { EffectType, Process, ProcessState } from '../subscription';
+import { compareOffsets, toArray } from '../util';
+import ExecContext from './exec_context';
 
 const inList = flip(contains);
 
 export type Callback = (...args: any[]) => any;
 export type Config = object & { path: (string | symbol)[] };
+export type Context = ExecContext<any>;
 
 export default class StateManager {
 
-  public state: object = {};
+  public state: [object] = [{}];
   public listeners: [any, Callback][] = [];
+  public processes: Map<MessageConstructor, Map<any, Process | Process[]>> = new Map();
 
   constructor(state: object = {}) {
-    Object.assign(this, { state });
+    Object.assign(this, { state: [state] });
+    Object.freeze(this);
   }
 
   /**
    * Gets the current state, optionally with a path into the root value.
    */
   public get(opts: Config = { path: [] }) {
-    return view(lensPath(opts && opts.path || []))(this.state);
+    return view(lensPath(opts && opts.path || []))(this.state[0]);
   }
 
   /**
@@ -27,12 +33,32 @@ export default class StateManager {
    * the root value to write into.
    */
   public set(newState: object, opts: Config = { path: [] }) {
-    this.state = set(lensPath(opts.path), newState, this.state);
+    this.state[0] = set(lensPath(opts.path), newState, this.state[0]);
     this.listeners.forEach(when(
       both(inList(this.listeners), pipe(nth(0), compareOffsets(opts.path))),
       this.broadcast
     ));
-    return this.state;
+    return this.state[0];
+  }
+
+  /**
+   * Updates the subscriptions attached to the container.
+   */
+  public run(context: Context, subs: Map<any, any>, dispatch: any) {
+    subs.forEach((data, key) => dispatch(new ProcessState({
+      [EffectType]: key,
+      context,
+      data,
+      current: this.processes.get(key) || null,
+      set: procState => this.processes.set(key, procState)
+    })));
+  }
+
+  public stop(context: Context) {
+    this.processes.forEach((contexts) => {
+      toArray(contexts.get(context) || []).forEach(proc => proc.stop());
+      contexts.delete(context);
+    });
   }
 
   /**
@@ -44,7 +70,7 @@ export default class StateManager {
     const config: [any, Callback] = [opts.path, listener];
     this.listeners.push(config);
 
-    if (this.state) {
+    if (this.state[0]) {
       this.broadcast(config);
     }
     return this.unsubscribeFn(config);

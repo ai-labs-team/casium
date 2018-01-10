@@ -14,7 +14,8 @@
     "lint-fix": "NODE_ENV=test tslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
     "unit-test": "mocha -r test/setup.js --opts test/mocha.opts",
-    "debug-tests": "node --inspect-brk ./node_modules/.bin/mocha --opts test/mocha.opts"
+    "dev": "mocha --watch -r test/setup.js --opts test/mocha.opts",
+    "debug-tests": "mocha -r test/setup.js --opts test/mocha.opts --inspect-brk"
   },
   "devDependencies": {
     "@team-griffin/install-self-peers": "^1.1.1",

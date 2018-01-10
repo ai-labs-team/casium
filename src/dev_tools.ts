@@ -15,13 +15,14 @@ export type DevTools = {
 };
 
 type DevToolsMessage = {
-  context: any,
-  container: any,
-  msg: Message,
-  prev?: object,
-  next: object,
-  path: any[],
-  cmds: any[]
+  context: any;
+  container: any;
+  msg: Message;
+  prev?: object;
+  next: object;
+  path: any[];
+  cmds: any[];
+  subs: any[];
 };
 
 let send = (msg: any) => {};

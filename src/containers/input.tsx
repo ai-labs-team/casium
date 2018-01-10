@@ -1,7 +1,7 @@
 import { assoc, defaultTo, omit, path, pipe } from 'ramda';
 import * as React from 'react';
 
-import { container, Container, PARENT } from '../app';
+import { container, Container, PARENT } from '../core';
 import Message from '../message';
 import { cloneRecursive, withProps } from '../util';
 

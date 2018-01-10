@@ -1,7 +1,7 @@
 import * as deepFreeze from 'deep-freeze-strict';
 import {
   all, always, both, cond, curry, equals, evolve, filter, flip, identity, ifElse, is, keys, map,
-  merge as _merge, mergeDeepWith, not, nth, pickAll, pipe, propEq, reduce, union, when, zipWith
+  merge, mergeDeepWith, not, nth, pickAll, pipe, propEq, reduce, union, when, zipWith
 } from 'ramda';
 import * as React from 'react';
 
@@ -12,16 +12,16 @@ import * as React from 'react';
  * @param  {Object} right
  * @return {Object}
  */
-export const merge = mergeDeepWith((left, right) => (
+export const mergeDeep = mergeDeepWith((left, right) => (
   all(is(Array), [left, right]) ? union(left, right) : right
 ));
 
 /**
  * Convenience function for handlers that only update state with fixed values,
  * i.e. `[FooMessage, state => merge(state, { bar: true })]` becomes
- * `[FooMessage, update({ bar: true })]`
+ * `[FooMessage, replace({ bar: true })]`
  */
-export const update = flip(_merge);
+export const replace = flip(merge);
 
 /**
  * Returns the count of offsets that are equal between two arrays. Useful for determining
@@ -82,7 +82,7 @@ export const withProps = curry((
   fnMap: { [key: string]: (props: object) => any },
   component: React.StatelessComponent<any>,
   props: object
-): JSX.Element => component(merge(props, map(fn => fn(props), fnMap))));
+): JSX.Element => component(mergeDeep(props, map(fn => fn(props), fnMap))));
 
 export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
   const mapProps = (child) => {
@@ -90,13 +90,13 @@ export const cloneRecursive = (children, newProps) => React.Children.map(childre
     const hasChildren = child.props && child.props.children;
     const mapper = hasChildren && is(Array, child.props.children) ? identity : nth(0);
     const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
-    return merge(props || {}, { children });
+    return mergeDeep(props || {}, { children });
   };
   return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
 });
 
 export const clone = (children, newProps) => React.Children.map(children, (child: React.ReactElement<any>) => (
-  React.cloneElement(child, merge(React.isValidElement(child) ? newProps : {}, {
+  React.cloneElement(child, mergeDeep(React.isValidElement(child) ? newProps : {}, {
     children: child.props.children,
   }))
 ));
@@ -178,7 +178,7 @@ const freezeObj = when(is(Object), deepFreeze);
 /**
  * Maps an `init()` or `update()` return value to the proper format.
  */
-export const result = cond([
+export const mapResult = cond([
   [both(is(Array), propEq('length', 0)), () => { throw new TypeError('An empty array is an invalid value'); }],
   [both(is(Array), propEq('length', 1)), ([state]) => [freezeObj(state), []]],
   [is(Array), ([state, ...commands]) => [freezeObj(state), commands]],
