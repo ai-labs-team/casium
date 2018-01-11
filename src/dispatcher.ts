@@ -1,4 +1,4 @@
-import { cond, curry, flip, is, pipe, prop, T } from 'ramda';
+import { always, cond, curry, flip, is, pipe, prop, T } from 'ramda';
 import Message, { MessageConstructor } from './message';
 import StateManager from './runtime/state_manager';
 import { EffectType, ProcessState } from './subscription';
@@ -9,7 +9,7 @@ export type EffectMap = Map<MessageConstructor, (...args: any[]) => any>;
 const unbox = cond([
   [is(Message), pipe(prop('data'), Array.of)],
   [is(ProcessState), Array.of],
-  [T, () => null]
+  [T, always(null)]
 ]);
 
 export const handler = curry((effects: EffectMap, msg: Message) => {
