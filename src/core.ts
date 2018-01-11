@@ -192,9 +192,10 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
  */
 export function seq<M>(...updaters: Updater<M>[]) {
   return function (model: M, msg?: GenericObject, relay?: GenericObject): UpdateResult<M> {
-    let reduce;
     const merge = ([{}, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
-    reduce = (prev, cur) => is(Function, cur) ? reduce(prev, cur(prev[0], msg, relay)) : merge(prev, mapResult(cur));
+    const reduce = (prev, cur) => is(Function, cur)
+      ? reduce(prev, cur(prev[0], msg, relay))
+      : merge(prev, mapResult(cur));
     return updaters.reduce(reduce, [model, []]) as UpdateResult<M>;
   };
 }
