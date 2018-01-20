@@ -1,9 +1,13 @@
 import Message from './message';
 
+const RUNNING = Symbol.for('@process/running');
+const STOPPED = Symbol.for('@process/stopped');
+
 // tslint:disable-next-line:variable-name
 export const EffectType = Symbol.for('@effect/type');
 
 export type ProcessStateData = {
+  state?: symbol;
   context: any;
   data: any;
   current: any;
@@ -24,6 +28,10 @@ export abstract class Process {
 
 export class ProcessState {
 
+  public static RUNNING = RUNNING;
+  public static STOPPED = STOPPED;
+
+  public state: symbol = ProcessState.RUNNING;
   public context: any;
   public data: any;
   public current: any;

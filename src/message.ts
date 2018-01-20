@@ -1,6 +1,9 @@
 import * as deepFreeze from 'deep-freeze-strict';
-import { both, curry, either as or, identity, ifElse, is, isEmpty, join, merge, nth, pipe } from 'ramda';
-import { getValidationFailures, safeStringify } from './util';
+import {
+  always, both, complement as not, curry, either as or, identity, ifElse,
+  is, isEmpty, join, merge, mergeAll, nth, pickBy, pipe
+} from 'ramda';
+import { getValidationFailures, safeStringify, suppressEvent } from './util';
 
 export interface MessageConstructor {
   new(data?: any, opts?: any): Message;
@@ -39,8 +42,8 @@ export default class Message {
   public data: any;
 
   constructor(data: any = {}, opts: MessageOptions = {}) {
-    const ctor = this.constructor as any;
-    this.check(data);
+    const ctor = this.constructor as MessageConstructor & any;
+    ctor.check(ctor, data);
     this.data = merge(ctor.defaults, data);
 
     const invalidTypes = getValidationFailures(ctor.expects)(this.data);
@@ -62,17 +65,28 @@ export default class Message {
     return new (this.constructor as any)(merge(this.data, data));
   }
 
-  private check(data) {
+  protected static check(ctor: MessageConstructor, data) {
     if (is(Object, data)) {
       return;
     }
-    throw new Error([
-      'Message data must be an object in message',
-      this.constructor.name,
-      'but is',
-      safeStringify(data),
-    ].join(' '));
+    throw new Error(`Message data must be an object in message ${ctor.name} but is ${safeStringify(data)}`);
   }
+
+ /**
+  * Maps an Event object to a hash that will be wrapped in a Message.
+  */
+  public static mapEvent = curry((extra: object & { preventDefault?: boolean }, event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const isDomEvent = event && (event as any).nativeEvent && is(Object, target);
+    const isCheckbox = isDomEvent && target.type && target.type.toLowerCase() === 'checkbox';
+    const value = isDomEvent && (isCheckbox ? target.checked : target.value);
+    const eventVal = isDomEvent ? { value, ...pickBy(not(is(Object)), event) } : event;
+
+    if (isDomEvent && !isCheckbox && extra.preventDefault !== false) {
+      suppressEvent(event);
+    }
+    return mergeAll([{ event: always(event) }, eventVal, extra]);
+  });
 }
 
 export class Activate extends Message {}

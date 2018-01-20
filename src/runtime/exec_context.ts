@@ -1,13 +1,13 @@
 import {
-  always, complement as not, concat, curry, defaultTo, equals, filter, flatten, identity, is, keys, map,
-  merge, mergeAll, nth, pick, pickBy, pipe, prop, values
+  complement as not, concat, curry, defaultTo, equals, filter, flatten,
+  identity, is, keys, map, merge, nth, pick, pipe, prop, values
 } from 'ramda';
 
 import { Container, DelegateDef, PARENT } from '../core';
 import { cmdName, intercept, notify } from '../dev_tools';
 import * as Environment from '../environment';
 import Message, { MessageConstructor } from '../message';
-import { mapResult, replace, safeStringify, suppressEvent, toArray, trap } from '../util';
+import { mapResult, replace, safeStringify, toArray, trap } from '../util';
 import StateManager, { Callback, Config } from './state_manager';
 
 export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) => object, path?: string[] };
@@ -30,17 +30,6 @@ const { assign, freeze } = Object;
  * @return {*}
  */
 const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, exec.parent, val));
-
-/**
- * Checks if a container or a container's ancestor handles messages of a given type
- *
- * @param  {Object} exec An instance of ExecContext
- * @param  {Function} msgType A message constructor
- * @return {Boolean} Returns true if the container (or an ancestor) has an update handler matching
- *         the given constructor, otherwise false.
- */
-const handlesMsg = <M>(exec: ExecContext<M>) =>
-  pipe(Message.toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), exec));
 
 /**
  * Formats a message for showing an error that occurred as the result of a command
@@ -70,7 +59,7 @@ const checkMessage = (exec, msg) => {
   if (msgType === Function) {
     throw new TypeError(`Attempted to dispatch message constructor '${msg.name}' — should be an instance`);
   }
-  if (!handlesMsg(exec)(msgType)) {
+  if (!exec.handles(msgType)) {
     throw new TypeError(`Unhandled message type '${msgType.name}' in container '${exec.container.name}'`);
   }
   return msg;
@@ -104,26 +93,10 @@ const mapMessage = (handler, state, msg, relay) => {
 };
 
 /**
- * Maps an Event object to a hash that will be wrapped in a Message.
- */
-const mapEvent = curry((extra: object & { preventDefault?: boolean }, event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const isDomEvent = event && (event as any).nativeEvent && is(Object, target);
-  const isCheckbox = isDomEvent && target.type && target.type.toLowerCase() === 'checkbox';
-  const value = isDomEvent && (isCheckbox ? target.checked : target.value);
-  const eventVal = isDomEvent ? { value, ...pickBy(not(is(Object)), event) } : event;
-
-  if (isDomEvent && !isCheckbox && extra.preventDefault !== false) {
-    suppressEvent(event);
-  }
-  return mergeAll([{ event: always(event) }, eventVal, extra]);
-});
-
-/**
  * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
  */
 const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
-  const unhandled = pipe(prop('data'), values, filter(Message.isEmittable), filter(not(handlesMsg(exec) as any)));
+  const unhandled = pipe(prop('data'), values, filter(Message.isEmittable), filter(not(exec.handles)));
   const msgs = unhandled(cmd);
 
   if (!msgs.length) {
@@ -174,7 +147,7 @@ const groupEffects = keyFn => (prev, current) => {
 export default class ExecContext<M> {
 
   /**
-   * Returns true
+   * Returns true if the passed context is a partial definition and not a full `ExecContext` instance.
    */
   public static isPartial: (ctx: ExecContext<any> | ExecContextPartial) => boolean = pipe(keys, equals(['relay']));
 
@@ -196,11 +169,10 @@ export default class ExecContext<M> {
     let hasInitialized = false;
 
     const run = (msg, [next, cmds]) => {
-      const subs = !container.subscriptions && [] || toArray(container.subscriptions(next, this.relay()));
-      const stateMgr = this.getStateManager(), grouped = subs.reduce(groupEffects(ctrEnv.handler), new Map());
+      const stateMgr = this.getStateManager(), subs = this.subscriptions(next);
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
-      stateMgr.run(this, grouped, this.env.dispatcher(stateMgr, this.dispatch));
+      stateMgr.run(this, subs, this.env.dispatcher(stateMgr, this.dispatch));
       return this.commands(msg, cmds);
     };
 
@@ -283,14 +255,40 @@ export default class ExecContext<M> {
       ctr = this.container.name,
       name = type && type.name || '??';
 
-    if (handlesMsg(this)(em)) {
-      return pipe(defaultTo({}), mapEvent(extra), Message.construct(type), this.dispatch);
+    if (this.handles(em)) {
+      return pipe(defaultTo({}), Message.mapEvent(extra), Message.construct(type), this.dispatch);
     }
     throw new Error(`Messages of type '${name}' are not handled by container '${ctr}' or any of its ancestors`);
   }
 
+  /**
+   * Called when the execution context shuts down. Clears attached subscription processes.
+   */
   public destroy() {
-    this.getStateManager().stop(this);
+    this.getStateManager().stop(
+      this,
+      this.subscriptions(this.state()),
+      this.env.dispatcher(this.getStateManager(), this.dispatch)
+    );
+  }
+
+  /**
+   * Checks if the container or container's ancestor handles messages of a given type
+   *
+   * @param  msgType A message constructor
+   * @return Returns true if the container (or an ancestor) has an update handler matching
+   *         the given constructor, otherwise false.
+   */
+  public get handles(): (msgType: MessageConstructor) => boolean {
+    return pipe(Message.toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), this));
+  }
+
+  private subscriptions(model) {
+    const { container, env } = this;
+    return (
+      !container.subscriptions && [] ||
+      toArray(container.subscriptions(model, this.relay()))
+    ).reduce(groupEffects(env.handler), new Map());
   }
 
   private getStateManager(): StateManager {

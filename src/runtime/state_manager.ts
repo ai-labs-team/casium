@@ -1,7 +1,7 @@
 import { both, contains, defaultTo, flip, lensPath, nth, pipe, set, view, when } from 'ramda';
 import { MessageConstructor } from '../message';
 import { EffectType, Process, ProcessState } from '../subscription';
-import { compareOffsets, toArray } from '../util';
+import { compareOffsets } from '../util';
 import ExecContext from './exec_context';
 
 const inList = flip(contains);
@@ -44,8 +44,9 @@ export default class StateManager {
   /**
    * Updates the subscriptions attached to the container.
    */
-  public run(context: Context, subs: Map<any, any>, dispatch: any) {
+  public run(context: Context, subs: Map<any, any>, dispatch: any, config: any = {}) {
     subs.forEach((data, key) => dispatch(new ProcessState({
+      ...config,
       [EffectType]: key,
       context,
       data,
@@ -54,11 +55,8 @@ export default class StateManager {
     })));
   }
 
-  public stop(context: Context) {
-    this.processes.forEach((contexts) => {
-      toArray(contexts.get(context) || []).forEach(proc => proc.stop());
-      contexts.delete(context);
-    });
+  public stop(context: Context, subs: Map<any, any>, dispatch: any, config: any = {}) {
+    this.run(context, subs, dispatch, { ...config, state: ProcessState.STOPPED });
   }
 
   /**
