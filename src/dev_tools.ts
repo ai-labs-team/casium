@@ -83,6 +83,7 @@ export const notify = ({ context, msg, prev, next, path, cmds }: DevToolsMessage
   const { container } = context;
 
   const serialized = serialize({
+    context: context.id,
     id: session + _ARCH_DEV_TOOLS_STATE.next(),
     name: container.name,
     ts: Date.now(),
