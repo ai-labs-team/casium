@@ -3,3 +3,5 @@ dist
 .tmp
 .vscode
 .idea
+coverage
+.nyc_output
