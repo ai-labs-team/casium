@@ -20,4 +20,12 @@ jobs:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
         
+      # Prepare the CodeClimate test reporter
+      - run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+      - run: chmod +x ./cc-test-reporter
+      - run: ./cc-test-reporter before-build
+
       - run: yarn test
+
+      # Publish the coverage report to CodeClimate
+      - run: ./cc-test-reporter after-build --exit-code $?
