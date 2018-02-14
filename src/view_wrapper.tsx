@@ -1,11 +1,11 @@
 import * as PropTypes from 'prop-types';
 import { equals, keys, merge, mergeAll, omit, pick } from 'ramda';
 import * as React from 'react';
-import { Container, DelegateDef, Emitter } from './app';
 import ErrorComponent from './components/error';
+import { Container, DelegateDef, Emitter } from './core';
 import { Environment } from './environment';
-import ExecContext from './exec_context';
 import { Activate, Deactivate, MessageConstructor, Refresh } from './message';
+import ExecContext from './runtime/exec_context';
 
 export type ViewWrapperProps<M> = {
   childProps: M & { emit: Emitter };
@@ -22,7 +22,7 @@ export type ViewWrapperProps<M> = {
  * itself with `execContext` in its children's contexts.
  */
 
-export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps<M>, any> {
+export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>, any> {
 
   public static contextTypes = { execContext: PropTypes.object };
 
@@ -34,7 +34,8 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
     delegate: PropTypes.oneOfType([
       PropTypes.string,
       PropTypes.symbol,
-      PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.number, PropTypes.string]))]),
+      PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.number, PropTypes.string]))
+    ]),
     env: PropTypes.object.isRequired,
   };
 
@@ -42,17 +43,15 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
 
   public execContext?: ExecContext<M> = null;
 
-  public unsubscribe: () => any;
+  public unsubscribe: () => void;
 
   public getChildContext() {
     return { execContext: this.execContext };
   }
 
-  public dispatchLifecycleMessage<M extends MessageConstructor>(message: M, props: any): boolean {
-    const { container, childProps } = props;
-    return container.accepts(message) &&
-      this.execContext.dispatch(new message(omit(['emit', 'children'], childProps), { shallow: true })) &&
-      true;
+  public dispatchLifecycleMessage<M extends MessageConstructor>(msg: M, props: any): boolean {
+    const { container, childProps } = props, propList = omit(['emit', 'children']);
+    return container.accepts(msg) && !!this.execContext.dispatch(new msg(propList(childProps), { shallow: true }));
   }
 
   public componentWillMount() {
@@ -74,11 +73,10 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
     this.setState(this.execContext.push(merge(state, pick(keys(state), childProps))));
   }
 
-  public componentDidUpdate(prevProps) {
-    const prevChildProps = prevProps.childProps;
+  public componentDidUpdate(prev) {
     const { childProps } = this.props;
     const omitChildren = omit(['children']);
-    if (!equals(omitChildren(prevChildProps), omitChildren(childProps))) {
+    if (!equals(omitChildren(prev.childProps), omitChildren(childProps))) {
       this.dispatchLifecycleMessage(Refresh, this.props);
     }
   }
@@ -86,6 +84,7 @@ export default class ViewWrapper<M> extends React.PureComponent<ViewWrapperProps
   public componentWillUnmount() {
     this.dispatchLifecycleMessage(Deactivate, this.props);
     this.unsubscribe();
+    this.execContext.destroy();
   }
 
   public unstable_handleError(e) {

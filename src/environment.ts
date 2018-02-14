@@ -1,11 +1,16 @@
-import { mergeDeepWithKey } from 'ramda';
-import { Container } from './app';
-import dispatcher from './dispatcher';
+import { always, cond, mergeDeepWithKey, path, pipe, prop, T } from 'ramda';
+import { Container } from './core';
+import { default as coreDispatcher, handler } from './dispatcher';
 import effects from './effects';
-import ExecContext, { ExecContextPartial } from './exec_context';
-import { MessageConstructor } from './message';
-import StateManager from './state_manager';
+import Message, { MessageConstructor } from './message';
+import ExecContext, { ExecContextPartial } from './runtime/exec_context';
+import StateManager from './runtime/state_manager';
+import { ProcessState } from './subscription';
 import { mergeMap } from './util';
+
+export type Dispatcher = (...args: any[]) => any | void;
+export type CommandDispatcher = (data: object, dispatch: Dispatcher) => any | void;
+export type SubscriptionDispatcher = (processState: ProcessState, dispatch: Dispatcher) => any | void;
 
 export type EnvDefPartial = {
   dispatcher: any;
@@ -14,10 +19,11 @@ export type EnvDefPartial = {
 };
 
 export type EnvDef = EnvDefPartial & {
-  effects: Map<MessageConstructor, (data: object, dispatch: any) => any | undefined>;
+  effects: Map<MessageConstructor, CommandDispatcher | SubscriptionDispatcher>;
 };
 
 export type Environment = EnvDefPartial & {
+  handler: (msg: Message) => MessageConstructor;
   identity: () => EnvDef;
 };
 
@@ -37,27 +43,38 @@ export type Environment = EnvDefPartial & {
  *         - stateManager: A StateManager factory function
  *         - identity: Returns the parameters that created this environment
  */
-export const environment = ({ effects, dispatcher, log = null, stateManager = null }: EnvDef): Environment => ({
-  dispatcher: dispatcher(effects),
+export const create = ({ effects, dispatcher = null, log = null, stateManager = null }: EnvDef): Environment => ({
+  dispatcher: (dispatcher || coreDispatcher)(effects),
+  handler: handler(effects),
   identity: () => ({ effects, dispatcher, log, stateManager }),
   log: log || console.error.bind(console),
   stateManager: stateManager || (() => new StateManager())
 });
 
-export const mergeEnv = <M>(
-  parent?: ExecContext<M> | ExecContextPartial,
-  env?: Environment
-): Environment => {
-  if (env && parent instanceof ExecContext && parent.env) {
-    const mergeEffects = (k, l, r) => k === 'effects' ? mergeMap(l, r) : r;
-    return environment(mergeDeepWithKey(mergeEffects, parent.env.identity(), env.identity()));
-  } else if (!env && parent instanceof ExecContext && parent.env) {
-    return parent.env;
-  } else if (env && (!parent || !(parent instanceof ExecContext) || !parent.env)) {
-    return env;
-  }
+export const root: Environment = create({ effects, dispatcher: coreDispatcher });
 
-  return defaultEnv;
-};
+/**
+ * Helper function for `create()`, to merge effects maps
+ */
+const mergeWithEffects = mergeDeepWithKey((key, left, right) => key === 'effects' ? mergeMap(left, right) : right);
 
-export const defaultEnv: Environment = environment({ effects, dispatcher });
+/**
+ * Helper function for `create()`. Validates state of environments.
+ */
+const checkEnvChain = <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Environment): any => ({
+  env,
+  parent,
+  canMerge: env && parent instanceof ExecContext && parent.env,
+  hasOnlyParent: !env && parent instanceof ExecContext && parent.env,
+  isOnlyChild: env && (!parent || !(parent instanceof ExecContext) || !parent.env),
+});
+
+export const merge: <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Environment) => Environment = pipe(
+  checkEnvChain,
+  cond([
+    [prop('canMerge'), ({ parent, env }) => create(mergeWithEffects(parent.env.identity(), env.identity()))],
+    [prop('hasOnlyParent'), path(['parent', 'env'])],
+    [prop('isOnlyChild'), prop('env')],
+    [T, always(root)]
+  ])
+);

@@ -1,25 +1,25 @@
 import {
-  always, complement as not, concat, curry, defaultTo, filter, flatten, flip, identity, is, map,
-  merge, mergeAll, nth, pick, pickBy, pipe, prop, values
+  complement as not, concat, curry, defaultTo, equals, filter, flatten,
+  identity, is, keys, map, merge, nth, pick, pipe, prop, values
 } from 'ramda';
 
-import { Container, DelegateDef, PARENT } from './app';
-import { cmdName, intercept, notify } from './dev_tools';
-import { Environment, mergeEnv } from './environment';
-import Message from './message';
+import { Container, DelegateDef, PARENT } from '../core';
+import { cmdName, intercept, notify } from '../dev_tools';
+import * as Environment from '../environment';
+import Message, { MessageConstructor } from '../message';
+import { mapResult, replace, safeStringify, toArray, trap } from '../util';
 import StateManager, { Callback, Config } from './state_manager';
-import { result, safeStringify, suppressEvent, toArray, trap } from './util';
-
-const update = flip(merge);
 
 export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) => object, path?: string[] };
 
 export type ExecContextDef<M> = {
-  env?: Environment,
+  env?: Environment.Environment,
   container: Container<M>,
   parent?: ExecContext<M> | ExecContextPartial,
   delegate?: DelegateDef
 };
+
+const { assign, freeze } = Object;
 
 /**
  * Walk up a container hierarchy looking for a value.
@@ -30,17 +30,6 @@ export type ExecContextDef<M> = {
  * @return {*}
  */
 const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, exec.parent, val));
-
-/**
- * Checks if a container or a container's ancestor handles messages of a given type
- *
- * @param  {Object} exec An instance of ExecContext
- * @param  {Function} msgType A message constructor
- * @return {Boolean} Returns true if the container (or an ancestor) has an update handler matching
- *         the given constructor, otherwise false.
- */
-const handlesMsg = <M>(exec: ExecContext<M>) =>
-  pipe(Message.toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), exec));
 
 /**
  * Formats a message for showing an error that occurred as the result of a command
@@ -70,7 +59,7 @@ const checkMessage = (exec, msg) => {
   if (msgType === Function) {
     throw new TypeError(`Attempted to dispatch message constructor '${msg.name}' — should be an instance`);
   }
-  if (!handlesMsg(exec)(msgType)) {
+  if (!exec.handles(msgType)) {
     throw new TypeError(`Unhandled message type '${msgType.name}' in container '${exec.container.name}'`);
   }
   return msg;
@@ -85,7 +74,7 @@ const checkMessage = (exec, msg) => {
  */
 const attachStore = (config, container) => {
   const getState = () => (config.key && prop(config.key) || identity)(config.store.getState());
-  config.store.subscribe(pipe(getState, update(container.state()), container.push));
+  config.store.subscribe(pipe(getState, replace(container.state()), container.push));
   return getState();
 };
 
@@ -100,30 +89,14 @@ const mapMessage = (handler, state, msg, relay) => {
   if (!handler || !is(Function, handler)) {
     throw new TypeError(`Invalid handler for message type '${msg.constructor.name}'`);
   }
-  return result(handler(state, msg.data, relay));
+  return mapResult(handler(state, msg.data, relay));
 };
-
-/**
- * Maps an Event object to a hash that will be wrapped in a Message.
- */
-const mapEvent = curry((extra: object & { preventDefault?: boolean }, event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const isDomEvent = event && (event as any).nativeEvent && is(Object, target);
-  const isCheckbox = isDomEvent && target.type && target.type.toLowerCase() === 'checkbox';
-  const value = isDomEvent && (isCheckbox ? target.checked : target.value);
-  const eventVal = isDomEvent ? { value, ...pickBy(not(is(Object)), event) } : event;
-
-  if (isDomEvent && !isCheckbox && extra.preventDefault !== false) {
-    suppressEvent(event);
-  }
-  return mergeAll([{ event: always(event) }, eventVal, extra]);
-});
 
 /**
  * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
  */
 const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
-  const unhandled = pipe(prop('data'), values, filter(Message.isEmittable), filter(not(handlesMsg(exec) as any)));
+  const unhandled = pipe(prop('data'), values, filter(Message.isEmittable), filter(not(exec.handles)));
   const msgs = unhandled(cmd);
 
   if (!msgs.length) {
@@ -146,9 +119,16 @@ const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
  * @param  {Object} action A Redux action
  */
 const dispatchAction = (exec, messageTypes, action) => {
-  if (action && action.type && messageTypes[action.type]) {
-    exec.dispatch(new messageTypes[action.type](action));
-  }
+  action && action.type && messageTypes[action.type] && exec.dispatch(new messageTypes[action.type](action));
+};
+
+/**
+ * Groups subscriptions by the effect handler constructor.
+ */
+const groupEffects = keyFn => (prev, current) => {
+  const key = keyFn(current);
+  prev.set(key, concat(prev.get(key) || [], [current]));
+  return prev;
 };
 
 /**
@@ -166,28 +146,33 @@ const dispatchAction = (exec, messageTypes, action) => {
  */
 export default class ExecContext<M> {
 
+  /**
+   * Returns true if the passed context is a partial definition and not a full `ExecContext` instance.
+   */
+  public static isPartial: (ctx: ExecContext<any> | ExecContextPartial) => boolean = pipe(keys, equals(['relay']));
+
   public id: string = Math.round(Math.random() * Math.pow(2, 50)).toString();
 
-  public stateMgr?: StateManager = null;
   public parent?: ExecContext<M> = null;
   public delegate?: DelegateDef = null;
   public path: (string | symbol)[] = [];
-  public env?: Environment = null;
+  public env?: Environment.Environment = null;
   public container?: Container<any> = null;
 
   protected errLog;
   protected getState: (params?: object) => object = null;
+  protected stateMgr?: StateManager = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
-    const containerEnv = mergeEnv(parent, env);
-    const stateMgr = parent && parent.state ? null : intercept(containerEnv.stateManager(container));
+    const ctrEnv = Environment.merge(parent, env);
     const path = concat(parent && parent.path || [], (delegate && delegate !== PARENT) ? toArray(delegate) : []);
-    const { freeze, assign } = Object;
     let hasInitialized = false;
 
     const run = (msg, [next, cmds]) => {
-      notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds });
+      const stateMgr = this.getStateManager(), subs = this.subscriptions(next);
+      notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
+      stateMgr.run(this, subs, this.env.dispatcher(stateMgr, this.dispatch));
       return this.commands(msg, cmds);
     };
 
@@ -196,44 +181,36 @@ export default class ExecContext<M> {
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
         const initial = hasStore ? attachStore(container.attach, container) : (this.getState() || {});
-        run(null, result(container.init(initial, parent && parent.relay() || {}) || {}));
+        run(null, mapResult(container.init(initial, parent && parent.relay() || {}) || {}));
       }
       return fn.call(this, ...args);
     };
 
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
-    const errLog = error(containerEnv.log);
+    const errLog = error(ctrEnv.log);
+    const isRoot: boolean = !parent || ExecContext.isPartial(parent);
+    const stateMgr: StateManager = isRoot ? intercept(ctrEnv.stateManager(container)) : null;
+    const getState = stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path });
 
     freeze(assign(this, {
-      env: containerEnv,
-      path,
-      parent,
-      errLog,
-      delegate,
-      stateMgr,
-      container,
-      getState: stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path }),
+      env: ctrEnv, path, parent, errLog, delegate, stateMgr, container, getState,
       ...wrapInit(['dispatch', 'push', 'subscribe', 'state', 'relay'])(this.constructor.prototype),
     }));
 
-    Object.assign(this.dispatch, { run });
+    assign(this.dispatch, { run });
   }
 
   public subscribe(listener: Callback, config?: Config) {
-    return (this.stateMgr || this.parent).subscribe(listener, config || { path: this.path });
+    return this.getStateManager().subscribe(listener, config || { path: this.path });
   }
 
   public dispatch(message: Message) {
-    return trap(this.errLog(null), (msg) => {
-      const msgType = msg.constructor, updater = this.container.update.get(msgType);
-      const dispatch = (this.dispatch as any), { parent, getState, relay } = this;
-      return updater ? dispatch.run(msg, mapMessage(updater, getState(), msg, relay())) : parent.dispatch(msg);
-    })(checkMessage(this, message));
+    return trap(this.errLog(null), this.internalDispatch.bind(this))(checkMessage(this, message));
   }
 
   public commands(msg, cmds) {
     return pipe(flatten, filter(is(Object)), map(
-      trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.dispatch)))
+      trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.getStateManager(), this.dispatch)))
     ))(cmds);
   }
 
@@ -278,9 +255,50 @@ export default class ExecContext<M> {
       ctr = this.container.name,
       name = type && type.name || '??';
 
-    if (handlesMsg(this)(em)) {
-      return pipe(defaultTo({}), mapEvent(extra), Message.construct(type), this.dispatch);
+    if (this.handles(em)) {
+      return pipe(defaultTo({}), Message.mapEvent(extra), Message.construct(type), this.dispatch);
     }
     throw new Error(`Messages of type '${name}' are not handled by container '${ctr}' or any of its ancestors`);
+  }
+
+  /**
+   * Called when the execution context shuts down. Clears attached subscription processes.
+   */
+  public destroy() {
+    this.getStateManager().stop(
+      this,
+      this.subscriptions(this.state()),
+      this.env.dispatcher(this.getStateManager(), this.dispatch)
+    );
+  }
+
+  /**
+   * Checks if the container or container's ancestor handles messages of a given type
+   *
+   * @param  msgType A message constructor
+   * @return Returns true if the container (or an ancestor) has an update handler matching
+   *         the given constructor, otherwise false.
+   */
+  public get handles(): (msgType: MessageConstructor) => boolean {
+    return pipe(Message.toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), this));
+  }
+
+  private subscriptions(model) {
+    const { container, env } = this;
+    return (
+      !container.subscriptions && [] ||
+      toArray(container.subscriptions(model, this.relay()))
+    ).reduce(groupEffects(env.handler), new Map());
+  }
+
+  private getStateManager(): StateManager {
+    const parent = this.parent as ExecContext<M>;
+    return this.stateMgr || parent.getStateManager && parent.getStateManager();
+  }
+
+  private internalDispatch(msg: Message) {
+    const { dispatch, parent, getState, relay } = this;
+    const msgType = msg.constructor as MessageConstructor, updater = this.container.update.get(msgType);
+    return updater ? (dispatch as any).run(msg, mapMessage(updater, getState(), msg, relay())) : parent.dispatch(msg);
   }
 }

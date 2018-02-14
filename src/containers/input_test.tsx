@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { mount } from 'enzyme';
 import 'mocha';
 import * as React from 'react';
-import { container, isolate } from '../app';
+import { container, isolate } from '../core';
 import InputContainer from './input';
 
 describe('InputContainer', () => {

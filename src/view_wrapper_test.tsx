@@ -4,9 +4,9 @@ import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { always, merge, pipe } from 'ramda';
 import * as React from 'react';
-import { container, PARENT, withEnvironment } from './app';
+import { container, PARENT, withEnvironment } from './core';
 import dispatcher from './dispatcher';
-import { environment } from './environment';
+import { create as environment } from './environment';
 import Message, { Activate, Deactivate, Refresh } from './message';
 
 describe('ViewWrapper', () => {
@@ -139,7 +139,7 @@ describe('ViewWrapper', () => {
 
   describe('Commands', () => {
 
-    describe('ContainerA environment should casscade to ContainerB', () => {
+    describe('ContainerA environment should cascade to ContainerB', () => {
       let ContainerB, ContainerA;
 
       beforeEach(() => {

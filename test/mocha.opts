@@ -1,3 +1,4 @@
 --require ts-node/register
 --require jsdom-global/register
+--watch-extensions ts,tsx
 src/**/*_test.{ts,tsx}
