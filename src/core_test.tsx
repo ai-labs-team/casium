@@ -71,6 +71,25 @@ describe('app', () => {
     });
 
     describe('subscriptions', () => {
+      it('is called with the new model value after every Updater', () => {
+        const log = [];
+
+        const ctr = isolate(container({
+          subscriptions: model => log.push(model),
+
+          update: [
+            [Msg, (model, { count }) => ({ test: count })],
+          ],
+        }));
+
+        ctr.dispatch(new Msg({ count: 'one' }));
+        ctr.dispatch(new Msg({ count: 'two' }));
+
+        expect(log).to.deep.equal([
+          { test: 'one' },
+          { test: 'two' }
+        ]);
+      });
     });
   });
 
