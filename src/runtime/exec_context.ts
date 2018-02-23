@@ -177,11 +177,11 @@ export default class ExecContext<M> {
     };
 
     const initialize = fn => (...args) => {
-      if (!hasInitialized && container.init) {
+      if (!hasInitialized) {
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
         const initial = hasStore ? attachStore(container.attach, container) : (this.getState() || {});
-        run(null, mapResult(container.init(initial, parent && parent.relay() || {}) || {}));
+        run(null, mapResult((container.init || identity)(initial, parent && parent.relay() || {}) || {}));
       }
       return fn.call(this, ...args);
     };
