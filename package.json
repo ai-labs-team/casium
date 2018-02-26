@@ -21,6 +21,7 @@
     "@team-griffin/install-self-peers": "^1.1.1",
     "@types/chai": "^4.0.4",
     "@types/enzyme": "^3.1.6",
+    "@types/history": "^4.6.2",
     "@types/mocha": "^2.2.43",
     "@types/ramda": "types/npm-ramda",
     "awesome-typescript-loader": "^3.2.3",

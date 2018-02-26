@@ -3,9 +3,9 @@ import { pipe } from 'ramda';
 import { Back, PushHistory, ReplaceHistory, Timeout } from '../commands/browser';
 import Message, { MessageConstructor } from '../message';
 
-export const history = typeof window === 'undefined' ? History.createMemoryHistory() : History.createBrowserHistory();
+type CasiumHistory = History.History | History.MemoryHistory;
 
-export const syncHistoryWithState = history => {
+export const syncHistoryWithState = (history: CasiumHistory): CasiumHistory => {
 
   // const delagate = 'route';
   // const locationPath = 'location';
@@ -53,10 +53,14 @@ export const syncHistoryWithState = history => {
   });
 };
 
+export const history = typeof window === 'undefined' ?
+  syncHistoryWithState(History.createMemoryHistory()) :
+  syncHistoryWithState(History.createBrowserHistory());
+
 export default new Map<MessageConstructor, (data: any, dispatch: any) => any>([
   [PushHistory, ({ path, state }) => history.push(path, state || {})],
   [ReplaceHistory, ({ path, state }) => history.replace(path, state || {})],
-  [Back, ({ state }) => history.goBack(state)],
+  [Back, () => history.goBack()],
   [Timeout, ({ result, timeout }, dispatch) => setTimeout(
     () => pipe(Message.construct(result), dispatch)({}),
     timeout
