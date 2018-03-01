@@ -67,7 +67,11 @@ export type Container<M> = ContainerView<M> & ContainerPartial<M> & ContainerDef
   accepts: (m: MessageConstructor) => boolean;
   identity: () => ContainerDef<M>;
 };
-export type IsolatedContainer<M> = Container<M> & { dispatch: any };
+export type IsolatedContainer<M> = Container<M> & {
+  dispatch: any;
+  state: () => M;
+  push: (state: M) => void;
+};
 
 const { freeze, assign, defineProperty } = Object;
 
