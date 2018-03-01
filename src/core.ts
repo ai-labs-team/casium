@@ -9,7 +9,7 @@ import { create, Environment, root } from './environment';
 import Message, { MessageConstructor } from './message';
 import ExecContext from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
-import { mapResult } from './util';
+import { mapResult, reduceUpdater } from './util';
 import ViewWrapper from './view_wrapper';
 
 /**
@@ -193,9 +193,9 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
 export function seq<M>(...updaters: Updater<M>[]) {
   return function (model: M, msg?: GenericObject, relay?: GenericObject): UpdateResult<M> {
     const merge = ([{}, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
-    const reduce = (prev, cur) => is(Function, cur)
-      ? reduce(prev, cur(prev[0], msg, relay))
-      : merge(prev, mapResult(cur));
+    const reduce = (prev, cur) =>
+      merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
+
     return updaters.reduce(reduce, [model, []]) as UpdateResult<M>;
   };
 }

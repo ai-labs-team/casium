@@ -185,3 +185,8 @@ export const mapResult = cond([
   [is(Object), state => [freezeObj(state), []]],
   [always(true), (val) => { throw new TypeError('Unrecognized structure ' + safeStringify(val)); }],
 ]);
+
+export const reduceUpdater = (value, state, msg, relay) =>
+  is(Function, value)
+    ? reduceUpdater(value(state, msg, relay), state, msg, relay)
+    : value;
