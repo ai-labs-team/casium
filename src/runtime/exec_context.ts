@@ -7,7 +7,7 @@ import { Container, DelegateDef, PARENT } from '../core';
 import { cmdName, intercept, notify } from '../dev_tools';
 import * as Environment from '../environment';
 import Message, { MessageConstructor } from '../message';
-import { mapResult, replace, safeStringify, toArray, trap } from '../util';
+import { mapResult, reduceUpdater, replace, safeStringify, toArray, trap } from '../util';
 import StateManager, { Callback, Config } from './state_manager';
 
 export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) => object, path?: string[] };
@@ -89,7 +89,8 @@ const mapMessage = (handler, state, msg, relay) => {
   if (!handler || !is(Function, handler)) {
     throw new TypeError(`Invalid handler for message type '${msg.constructor.name}'`);
   }
-  return mapResult(handler(state, msg.data, relay));
+
+  return mapResult(reduceUpdater(handler, state, msg.data, relay));
 };
 
 /**
