@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { mount, shallow } from 'enzyme';
 import 'mocha';
-import { always, evolve, identity, inc, map, mergeAll, not, pick, pipe, prop, unapply } from 'ramda';
+import { add, always, evolve, identity, inc, map, mergeAll, not, pick, pipe, prop, unapply } from 'ramda';
 import * as React from 'react';
 import { commands, container, isolate, mapModel, message, seq } from './core';
 import Message from './message';
@@ -68,6 +68,26 @@ describe('app', () => {
         new Cmd({ foo: true }),
         new Cmd({ bar: false }),
       ]);
+    });
+
+    it('recursively calls functions returned by an updater', () => {
+      const ctr = isolate(container({
+        update: [
+          [Msg, (model, msg) => evolve({ count: add(msg.step) })],
+          [Msg2, seq(
+            evolve({ count: inc }),
+            evolve({ flag: not })
+          )]
+        ],
+      }));
+
+      ctr.push({ count: 1, flag: false });
+
+      ctr.dispatch(new Msg({ step: 2 }));
+      expect(ctr.state()).to.deep.equal({ count: 3, flag: false });
+
+      ctr.dispatch(new Msg2());
+      expect(ctr.state()).to.deep.equal({ count: 4, flag: true });
     });
 
     describe('subscriptions', () => {
