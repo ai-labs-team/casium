@@ -1,6 +1,6 @@
 import { always, cond, curry, flip, is, pipe, prop, T } from 'ramda';
 import Message, { MessageConstructor } from './message';
-import StateManager from './runtime/state_manager';
+import ExecContext from './runtime/exec_context';
 import { EffectType, ProcessState } from './subscription';
 import { safeStringify } from './util';
 
@@ -26,7 +26,7 @@ export const handler = curry((effects: EffectMap, msg: Message) => {
  * @param {Message} msg A command message to dispatch
  * @return {*} returns the result of calling the effect handler
  */
-export default curry((effects: EffectMap, stateManager: StateManager, dispatch, msg: Message) => {
+export default curry((effects: EffectMap, execContext: ExecContext<any>, msg: Message) => {
   const ctor = msg && msg.constructor, data = unbox(msg), callback = effects.get(handler(effects, msg));
 
   if (!data) {
@@ -36,5 +36,5 @@ export default curry((effects: EffectMap, stateManager: StateManager, dispatch, 
     throw new Error(`Unhandled command or subscription message type '${ctor && ctor.name}'`);
   }
 
-  return callback(...unbox(msg), dispatch, stateManager);
+  return callback(...unbox(msg), execContext.dispatch, execContext);
 });

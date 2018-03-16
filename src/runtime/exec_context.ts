@@ -174,7 +174,7 @@ export default class ExecContext<M> {
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
       // @TODO: Patch this to probably take the whole ExecContext
-      stateMgr.run(this, subs, this.env.dispatcher(stateMgr, this.dispatch));
+      stateMgr.run(this, subs, this.env.dispatcher(this));
       return this.commands(msg, cmds);
     };
 
@@ -218,7 +218,7 @@ export default class ExecContext<M> {
   }
 
   public commandDispatcher() {
-    return this.env.dispatcher(this.stateManager(), this.dispatch);
+    return this.env.dispatcher(this);
   }
 
   public push(val, config?: object & { path: any[] }) {
@@ -275,7 +275,7 @@ export default class ExecContext<M> {
     this.stateManager().stop(
       this,
       this.subscriptions(this.state()),
-      this.env.dispatcher(this.stateManager(), this.dispatch)
+      this.env.dispatcher(this)
     );
   }
 
