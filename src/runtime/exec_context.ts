@@ -173,7 +173,6 @@ export default class ExecContext<M> {
       const stateMgr = this.stateManager(), subs = this.subscriptions(next);
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
-      // @TODO: Patch this to probably take the whole ExecContext
       stateMgr.run(this, subs, this.env.dispatcher(this));
       return this.commands(msg, cmds);
     };
@@ -212,7 +211,6 @@ export default class ExecContext<M> {
 
   public commands(msg, cmds) {
     return pipe(flatten, filter(is(Object)), map(
-      // @TODO: Patch this to probably take the whole ExecContext --- vv
       trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.commandDispatcher()))
     ))(cmds);
   }
