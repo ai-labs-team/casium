@@ -170,9 +170,10 @@ export default class ExecContext<M> {
     let hasInitialized = false;
 
     const run = (msg, [next, cmds]) => {
-      const stateMgr = this.getStateManager(), subs = this.subscriptions(next);
+      const stateMgr = this.stateManager(), subs = this.subscriptions(next);
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
+      // @TODO: Patch this to probably take the whole ExecContext
       stateMgr.run(this, subs, this.env.dispatcher(stateMgr, this.dispatch));
       return this.commands(msg, cmds);
     };
@@ -202,7 +203,7 @@ export default class ExecContext<M> {
   }
 
   public subscribe(listener: Callback, config?: Config) {
-    return this.getStateManager().subscribe(listener, config || { path: this.path });
+    return this.stateManager().subscribe(listener, config || { path: this.path });
   }
 
   public dispatch(message: Message) {
@@ -211,8 +212,13 @@ export default class ExecContext<M> {
 
   public commands(msg, cmds) {
     return pipe(flatten, filter(is(Object)), map(
-      trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.env.dispatcher(this.getStateManager(), this.dispatch)))
+      // @TODO: Patch this to probably take the whole ExecContext --- vv
+      trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.commandDispatcher()))
     ))(cmds);
+  }
+
+  public commandDispatcher() {
+    return this.env.dispatcher(this.stateManager(), this.dispatch);
   }
 
   public push(val, config?: object & { path: any[] }) {
@@ -266,10 +272,10 @@ export default class ExecContext<M> {
    * Called when the execution context shuts down. Clears attached subscription processes.
    */
   public destroy() {
-    this.getStateManager().stop(
+    this.stateManager().stop(
       this,
       this.subscriptions(this.state()),
-      this.env.dispatcher(this.getStateManager(), this.dispatch)
+      this.env.dispatcher(this.stateManager(), this.dispatch)
     );
   }
 
@@ -288,13 +294,14 @@ export default class ExecContext<M> {
     const { container, env } = this;
     return (
       !container.subscriptions && [] ||
+      // @TODO Filter out empty values, like how commands work
       toArray(container.subscriptions(model, this.relay()))
     ).reduce(groupEffects(env.handler), new Map());
   }
 
-  private getStateManager(): StateManager {
+  public stateManager(): StateManager {
     const parent = this.parent as ExecContext<M>;
-    return this.stateMgr || parent.getStateManager && parent.getStateManager();
+    return this.stateMgr || parent.stateManager && parent.stateManager();
   }
 
   private internalDispatch(msg: Message) {
