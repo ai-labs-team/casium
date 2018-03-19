@@ -1,6 +1,6 @@
 import {
-  complement as not, concat, curry, defaultTo, equals, filter, flatten,
-  identity, is, keys, map, merge, nth, pick, pipe, prop, values
+  complement as not, complement, concat, curry, defaultTo, equals, filter, flatten,
+  identity, is, isEmpty, keys, map, merge, nth, pick, pipe, prop, values
 } from 'ramda';
 
 import { Container, DelegateDef, PARENT } from '../core';
@@ -165,11 +165,13 @@ export default class ExecContext<M> {
   protected stateMgr?: StateManager = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
+    console.log('constructor');
     const ctrEnv = Environment.merge(parent, env);
     const path = concat(parent && parent.path || [], (delegate && delegate !== PARENT) ? toArray(delegate) : []);
     let hasInitialized = false;
 
     const run = (msg, [next, cmds]) => {
+      console.log(this.subscriptions(next));
       const stateMgr = this.stateManager(), subs = this.subscriptions(next);
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
@@ -179,6 +181,7 @@ export default class ExecContext<M> {
 
     const initialize = fn => (...args) => {
       if (!hasInitialized) {
+        console.log('initialize');
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
         const initial = hasStore ? attachStore(container.attach, container) : (this.getState() || {});
@@ -288,18 +291,18 @@ export default class ExecContext<M> {
     return pipe(Message.toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), this));
   }
 
+  public stateManager(): StateManager {
+    const parent = this.parent as ExecContext<M>;
+    return this.stateMgr || parent.stateManager && parent.stateManager();
+  }
+
   private subscriptions(model) {
     const { container, env } = this;
     return (
       !container.subscriptions && [] ||
       // @TODO Filter out empty values, like how commands work
       toArray(container.subscriptions(model, this.relay()))
-    ).reduce(groupEffects(env.handler), new Map());
-  }
-
-  public stateManager(): StateManager {
-    const parent = this.parent as ExecContext<M>;
-    return this.stateMgr || parent.stateManager && parent.stateManager();
+    ).filter(complement(isEmpty)).reduce(groupEffects(env.handler), new Map());
   }
 
   private internalDispatch(msg: Message) {
