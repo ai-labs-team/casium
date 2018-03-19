@@ -173,7 +173,7 @@ export default class ExecContext<M> {
       const stateMgr = this.stateManager(), subs = this.subscriptions(next);
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
-      stateMgr.run(this, subs, this.env.dispatcher(this));
+      stateMgr.run(this, subs, this.commandDispatcher());
       return this.commands(msg, cmds);
     };
 
@@ -273,7 +273,7 @@ export default class ExecContext<M> {
     this.stateManager().stop(
       this,
       this.subscriptions(this.state()),
-      this.env.dispatcher(this)
+      this.commandDispatcher()
     );
   }
 
@@ -297,7 +297,6 @@ export default class ExecContext<M> {
     const { container, env } = this;
     return (
       !container.subscriptions && [] ||
-      // @TODO Filter out empty values, like how commands work
       toArray(container.subscriptions(model, this.relay()))
     ).filter(not(isEmpty)).reduce(groupEffects(env.handler), new Map());
   }
