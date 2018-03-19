@@ -1,38 +1,39 @@
 import { expect } from 'chai';
 import 'mocha';
-import { always } from 'ramda';
-import * as React from 'react'
+import { always, nthArg } from 'ramda';
+import * as React from 'react';
+import { container, isolate } from '../core';
+import { create } from '../environment';
 import ExecutionContext from './exec_context';
-import { container } from '../core';
-import { root } from '../environment';
-import { mount } from 'enzyme';
+import StateManager from './state_manager';
 
 import Message from '../message';
 
 class Cmd extends Message {}
 
 describe('ExecutionContext', () => {
-  let Ctr;
-  let exec_context;
+  let ctr: any;
+  let execContext: any;
 
   before(() => {
-    Ctr =  container({
-        init: always({ foo: true }),
-        update: [],
-        subscriptions: () => [
-            new Cmd(),
-            new Cmd({ foo: '1', bar: '2'}),
-            {},
-          ],
-        view: () => (<div/>),
-      });
-    exec_context = new ExecutionContext({env: root, container: Ctr});
-    mount(<Ctr />);
-    exec_context.state();
+    ctr =  isolate(container({
+      init: always({ foo: true }),
+      update: [[Cmd, model => model]],
+      subscriptions: () => [
+        {},
+        null,
+        false,
+      ],
+      view: () => (<div/>),
+    }));
+    execContext = new ExecutionContext({
+      env: create({ dispatcher: nthArg(2), effects: new Map(), log: () => {}, stateManager: () => new StateManager() }),
+      container: ctr
+    });
+    execContext.push({});
   });
 
   it('should filter empty subscriptions', () => {
-      console.log(exec_context.stateManager().listeners);
-    expect(exec_context.stateManager().listeners).to.equal(2);
+    expect(() => execContext.state()).not.to.throw();
   });
 });

@@ -1,5 +1,5 @@
 import {
-  complement as not, complement, concat, curry, defaultTo, equals, filter, flatten,
+  complement as not, concat, curry, defaultTo, equals, filter, flatten,
   identity, is, isEmpty, keys, map, merge, nth, pick, pipe, prop, values
 } from 'ramda';
 
@@ -165,13 +165,11 @@ export default class ExecContext<M> {
   protected stateMgr?: StateManager = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
-    console.log('constructor');
     const ctrEnv = Environment.merge(parent, env);
     const path = concat(parent && parent.path || [], (delegate && delegate !== PARENT) ? toArray(delegate) : []);
     let hasInitialized = false;
 
     const run = (msg, [next, cmds]) => {
-      console.log(this.subscriptions(next));
       const stateMgr = this.stateManager(), subs = this.subscriptions(next);
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
@@ -181,7 +179,6 @@ export default class ExecContext<M> {
 
     const initialize = fn => (...args) => {
       if (!hasInitialized) {
-        console.log('initialize');
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
         const initial = hasStore ? attachStore(container.attach, container) : (this.getState() || {});
@@ -302,7 +299,7 @@ export default class ExecContext<M> {
       !container.subscriptions && [] ||
       // @TODO Filter out empty values, like how commands work
       toArray(container.subscriptions(model, this.relay()))
-    ).filter(complement(isEmpty)).reduce(groupEffects(env.handler), new Map());
+    ).filter(not(isEmpty)).reduce(groupEffects(env.handler), new Map());
   }
 
   private internalDispatch(msg: Message) {
