@@ -3,9 +3,10 @@ import {
   identity, is, keys, map, merge, nth, pick, pipe, prop, values
 } from 'ramda';
 
+import * as commands from '../commands';
 import { Container, DelegateDef, PARENT } from '../core';
-import { cmdName, intercept, notify } from '../dev_tools';
 import * as Environment from '../environment';
+import { intercept, notify } from '../instrumentation';
 import Message, { MessageConstructor } from '../message';
 import { mapResult, reduceUpdater, replace, safeStringify, toArray, trap } from '../util';
 import StateManager, { Callback, Config } from './state_manager';
@@ -130,6 +131,26 @@ const groupEffects = keyFn => (prev, current) => {
   const key = keyFn(current);
   prev.set(key, concat(prev.get(key) || [], [current]));
   return prev;
+};
+
+/**
+ * Represents a Command instance as a string.
+ *
+ * @todo This is implementation will *not* represent custom Commands correctly,
+ * and will change significantly in the near future.
+ */
+const cmdName = (cmd) => {
+  let mod, name, cls;
+
+  for (mod in commands) {
+    for (name in commands[mod]) {
+      cls = commands[mod][name];
+      if (cmd && cmd.constructor && cls === cmd.constructor) {
+        return `${mod}.${name}`;
+      }
+    }
+  }
+  return cmd && cmd.constructor && cmd.constructor.name || '??';
 };
 
 /**
