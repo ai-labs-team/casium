@@ -1,9 +1,15 @@
 import * as deepFreeze from 'deep-freeze-strict';
 import {
-  all, always, both, cond, curry, equals, evolve, filter, flip, identity, ifElse, is, keys, map,
-  merge, mergeDeepWith, not, nth, pickAll, pipe, propEq, reduce, union, when, zipWith
+  all, always, both, cond, curry, equals, evolve, filter, flip, identity,
+  ifElse, is, keys, map, merge, mergeDeepWith, not, nth, pickAll, pipe, propEq,
+  reduce, union, when, zipWith
 } from 'ramda';
 import * as React from 'react';
+
+// tslint:disable-next-line:ban-types
+export const moduleName = (prefix: string) => (constructor: Function) => {
+  Object.defineProperty(constructor, 'name', { value: `${prefix}.${constructor.name}` });
+};
 
 /**
  * Deep-merges two objects, overwriting left-hand keys with right-hand keys, unionizing arrays.
