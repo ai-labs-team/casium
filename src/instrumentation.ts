@@ -33,13 +33,12 @@ export const INSTRUMENTATION_KEY = '__CASIUM_INSTRUMENTATION__';
 declare global {
   interface Window {
     [INSTRUMENTATION_KEY]: {
+      stateManager?: StateManager;
       withStateManager: StateManagerCallback[];
       onMessage: OnMessageCallback[];
     };
   }
 }
-
-let stateManager: StateManager;
 
 /**
  * Executes `callback` with the root Execution Context's State Manager instance.
@@ -48,6 +47,8 @@ let stateManager: StateManager;
  */
 export const withStateManager = (callback: StateManagerCallback) => {
   init();
+
+  const { stateManager } = window[INSTRUMENTATION_KEY];
 
   stateManager ?
     callback(stateManager) :
@@ -85,9 +86,11 @@ export const notify = (msg: Message) =>
  * be called from within an Execution Context.
  */
 export const intercept = (stateMgr: StateManager) => {
-  stateManager = stateMgr;
+  if (hasWindow()) {
+    init();
 
-  if (hasWindow() && hasInstrumentation()) {
+    window[INSTRUMENTATION_KEY].stateManager = stateMgr;
+
     /**
      * To avoid any potential pitfalls with multiple threads and contexts
      * operating at global state, process and clear each deferred
@@ -112,6 +115,7 @@ const init = () =>
   hasWindow() &&
   !hasInstrumentation() &&
   (window[INSTRUMENTATION_KEY] = {
+    stateManager: undefined,
     withStateManager: [],
     onMessage: []
   });

@@ -139,7 +139,7 @@ const groupEffects = keyFn => (prev, current) => {
  * @todo This is implementation will *not* represent custom Commands correctly,
  * and will change significantly in the near future.
  */
-const cmdName = (cmd) => {
+export const cmdName = (cmd) => {
   let mod, name, cls;
 
   for (mod in commands) {
