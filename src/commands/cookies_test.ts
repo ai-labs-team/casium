@@ -13,7 +13,7 @@ describe('cookies', () => {
 
     it('result does not accept a function', () => {
       expect(() => new Cookies.Read({ key: 'bleh', result: () => {} }))
-        .to.throw(TypeError, /failed expectations in Read: result/);
+        .to.throw(TypeError, /failed expectations in Cookies.Read: result/);
     });
   });
 });

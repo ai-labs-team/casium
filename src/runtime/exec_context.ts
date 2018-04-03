@@ -3,7 +3,6 @@ import {
   identity, is, isEmpty, keys, map, merge, nth, pick, pipe, prop, values
 } from 'ramda';
 
-import * as commands from '../commands';
 import { Container, DelegateDef, PARENT } from '../core';
 import * as Environment from '../environment';
 import { intercept, notify } from '../instrumentation';
@@ -140,16 +139,6 @@ const groupEffects = keyFn => (prev, current) => {
  * and will change significantly in the near future.
  */
 export const cmdName = (cmd) => {
-  let mod, name, cls;
-
-  for (mod in commands) {
-    for (name in commands[mod]) {
-      cls = commands[mod][name];
-      if (cmd && cmd.constructor && cls === cmd.constructor) {
-        return `${mod}.${name}`;
-      }
-    }
-  }
   return cmd && cmd.constructor && cmd.constructor.name || '??';
 };
 
