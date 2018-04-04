@@ -23,6 +23,7 @@ export type MessageOrEmpty = Message | Empty;
 export type GenericObject = { [key: string]: any };
 
 export type UpdateResult<M> = M |
+  ((model: M) => M) |
   [M] |
   [M, MessageOrEmpty] |
   [M, MessageOrEmpty, MessageOrEmpty] |
