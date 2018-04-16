@@ -73,6 +73,13 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
     this.setState(this.execContext.push(merge(state, pick(keys(state), childProps))));
   }
 
+  public shouldComponentUpdate(nextProps, nextState) {
+    return (
+      !equals(nextProps.childProps, this.props.childProps) ||
+      !equals(nextState, this.state)
+    );
+  }
+
   public componentDidUpdate(prev) {
     const { childProps } = this.props;
     const omitChildren = omit(['children']);
