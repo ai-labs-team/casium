@@ -216,7 +216,7 @@ export default class ExecContext<M> {
   }
 
   public dispatch(message: Message) {
-    return trap(this.errLog(null), this.internalDispatch.bind(this))(checkMessage(this, message));
+    return trap(this.errLog(message), this.internalDispatch.bind(this))(checkMessage(this, message));
   }
 
   public commands(msg, cmds) {
