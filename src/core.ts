@@ -23,6 +23,7 @@ export type MessageOrEmpty = Message | Empty;
 export type GenericObject = { [key: string]: any };
 
 export type UpdateResult<M> = M |
+  ((model: M) => M) |
   [M] |
   [M, MessageOrEmpty] |
   [M, MessageOrEmpty, MessageOrEmpty] |
@@ -43,10 +44,11 @@ export type UpdateResult<M> = M |
   ];
 
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
+export type UpdaterDef<M> = (model: M, message: GenericObject, relay: GenericObject) => UpdateResult<M>;
 
 export type DelegateDef = symbol | string;
-export type UpdateMapDef<M> = [MessageConstructor, Updater<M>][];
-export type UpdateMap<M> = Map<MessageConstructor, Updater<M>>;
+export type UpdateMapDef<M> = [MessageConstructor, UpdaterDef<M>][];
+export type UpdateMap<M> = Map<MessageConstructor, UpdaterDef<M>>;
 
 export type ContainerDefPartial<M> = { update?: UpdateMapDef<M>, name?: string };
 export type ContainerDefMapped<M> = { update: UpdateMap<M>, name: string };
@@ -54,7 +56,7 @@ export type ContainerPartial<M> = {
   delegate?: DelegateDef;
   init?: (model: M, relay: GenericObject) => UpdateResult<M>;
   relay?: { [key: string]: (model: M, relay: GenericObject) => M & GenericObject };
-  view?: ContainerView<M>;
+  view?: ContainerViewDef<M>;
   attach?: { store: GenericObject, key?: string };
   subscriptions?: (model: M, relay: GenericObject) => any | any[];
 };
@@ -62,6 +64,7 @@ export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
 
 export type Emitter = (msg: MessageConstructor | [MessageConstructor, GenericObject]) => any;
 export type ContainerViewProps<M> = M & { emit: Emitter, relay: GenericObject };
+export type ContainerViewDef<M> = (props: ContainerViewProps<M>) => any;
 export type ContainerView<M> = (props?: ContainerViewProps<M>) => any;
 export type Container<M> = ContainerView<M> & ContainerPartial<M> & ContainerDefMapped<M> & {
   accepts: (m: MessageConstructor) => boolean;
@@ -195,7 +198,7 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
  * will be treated as an updater.
  */
 export function seq<M>(...updaters: Updater<M>[]) {
-  return function (model: M, msg?: GenericObject, relay?: GenericObject): UpdateResult<M> {
+  return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): UpdateResult<M> {
     const merge = ([{}, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
     const reduce = (prev, cur) =>
       merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
