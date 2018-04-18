@@ -1,16 +1,21 @@
-import * as History from 'history';
 import { pipe } from 'ramda';
-import { Back, PushHistory, ReplaceHistory, Timeout } from '../commands/browser';
+import { Back, Forward, PushHistory, ReplaceHistory, Timeout } from '../commands/browser';
 import Message, { MessageConstructor } from '../message';
 
-export const history = typeof window === 'undefined' || process.env.NODE_ENV === 'test' ?
-  History.createMemoryHistory() : History.createBrowserHistory();
+const noOp: any = () => {};
+
+export const history = (() => (
+  (typeof window === 'undefined' || (typeof process !== 'undefined' && process.env.NODE_ENV === 'test'))
+    ? { back: noOp, forward: noOp, pushState: noOp, replaceState: noOp }
+    : window.history
+))();
 
 export default new Map<MessageConstructor, (data: any, dispatch: any) => any>([
-  [PushHistory, ({ path, state }) => history.push(path, state || {})],
-  [ReplaceHistory, ({ path, state }) => history.replace(path, state || {})],
-  [Back, () => history.goBack()],
-  [Timeout, ({ result, timeout }, dispatch) => setTimeout(
+  [PushHistory, ({ path, title, state }) => history.pushState(state, title, path)],
+  [ReplaceHistory, ({ path, title, state }) => history.replaceState(state, title, path)],
+  [Back, () => history.back()],
+  [Forward, () => history.forward()],
+  [Timeout, ({ result, timeout, ...data }, dispatch) => setTimeout(
     () => pipe(Message.construct(result), dispatch)({}),
     timeout
   )],
