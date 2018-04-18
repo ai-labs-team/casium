@@ -5,7 +5,6 @@ import { Read } from './commands/local_storage';
 import dispatcher, { handler } from './dispatcher';
 import effects from './effects';
 import Message from './message';
-// import ExecContext from './runtime/exec_context';
 
 describe('dispatcher', () => {
 
