@@ -30,10 +30,10 @@ export default curry((effects: EffectMap, execContext: ExecContext<any>, msg: Me
   const ctor = msg && msg.constructor, data = unbox(msg), callback = effects.get(handler(effects, msg));
 
   if (!data) {
-    throw new Error(`Message '${safeStringify(msg)}' of type '${ctor && ctor.name}' is not acceptable`);
+    throw new TypeError(`Message '${safeStringify(msg)}' of type '${ctor && ctor.name}' is not acceptable`);
   }
   if (!callback) {
-    throw new Error(`Unhandled command or subscription message type '${ctor && ctor.name}'`);
+    throw new TypeError(`Unhandled command or subscription message type '${ctor && ctor.name}'`);
   }
 
   return callback(...unbox(msg), execContext.dispatch, execContext);
