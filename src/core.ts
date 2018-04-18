@@ -183,8 +183,9 @@ export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironm
 export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer<M> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
   const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => {}, stateManager });
+  const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
 
-  const container = assign(mapDef(ctr.identity()), { accepts: always(true) }) as Container<M>;
+  const container = assign(mapDef(ctr.identity()), overrides) as Container<M>;
   const parent: any = opts.relay ? { relay: always(opts.relay) } : null;
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
