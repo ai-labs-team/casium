@@ -79,7 +79,9 @@
       "src/**/*.{ts,tsx}"
     ],
     "exclude": [
-      "**/*_test.{ts,tsx}"
+      "**/*_test.{ts,tsx}",
+      "src/effects/*.{ts,tsx}",
+      "src/components/error.tsx"
     ],
     "extension": [
       ".ts",
