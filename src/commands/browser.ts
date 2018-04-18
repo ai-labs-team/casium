@@ -17,6 +17,10 @@ export class Back extends Message {
 }
 
 @moduleName('Browser')
+export class Forward extends Message {
+}
+
+@moduleName('Browser')
 export class Timeout extends Message {
   public static expects = { result: Message.isEmittable, timeout: is(Number) };
 }
