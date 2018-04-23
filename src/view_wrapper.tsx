@@ -1,5 +1,5 @@
 import * as PropTypes from 'prop-types';
-import { equals, keys, merge, mergeAll, omit, pick } from 'ramda';
+import { equals, keys, merge, mergeAll, omit, pick, pipe } from 'ramda';
 import * as React from 'react';
 import ErrorComponent from './components/error';
 import { Container, DelegateDef, Emitter } from './core';
@@ -54,6 +54,10 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
     return container.accepts(msg) && !!this.execContext.dispatch(new msg(propList(childProps), { shallow: true }));
   }
 
+  public mergeWithRelay(nextState: any) {
+    return merge(nextState, { relay: this.execContext.relay() });
+  }
+
   public componentWillMount() {
     const parent = this.context.execContext;
     const { container, delegate, env, childProps } = this.props;
@@ -63,7 +67,7 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
       console.warn(msg); // tslint:disable-line:no-console
     }
     this.execContext = new ExecContext({ env, parent, container, delegate });
-    this.unsubscribe = this.execContext.subscribe(this.setState.bind(this));
+    this.unsubscribe = this.execContext.subscribe(pipe(this.mergeWithRelay.bind(this), this.setState.bind(this)));
 
     if (this.dispatchLifecycleMessage(Activate, this.props)) {
       return;
@@ -76,7 +80,7 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
   public shouldComponentUpdate(nextProps, nextState) {
     return (
       !equals(nextProps.childProps, this.props.childProps) ||
-      !equals(nextState, this.state)
+      !equals(this.mergeWithRelay(nextState), this.state)
     );
   }
 
