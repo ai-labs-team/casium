@@ -98,7 +98,7 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
     this.execContext.destroy();
   }
 
-  public unstable_handleError(e) {
+  public componentDidCatch(e) {
     // tslint:disable-next-line:no-console
     console.error('Failed to compile React component\n', e);
     this.setState({ componentError: e });
