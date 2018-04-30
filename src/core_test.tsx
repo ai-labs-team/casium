@@ -41,7 +41,7 @@ describe('app', () => {
     });
 
     it('throws on constructor dispatch', () => {
-      const ctr = isolate(container({ update: [] }));
+      const ctr = isolate(container({ update: [] }), { catchAll: false });
       expect(() => ctr.dispatch(Msg)).to.throw(TypeError, /Attempted to dispatch message constructor/);
     });
 
@@ -55,6 +55,32 @@ describe('app', () => {
 
       expect(ctr.dispatch(new Msg())).to.be.an.instanceof(TypeError);
       expect(ctr.dispatch(new Msg2())).to.be.an.instanceof(TypeError);
+    });
+
+    it('throws on invalid message', () => {
+      const ctr = isolate(container({
+        update: [
+          [Object as any, identity]
+        ],
+      }));
+
+      expect(ctr.dispatch({})).to.be.an.instanceof(TypeError);
+    });
+
+    it('throws on invalid handler', () => {
+      const ctr = isolate(container({
+        update: [
+          [Msg, {} as any]
+        ],
+      }));
+
+      expect(ctr.dispatch(new Msg())).to.be.an.instanceof(TypeError);
+    });
+
+    it('throws on unhandled messages', () => {
+      const ctr = isolate(container({ name: 'FooContainer', update: [[Msg, always([])]] }), { catchAll: false });
+
+      expect(() => ctr.dispatch(new Msg2())).to.throw(`Unhandled message type 'Msg2' in container 'FooContainer'`);
     });
 
     it('accepts a flattened array with state and commands', () => {
