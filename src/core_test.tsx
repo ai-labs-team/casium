@@ -78,14 +78,7 @@ describe('app', () => {
     });
 
     it('throws on unhandled messages', () => {
-      const ctr = isolate(container({
-        name: 'FooContainer',
-        update: [
-          [Msg, always([])],
-        ],
-      }), {
-        catchAll: false
-      });
+      const ctr = isolate(container({ name: 'FooContainer', update: [[Msg, always([])]] }), { catchAll: false });
 
       expect(() => ctr.dispatch(new Msg2())).to.throw(`Unhandled message type 'Msg2' in container 'FooContainer'`);
     });

@@ -200,7 +200,7 @@ export default class ExecContext<M> {
   public dispatch(msg: Message) {
     const msgType = msg.constructor as MessageConstructor;
 
-    if ((msgType as Function) === Function) {
+    if ((msgType as any) === Function) {
       throw new TypeError(`Attempted to dispatch message constructor '${(msg as any).name}' — should be an instance`);
     }
     if (!this.handles(msgType)) {
