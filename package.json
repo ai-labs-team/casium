@@ -2,14 +2,14 @@
   "name": "casium",
   "version": "2.1.3",
   "description": "Casium — An application architecture for React",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "module": "./index.js",
+  "types": "./index.d.ts",
   "repository": "https://github.com/ai-labs-team/casium.git",
   "author": "Nate Abele <natea@advisorinnovationlabs.com>",
   "license": "Apache-2.0",
   "scripts": {
     "peers": "install-self-peers -- --ignore-scripts",
-    "build": "tsc",
+    "build": "yarn peers; rm -r ./dist; tsc; cp package.json ./dist",
     "lint": "NODE_ENV=test tslint -c tslint.json \"src/**/*.{js,ts,jsx,tsx}\"",
     "lint-fix": "NODE_ENV=test tslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
@@ -69,7 +69,6 @@
   "peerDependencies": {
     "axios": "^0.16.0 || ^0.17.0",
     "deep-freeze-strict": "^1.1.0",
-    "history": "^4.6.0",
     "js-cookie": "^2.1.4",
     "prop-types": "^15.0.0-0 || ^16.0.0-0",
     "ramda": "^0.25.0",
@@ -80,7 +79,9 @@
       "src/**/*.{ts,tsx}"
     ],
     "exclude": [
-      "**/*_test.{ts,tsx}"
+      "**/*_test.{ts,tsx}",
+      "src/effects/*.{ts,tsx}",
+      "src/components/error.tsx"
     ],
     "extension": [
       ".ts",

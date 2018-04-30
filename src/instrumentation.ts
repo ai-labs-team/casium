@@ -45,6 +45,7 @@ declare global {
  * If the root Execution Context has not been initialized yet, execution of
  * `callback` is deferred until it is.
  */
+/* istanbul ignore next */
 export const withStateManager = (callback: StateManagerCallback) => {
   init();
 
@@ -62,6 +63,7 @@ export const withStateManager = (callback: StateManagerCallback) => {
  * will *not* be applied. To ensure that all messages are captured, ensure that
  * `onMessage` is called *before* defining the root Container.
  */
+/* istanbul ignore next */
 export const onMessage = (callback: OnMessageCallback) => {
   init();
   window[INSTRUMENTATION_KEY].onMessage.push(callback);

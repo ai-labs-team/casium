@@ -48,24 +48,6 @@ const formatError = (msg, cmd) => [
 const error = curry((logger, ctx, msg, err) => logger(formatError(msg, ctx), err) || err);
 
 /**
- * Checks that a Message object is valid
- * @param  {Object} A ExecContext instance
- * @param {Object} A Message instance
- * @return {Object} Returns the message instance, otherwise throws an error if it is invalid
- */
-const checkMessage = (exec, msg) => {
-  const msgType = msg && msg.constructor;
-
-  if (msgType === Function) {
-    throw new TypeError(`Attempted to dispatch message constructor '${msg.name}' — should be an instance`);
-  }
-  if (!exec.handles(msgType)) {
-    throw new TypeError(`Unhandled message type '${msgType.name}' in container '${exec.container.name}'`);
-  }
-  return msg;
-};
-
-/**
  * Attaches a container's state manager to a Redux store to receive updates.
  *
  * @param  {Object} config The attachment configuration
@@ -134,11 +116,8 @@ const groupEffects = keyFn => (prev, current) => {
 
 /**
  * Represents a Command instance as a string.
- *
- * @todo This is implementation will *not* represent custom Commands correctly,
- * and will change significantly in the near future.
  */
-export const cmdName = (cmd) => {
+const cmdName = (cmd) => {
   return cmd && cmd.constructor && cmd.constructor.name || '??';
 };
 
@@ -215,8 +194,19 @@ export default class ExecContext<M> {
     return this.stateManager().subscribe(listener, config || { path: this.path });
   }
 
-  public dispatch(message: Message) {
-    return trap(this.errLog(null), this.internalDispatch.bind(this))(checkMessage(this, message));
+  /**
+   * Checks that a Message object is valid and is handled by the bound container, then dispatches it.
+   */
+  public dispatch(msg: Message) {
+    const msgType = msg.constructor as MessageConstructor;
+
+    if ((msgType as any) === Function) {
+      throw new TypeError(`Attempted to dispatch message constructor '${(msg as any).name}' — should be an instance`);
+    }
+    if (!this.handles(msgType)) {
+      throw new TypeError(`Unhandled message type '${msgType.name}' in container '${this.container.name}'`);
+    }
+    return trap(this.errLog(null), this.internalDispatch.bind(this))(msg);
   }
 
   public commands(msg, cmds) {
@@ -312,8 +302,8 @@ export default class ExecContext<M> {
   }
 
   private internalDispatch(msg: Message) {
-    const { dispatch, parent, getState, relay } = this;
-    const msgType = msg.constructor as MessageConstructor, updater = this.container.update.get(msgType);
+    const { dispatch, parent, getState, relay } = this, msgType = msg.constructor as MessageConstructor;
+    const updater = this.container.update.get(msgType);
     return updater ? (dispatch as any).run(msg, mapMessage(updater, getState(), msg, relay())) : parent.dispatch(msg);
   }
 }
