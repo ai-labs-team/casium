@@ -3,11 +3,12 @@ import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { add, always, evolve, identity, inc, map, mergeAll, not, pick, pipe, prop, unapply } from 'ramda';
 import * as React from 'react';
-import { commands, container, isolate, mapModel, message, seq } from './core';
+import { commands, mapModel, message, seq } from './core';
 import Message from './message';
+import { container, isolate } from './react';
 import StateManager from './runtime/state_manager';
 
-describe('app', () => {
+describe('core', () => {
 
   class Cmd extends Message {}
   class Cmd2 extends Message {}

@@ -1,7 +1,7 @@
-import { always, cond, mergeDeepWithKey, path, pipe, prop, T } from 'ramda';
-import { Container } from './core';
+import { always, cond, identity, mergeDeepWithKey, path, pipe, prop, T } from 'ramda';
+
+import { Container, DelegateDef, Emitter } from './core';
 import { default as coreDispatcher, handler } from './dispatcher';
-import effects from './effects';
 import Message, { MessageConstructor } from './message';
 import ExecContext, { ExecContextPartial } from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
@@ -16,7 +16,17 @@ export type EnvDefPartial = {
   dispatcher: any;
   log?: (...args: any[]) => any | void;
   stateManager?: (container?: Container<any>) => StateManager;
+  renderer: Renderer;
 };
+
+export type RenderProps = {
+  childProps: { [key: string]: any } & { emit: Emitter };
+  container: Container<any>;
+  delegate: DelegateDef;
+  env: Environment;
+};
+
+export type Renderer = (props: RenderProps) => any;
 
 export type EnvDef = EnvDefPartial & {
   effects: Map<MessageConstructor, CommandDispatcher | SubscriptionDispatcher>;
@@ -43,15 +53,20 @@ export type Environment = EnvDefPartial & {
  *         - stateManager: A StateManager factory function
  *         - identity: Returns the parameters that created this environment
  */
-export const create = ({ effects, dispatcher = null, log = null, stateManager = null }: EnvDef): Environment => ({
+export const create = ({
+  effects,
+  dispatcher = null,
+  log = null,
+  stateManager = null,
+  renderer = identity,
+}: EnvDef): Environment => ({
   dispatcher: (dispatcher || coreDispatcher)(effects),
   handler: handler(effects),
-  identity: () => ({ effects, dispatcher, log, stateManager }),
+  identity: () => ({ effects, dispatcher, log, stateManager, renderer }),
   log: log || console.error.bind(console),
+  renderer,
   stateManager: stateManager || (() => new StateManager())
 });
-
-export const root: Environment = create({ effects, dispatcher: coreDispatcher });
 
 /**
  * Helper function for `create()`, to merge effects maps
@@ -75,6 +90,6 @@ export const merge: <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Envi
     [prop('canMerge'), ({ parent, env }) => create(mergeWithEffects(parent.env.identity(), env.identity()))],
     [prop('hasOnlyParent'), path(['parent', 'env'])],
     [prop('isOnlyChild'), prop('env')],
-    [T, always(root)]
+    [T, always(parent)] // Will this work?
   ])
 );
