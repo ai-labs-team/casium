@@ -4,10 +4,14 @@ import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { always, merge, pipe } from 'ramda';
 import * as React from 'react';
-import { container, PARENT, withEnvironment } from './core';
+
+import { PARENT, withEnvironment } from './core';
 import dispatcher from './dispatcher';
 import { create as environment } from './environment';
 import Message, { Activate, Deactivate, Refresh } from './message';
+import { container } from './react';
+
+import ViewWrapper from './view_wrapper';
 
 describe('ViewWrapper', () => {
 
@@ -168,7 +172,11 @@ describe('ViewWrapper', () => {
           ),
         });
 
-        ContainerA = withEnvironment(environment({ effects: testEffect, dispatcher }), {
+        ContainerA = withEnvironment(environment({
+          effects: testEffect,
+          dispatcher,
+          renderer: props => React.createElement(ViewWrapper, props),
+        }),                          {
           init: always({ foo: true }),
           view: state => (
             <span>
