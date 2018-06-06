@@ -73,12 +73,17 @@ export type IsolatedContainer<M> = Container<M> & {
   push: (state: M) => void;
 };
 
+type WrapView = <M>(defs: { env: Environment, container: Container<M> }) => any;
+type WrapViewProps = GenericObject & { delegate?: DelegateDef };
+
 const { freeze, assign, defineProperty } = Object;
 
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
  */
 const toMap = ifElse(is(Array), constructN(1, Map as any), id);
+
+const mergeProps = pipe(defaultTo({}), omit(['delegate']));
 
 /**
  * Wraps a container's view to extract container-specific props and inject `emit()` helper
@@ -92,16 +97,12 @@ const toMap = ifElse(is(Array), constructN(1, Map as any), id);
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView: <M>(defs: { env: Environment, container: Container<M> }) => any = ({ env, container }) => {
-  const mergeProps = pipe(defaultTo({}), omit(['delegate']));
-
-  return (props: GenericObject & { delegate?: DelegateDef } = {}) => env.renderer({
-    childProps: mergeProps(props),
-    container,
-    delegate: props.delegate || container.delegate,
-    env
-  });
-};
+const wrapView: WrapView = ({ env, container }) => (props: WrapViewProps = {}) => env.renderer({
+  childProps: mergeProps(props),
+  container,
+  delegate: props.delegate || container.delegate,
+  env
+});
 
 /**
  * Maps default values of a container definition.
