@@ -77,7 +77,7 @@ type ViewProps<M> = Partial<M> & Delegate;
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView: <Model>(defs: ViewWrapDef<Model>) => any = ({ env, container }) => {
+const wrapView: <Model>(defs: ViewWrapDef<Model>) => any = ({ env, container }) => (
   <Model>(props: ViewProps<Model> = {}) => env.renderer({
     childProps: omit(['delegate'], props),
     container,
