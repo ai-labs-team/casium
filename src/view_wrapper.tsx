@@ -98,9 +98,18 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
     this.execContext.destroy();
   }
 
+  public componentDidCatch(e) {
+    this.handleError(e);
+  }
+
   public unstable_handleError(e) {
+    this.handleError(e);
+  }
+
+  public handleError(e) {
+    const { container } = this.props;
     // tslint:disable-next-line:no-console
-    console.error('Failed to compile React component\n', e);
+    console.error(`Error rendering view for container '${container.name}' -- `, e);
     this.setState({ componentError: e });
   }
 

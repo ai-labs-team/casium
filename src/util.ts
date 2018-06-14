@@ -1,8 +1,8 @@
 import * as deepFreeze from 'deep-freeze-strict';
 import {
-  all, always, both, cond, curry, equals, evolve, filter, flip, identity,
-  ifElse, is, keys, map, merge, mergeDeepWith, not, nth, pickAll, pipe, propEq,
-  reduce, union, when, zipWith
+  __, all, always, both, cond, curry, equals, evolve, filter, flip, identity,
+  ifElse, is, keys, map, merge, mergeDeepWith, not, nth, pathOr, pickAll, pipe,
+  propEq, reduce, union, when, zipWith
 } from 'ramda';
 import * as React from 'react';
 
@@ -139,7 +139,7 @@ export const trap: Trap = curry((handler, fn) => ((...args) => {
   try {
     return fn(...args);
   } catch (e) {
-    return handler(args, e);
+    return handler(e, ...args);
   }
 }));
 
@@ -197,3 +197,27 @@ export const reduceUpdater = (value, state, msg, relay) =>
   is(Function, value)
     ? reduceUpdater(value(state, msg, relay), state, msg, relay)
     : value;
+
+/**
+ * Generic helper function for resolving the `name` of an Instance's Constructor
+ * function
+ */
+const ctorName = pathOr(__, ['constructor', 'name']);
+
+/**
+ * Gets the `name` of a Message instance, or defaults to `{INIT}` for nameless
+ * Messages (ie, those called during container initialization)
+ */
+export const msgName = ctorName('{INIT}');
+
+/**
+ * Gets the `name` of a Command Message instance. A nameless Command Message
+ * typically indicates an error.
+ */
+export const cmdName = ctorName('??');
+
+/**
+ * Gets the `name` of a Container if it exists, or defaults to `{Anonymous
+ * Container}` in cases where an explicit name has not been given.
+ */
+export const contextContainerName = pathOr('{Anonymous Container}', ['container', 'name']);

@@ -7,7 +7,7 @@ import { Container, DelegateDef, PARENT } from '../core';
 import * as Environment from '../environment';
 import { intercept, notify } from '../instrumentation';
 import Message, { MessageConstructor } from '../message';
-import { mapResult, reduceUpdater, replace, safeStringify, toArray, trap } from '../util';
+import { cmdName, mapResult, msgName, reduceUpdater, replace, toArray, trap } from '../util';
 import StateManager, { Callback, Config } from './state_manager';
 
 export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) => object, path?: string[] };
@@ -22,6 +22,41 @@ export type ExecContextDef<M> = {
 const { assign, freeze } = Object;
 
 /**
+ * Logs an Error that was thrown while handling a Message
+ *
+ * @param logger The function to use for logging to
+ * @param err The Error that was thrown
+ * @param msg The Message that resulted in the Error being thrown
+ */
+const logMsgError = curry((logger, err, msg) => {
+  logger(`An error was thrown as the result of message '${msgName(msg)}' -- `, err);
+  logger('Message: ', msg);
+
+  return err;
+});
+
+/**
+ * Logs an Error that was thrown while handling a Command that was initiated by
+ * a Message.
+ *
+ * @param logger The function to use for logging to
+ * @param msg The Message that initated the Command
+ * @param err The Error that was thrown
+ * @param msg The Command that resulted in the Error being thrown
+ */
+const logCmdError = curry((logger, msg, err, cmd) => {
+  logger(
+    `An error was thrown as the result of command '${cmdName(cmd)}', ` +
+    `which was initiated by message '${msgName(msg)}' -- `,
+    err
+  );
+  logger('Command: ', cmd);
+  logger('Message: ', msg);
+
+  return err;
+});
+
+/**
  * Walk up a container hierarchy looking for a value.
  *
  * @param  {Function} Callback to check an execution context for a value
@@ -30,22 +65,6 @@ const { assign, freeze } = Object;
  * @return {*}
  */
 const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, exec.parent, val));
-
-/**
- * Formats a message for showing an error that occurred as the result of a command
- *
- * @param  {Message} msg
- * @param  {Message} cmd
- * @return {string}
- */
-const formatError = (msg, cmd) => [
-  `An error was thrown as the result of command ${(cmdName(cmd) || '{COMMAND UNDEFINED}')}`,
-  `(${safeStringify(cmd && cmd.data)}), which was initiated by message`,
-  (msg && msg.constructor && msg.constructor.name || '{INIT}'),
-  `(${safeStringify(msg && msg.data)}) --`,
-].join(' ');
-
-const error = curry((logger, ctx, msg, err) => logger(formatError(msg, ctx), err) || err);
 
 /**
  * Attaches a container's state manager to a Redux store to receive updates.
@@ -115,13 +134,6 @@ const groupEffects = keyFn => (prev, current) => {
 };
 
 /**
- * Represents a Command instance as a string.
- */
-const cmdName = (cmd) => {
-  return cmd && cmd.constructor && cmd.constructor.name || '??';
-};
-
-/**
  * Binds together a container, environment, and a state manager to handles message execution within a
  * container.
  *
@@ -177,13 +189,12 @@ export default class ExecContext<M> {
     };
 
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
-    const errLog = error(ctrEnv.log);
     const isRoot: boolean = !parent || ExecContext.isPartial(parent);
     const stateMgr: StateManager = isRoot ? intercept(ctrEnv.stateManager(container)) : null;
     const getState = stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path });
 
     freeze(assign(this, {
-      env: ctrEnv, path, parent, errLog, delegate, stateMgr, container, getState,
+      env: ctrEnv, path, parent, delegate, stateMgr, container, getState,
       ...wrapInit(['dispatch', 'push', 'subscribe', 'state', 'relay'])(this.constructor.prototype),
     }));
 
@@ -206,12 +217,12 @@ export default class ExecContext<M> {
     if (!this.handles(msgType)) {
       throw new TypeError(`Unhandled message type '${msgType.name}' in container '${this.container.name}'`);
     }
-    return trap(this.errLog(null), this.internalDispatch.bind(this))(msg);
+    return trap(logMsgError(this.env.log), this.internalDispatch.bind(this))(msg);
   }
 
   public commands(msg, cmds) {
     return pipe(flatten, filter(is(Object)), map(
-      trap(this.errLog(msg), pipe(checkCmdMsgs(this), this.commandDispatcher()))
+      trap(logCmdError(this.env.log, msg), pipe(checkCmdMsgs(this), this.commandDispatcher()))
     ))(cmds);
   }
 
