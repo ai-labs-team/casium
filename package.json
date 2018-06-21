@@ -92,5 +92,8 @@
       "html",
       "lcov"
     ]
+  },
+  "dependencies": {
+    "@uirouter/core": "^5.0.19"
   }
 }

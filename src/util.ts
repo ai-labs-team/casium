@@ -221,3 +221,58 @@ export const cmdName = ctorName('??');
  * Container}` in cases where an explicit name has not been given.
  */
 export const contextContainerName = pathOr('{Anonymous Container}', ['container', 'name']);
+
+export interface WithDefault {
+  <T>(val: T, maybe: Maybe<T>): T;
+  <T>(val: T): (maybe: Maybe<T>) => T;
+}
+
+export class Maybe<T> {
+
+  public static defaultTo: WithDefault = curry((val, maybe) => maybe.defaultTo(val));
+
+  public static empty: Maybe<null> = Maybe.of(null);
+
+  private val: T;
+
+  constructor(val: T | null | undefined) {
+    this.val = val;
+    Object.freeze(this);
+  }
+
+  public static of<T>(val: T): Maybe<T> { //tslint:disable-line:function-name
+    return new Maybe(val);
+  }
+
+  public map<U>(fn: (val: T) => U): Maybe<U> {
+    return Maybe.of(this.isNothing() ? null : fn(this.val));
+  }
+
+  public isNothing(): boolean {
+    return (this.val === null || this.val === undefined);
+  }
+
+  public value(): T {
+    return this.val;
+  }
+
+  public chain<U>(fn: (val: T) => Maybe<U>): Maybe<U> {
+    return this.map(fn).value();
+  }
+
+  public defaultTo(defaultVal: T): T {
+    return this.isNothing() ? defaultVal : this.val;
+  }
+
+  public defaultToLazy(fn: () => T): T {
+    return this.isNothing() ? fn() : this.val;
+  }
+
+  public or(alt: Maybe<T>): Maybe<T> {
+    return this.isNothing() ? alt : this;
+  }
+
+  public orLazy(fn: () => Maybe<T>): Maybe<T> {
+    return this.isNothing() ? fn() : this;
+  }
+}
