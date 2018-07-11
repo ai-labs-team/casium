@@ -292,7 +292,7 @@ Again, we're changing the return value of `init()` to the array format we saw be
 
 We handle our `LoadCounter` message, destructuring the `value` property and assigning it to the `count` property of our new state. Great, right?
 
-Well, almost. Don't look now, but we've just introduced an error into our app: `count` is supposed to be a number, but local storage returns strings. We need to pass `value` through `parseInt()` and... this is starting to look a lot like work we've already done. 
+Well, almost. Don't look now, but we've just introduced an error into our app: `count` is supposed to be a number, but local storage returns strings. We need to pass `value` through `parseInt()` and... this is starting to look a lot like work we've already done.
 
 Instead, we can reuse our existing `SetCounter` message — both messages expect to have a `value` which gets number-ified and written to the `count` property of the state.
 
@@ -339,7 +339,7 @@ export default container({
 
       <button onClick={emit(Increment)}> + </button>
       <button onClick={emit([Increment, { step: 10 }])}> ++ </button>
-      
+
       <button onClick={emit(SaveCounter)}>Save</button>
     </div>
   )
@@ -398,6 +398,15 @@ export default class SignIn extends Post {
 As we talked about, all changes in the application are handled by _messages_. Messages are either emitted from the view, or the result of a _command message_ (or just _command_).
 
 **@TODO**
+
+# Development
+
+## Getting Started
+
+```
+yarn peers
+yarn test
+```
 
 ## Writing tests
 
