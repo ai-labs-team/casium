@@ -84,11 +84,17 @@ export const getValidationFailures = spec => pipe(
  * <Name first="Bob" last="Loblaw" />
  * ```
  */
-export const withProps = curry((
-  fnMap: { [key: string]: (props: object) => any },
-  component: React.StatelessComponent<any>,
-  props: object
-): JSX.Element => component(mergeDeep(props, map(fn => fn(props), fnMap))));
+ export type DeriveProps<Props, DerivedProps> = { [K in keyof DerivedProps]: (props: Props) => DerivedProps[K] };
+ export function withProps<Props extends {}, DerivedProps extends {}>(
+   deriveProps: DeriveProps<Props, DerivedProps>,
+   component: React.StatelessComponent<Props & DerivedProps>
+ ): React.StatelessComponent<Props> {
+   return curry((
+     fnMap: { [key: string]: (props: object) => any },
+     component: React.StatelessComponent<any>,
+     props: object
+   ): JSX.Element => component(mergeDeep(props, map(fn => fn(props), fnMap))))
+};
 
 export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
   const mapProps = (child) => {
