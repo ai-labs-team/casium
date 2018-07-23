@@ -84,10 +84,10 @@ export const getValidationFailures = spec => pipe(
  * <Name first="Bob" last="Loblaw" />
  * ```
  */
- export type DeriveProps<Props, DerivedProps> = { [K in keyof DerivedProps]: (props: Props) => DerivedProps[K] };
- export function withProps<Props extends {}, DerivedProps extends {}>(
-   deriveProps: DeriveProps<Props, DerivedProps>,
-   component: React.StatelessComponent<Props & DerivedProps>
+ export type ComputeProps<Props, ComputedProps> = { [K in keyof ComputedProps]: (props: Props) => ComputedProps[K] };
+ export function withProps<Props extends {}, ComputedProps extends {}>(
+   computeProps: ComputeProps<Props, ComputedProps>,
+   component: React.StatelessComponent<Props & ComputedProps>
  ): React.StatelessComponent<Props> {
    return curry((
      fnMap: { [key: string]: (props: object) => any },
