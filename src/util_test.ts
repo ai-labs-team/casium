@@ -71,20 +71,20 @@ describe('util', () => {
     const defaultProps = {};
 
     it(`passes when fnMap is an object with functions & component is a function that takes 1 arg`, () => {
-      expect(() => withProps(defaultFnMap, defaultComponent, defaultProps)).to.not.throw();
+      expect(() => withProps(defaultFnMap, defaultComponent)(defaultProps)).to.not.throw();
     });
 
     it('succeeds when fnMap is empty object', () => {
-      expect(() => withProps({}, defaultComponent, defaultProps)).to.not.throw();
+      expect(() => withProps({}, defaultComponent)(defaultProps)).to.not.throw();
     });
 
     it('succeeds when fnMap is object with 3 functions', () => {
       const fnMap = {
-        a: () => {},
-        b: (one, two, four) => (one + two + four),
+        a: () => 1,
+        b: ({ one, two, four }) => (one + two + four),
         c: one => one,
       };
-      expect(() => withProps(fnMap, defaultComponent, defaultProps)).to.not.throw();
+      expect(() => withProps(fnMap, defaultComponent)(defaultProps)).to.not.throw();
     });
   });
 

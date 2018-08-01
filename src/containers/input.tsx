@@ -18,7 +18,7 @@ export default container({
     [Change, (state, { name, value }) => assoc(name, value, state)],
   ],
 
-  view: withProps({ name }, ({ emit, name, children, ...props }) => (
+  view: withProps({ name }, ({ emit, name, children, ...props }: any) => (
     <span>
       {cloneRecursive(children, {
         ...omit([name], props),
