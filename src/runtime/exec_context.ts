@@ -255,10 +255,8 @@ export default class ExecContext<M> {
   /**
    * Returns a Redux-compatible reducer, which optionally accepts a map of action types to message constructors
    * which the container should handle.
-   *
-   * @param  {Object} msgTypes
    */
-  public reducer(msgTypes = {}) {
+  public reducer(msgTypes: { [key: string]: MessageConstructor } = {}) {
     return (prev, action) => dispatchAction((this.dispatch as any).run, msgTypes, action) || this.getState();
   }
 

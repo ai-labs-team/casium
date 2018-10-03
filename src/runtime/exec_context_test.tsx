@@ -1,9 +1,11 @@
 import { expect } from 'chai';
 import 'mocha';
-import { always, nthArg } from 'ramda';
+import { always, identity, nthArg } from 'ramda';
 import * as React from 'react';
-import { container, isolate } from '../core';
+
+import { isolate } from '../core';
 import { create } from '../environment';
+import { container } from '../react';
 import ExecutionContext from './exec_context';
 import StateManager from './state_manager';
 
@@ -27,7 +29,13 @@ describe('ExecutionContext', () => {
       view: () => (<div/>),
     }));
     execContext = new ExecutionContext({
-      env: create({ dispatcher: nthArg(2), effects: new Map(), log: () => {}, stateManager: () => new StateManager() }),
+      env: create({
+        dispatcher: nthArg(2),
+        effects: new Map(),
+        log: () => {},
+        stateManager: () => new StateManager(),
+        renderer: identity,
+      }),
       container: ctr
     });
     execContext.push({});
