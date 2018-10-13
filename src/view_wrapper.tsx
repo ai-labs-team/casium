@@ -2,13 +2,13 @@ import * as PropTypes from 'prop-types';
 import { equals, keys, merge, mergeAll, omit, pick, pipe } from 'ramda';
 import * as React from 'react';
 import ErrorComponent from './components/error';
-import { Container, DelegateDef, Emitter } from './core';
+import { Container, DelegateDef } from './core';
 import { Environment } from './environment';
 import { Activate, Deactivate, MessageConstructor, Refresh } from './message';
 import ExecContext from './runtime/exec_context';
 
 export type ViewWrapperProps<M> = {
-  childProps: M & { emit: Emitter };
+  childProps: M;
   container: Container<M>;
   delegate: DelegateDef;
   env?: Environment;

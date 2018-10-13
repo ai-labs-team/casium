@@ -259,7 +259,10 @@ export default class ExecContext<M> {
    * @param  {Object} msgTypes
    */
   public reducer(msgTypes = {}) {
-    return (prev, action) => dispatchAction((this.dispatch as any).run, msgTypes, action) || this.getState();
+    return (prev, action) => {
+      dispatchAction((this.dispatch as any).run, msgTypes, action);
+      return this.getState();
+    };
   }
 
   /**

@@ -194,7 +194,7 @@ export const mapResult = cond([
   [both(is(Array), propEq('length', 1)), ([state]) => [freezeObj(state), []]],
   [is(Array), ([state, ...commands]) => [freezeObj(state), commands]],
   [is(Object), state => [freezeObj(state), []]],
-  [always(true), (val) => { throw new TypeError('Unrecognized structure ' + safeStringify(val)); }],
+  [always(true), (val) => { throw new TypeError(`Unrecognized structure ${safeStringify(val)}`); }],
 ]);
 
 export const reduceUpdater = (value, state, msg, relay) =>

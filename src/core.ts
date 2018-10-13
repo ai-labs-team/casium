@@ -83,6 +83,10 @@ const { freeze, assign, defineProperty } = Object;
  */
 const toMap = ifElse(is(Array), constructN(1, Map as any), id);
 
+type ViewWrapDef<M> = { env: Environment, container: Container<M> };
+type Delegate = { delegate?: DelegateDef };
+type ViewProps<M> = Partial<M> & Delegate;
+
 /**
  * Wraps a container's view to extract container-specific props and inject `emit()` helper
  * function into the view's props.
@@ -95,14 +99,14 @@ const toMap = ifElse(is(Array), constructN(1, Map as any), id);
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView: <M>(defs: { env: Environment, container: Container<M> }) => any = ({ env, container }) => {
-  /* eslint-disable react/prop-types */
-  const mergeProps = pipe(defaultTo({}), omit(['delegate']));
-
-  return (props: GenericObject & { delegate?: DelegateDef } = {}) => React.createElement(ViewWrapper, {
-    childProps: mergeProps(props), container, delegate: props.delegate || container.delegate, env
-  } as any);
-};
+const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>> => (
+  <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
+    childProps: omit(['delegate'], props || {}),
+    container,
+    delegate: props.delegate || container.delegate,
+    env
+  })
+);
 
 /**
  * Maps default values of a container definition.
