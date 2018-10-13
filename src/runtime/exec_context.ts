@@ -73,9 +73,9 @@ const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, e
  * @param  {Object} container The container
  * @return {Object} Returns the store's current state to use as the container's initial state
  */
-const attachStore = (config, container) => {
+const attachStore = (config, ctx) => {
   const getState = () => (config.key && prop(config.key) || identity)(config.store.getState());
-  config.store.subscribe(pipe(getState, replace(container.state()), container.push));
+  config.store.subscribe(pipe(getState, replace(ctx.state()), ctx.push.bind(ctx)));
   return getState();
 };
 
@@ -111,16 +111,25 @@ const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
   ].join(''));
 });
 
+type ReduxAction = {
+  type: string;
+  [key: string]: any;
+};
+
+type ReduxMessageMap = {
+  [key: string]: MessageConstructor;
+};
+
 /**
  * Receives a Redux action and, if that action has been mapped to a container message constructor,
  * dispatches a message of the matching type to the container.
  *
- * @param  {Object} exec An executor bound to a container
- * @param  {Object} messageTypes An object that pairs one or more Redux action types to message
+ * @param  exec An executor bound to a container
+ * @param  messageTypes An object that pairs one or more Redux action types to message
  *                  constructors
- * @param  {Object} action A Redux action
+ * @param  action A Redux action
  */
-const dispatchAction = (exec, messageTypes, action) => {
+const dispatchAction = <M>(exec: ExecContext<M>, messageTypes: ReduxMessageMap, action: ReduxAction) => {
   action && action.type && messageTypes[action.type] && exec.dispatch(new messageTypes[action.type](action));
 };
 
@@ -182,7 +191,7 @@ export default class ExecContext<M> {
       if (!hasInitialized) {
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
-        const initial = hasStore ? attachStore(container.attach, container) : (this.getState() || {});
+        const initial = hasStore ? attachStore(container.attach, this) : (this.getState() || {});
         run(null, mapResult((container.init || identity)(initial, parent && parent.relay() || {}) || {}));
       }
       return fn.call(this, ...args);
@@ -286,7 +295,7 @@ export default class ExecContext<M> {
   public destroy() {
     this.stateManager().stop(
       this,
-      this.subscriptions(this.state()),
+      this.subscriptions(this.state() as any as M),
       this.commandDispatcher()
     );
   }
@@ -307,7 +316,7 @@ export default class ExecContext<M> {
     return this.stateMgr || parent.stateManager && parent.stateManager();
   }
 
-  private subscriptions(model) {
+  private subscriptions(model: M) {
     const { container, env } = this;
     return (
       !container.subscriptions && [] ||

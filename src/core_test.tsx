@@ -9,11 +9,11 @@ import StateManager from './runtime/state_manager';
 
 describe('app', () => {
 
-  class Cmd extends Message {}
-  class Cmd2 extends Message {}
+  class Cmd extends Message { }
+  class Cmd2 extends Message { }
 
-  class Msg extends Message {}
-  class Msg2 extends Message {}
+  class Msg extends Message { }
+  class Msg2 extends Message { }
 
   describe('environment()', () => {
 
@@ -160,7 +160,7 @@ describe('app', () => {
     });
 
     it('correctly maps DOM events from text inputs', () => {
-      class InputEvent extends Message {}
+      class InputEvent extends Message { }
       const log = [];
 
       const ctr = isolate(container({
@@ -188,7 +188,7 @@ describe('app', () => {
     });
 
     it('correctly maps DOM events from checkboxes', () => {
-      class CheckboxEvent extends Message {}
+      class CheckboxEvent extends Message { }
       const log = [];
 
       const ctr = isolate(container<any>({
@@ -301,6 +301,32 @@ describe('app', () => {
       expect(updater({ rememberMe: null, form: {} }, { value: '' })).to.deep.equal({
         rememberMe: false, form: {}
       });
+    });
+  });
+
+  describe('Redux support', () => {
+    it('attaches to a Redux store and receives updates', () => {
+      const store = {
+        subscribers: [],
+        subscribe: fn => store.subscribers.push(fn),
+        state: { foo: 'bar' },
+        getState: () => store.state,
+        update: (newState: any) => {
+          store.state = newState;
+          store.subscribers.forEach(sub => sub(newState));
+        }
+      };
+
+      const ctr = isolate(container<any>({
+        update: [],
+
+        attach: { store },
+
+        view: ({ foo }) => (<div>{foo}</div>),
+      }));
+
+      const wrapper = mount(ctr());
+      expect(wrapper.text()).to.eq('bar');
     });
   });
 });
