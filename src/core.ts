@@ -22,26 +22,7 @@ export type Empty = false | null | undefined;
 export type MessageOrEmpty = Message | Empty;
 export type GenericObject = { [key: string]: any };
 
-export type UpdateResult<M> = M |
-  ((model: M) => M) |
-  [M] |
-  [M, MessageOrEmpty] |
-  [M, MessageOrEmpty, MessageOrEmpty] |
-  [M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
-  [M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
-  [M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
-  [
-    M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
-    MessageOrEmpty, MessageOrEmpty
-  ] |
-  [
-    M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
-    MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty
-  ] |
-  [
-    M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
-    MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty
-  ];
+export type UpdateResult<M> = M | ((model: M) => M) | [M, ...MessageOrEmpty[]] | [M, MessageOrEmpty[]];
 
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
 export type UpdaterDef<M> = (model: M, message: GenericObject, relay: GenericObject) => UpdateResult<M>;
