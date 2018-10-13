@@ -1,6 +1,12 @@
 {
-  "include": ["./src/**/*"],
-  "exclude": ["node_modules", "**/*_test.ts", "**/*_test.tsx"],
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*_test.ts",
+    "**/*_test.tsx"
+  ],
   "compilerOptions": {
     "declaration": true,
     "declarationDir": "./dist/",
@@ -17,7 +23,14 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "./dist/",
-    "lib": ["es7", "es2015", "dom"],
-    "types": ["node"]
+    "pretty": true,
+    "lib": [
+      "es7",
+      "es2015",
+      "dom"
+    ],
+    "types": [
+      "node"
+    ]
   }
 }

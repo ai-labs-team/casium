@@ -182,7 +182,7 @@ export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironm
  */
 export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer<M> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
-  const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => {}, stateManager });
+  const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => { }, stateManager });
   const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
 
   const container = assign(mapDef(ctr.identity()), overrides) as Container<M>;
@@ -200,7 +200,7 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
  */
 export function seq<M>(...updaters: Updater<M>[]) {
   return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): UpdateResult<M> {
-    const merge = ([{}, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
+    const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
     const reduce = (prev, cur) =>
       merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
 
