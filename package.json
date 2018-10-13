@@ -11,8 +11,7 @@
   "scripts": {
     "peers": "install-self-peers -- --ignore-scripts",
     "build": "yarn peers; rm -r ./dist; tsc; cp package.json ./dist; cp README.md ./dist; rollup -c",
-    "lint": "NODE_ENV=test tslint -c tslint.json \"src/**/*.{js,ts,jsx,tsx}\"",
-    "lint-fix": "NODE_ENV=test tslint --fix \"src/**/*.{js,ts,jsx,tsx}\"",
+    "lint": "NODE_ENV=test tslint -c tslint.json --format stylish \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
     "dev": "nodemon -e ts,tsx --exec yarn unit-test",
     "unit-test": "nyc mocha -r test/setup.js --opts test/mocha.opts",
@@ -25,6 +24,7 @@
     "@types/enzyme": "3.1.14",
     "@types/mocha": "5.2.5",
     "@types/ramda": "types/npm-ramda",
+    "@types/react": "16.4.7",
     "awesome-typescript-loader": "5.2.1",
     "babel-core": "6.26.3",
     "babel-loader": "8.0.4",
@@ -47,7 +47,6 @@
     "jsdom-global": "3.0.2",
     "jss": "9.8.7",
     "mocha": "5.2.0",
-    "mocha-webpack": "1.1.0",
     "nodemon": "1.18.4",
     "nyc": "13.0.1",
     "react-addons-test-utils": "15.6.2",
@@ -60,11 +59,7 @@
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.11.0",
     "typescript": "^3.1.3",
-    "uglifyjs-webpack-plugin": "2.0.1",
-    "url-parse": "1.4.3",
-    "webpack": "^4.20.2",
-    "webpack-merge": "^4.1.0",
-    "webpack-node-externals": "^1.7.2"
+    "url-parse": "1.4.3"
   },
   "peerDependencies": {
     "axios": "^0.16.0 || ^0.17.0 || ^0.18.0",
