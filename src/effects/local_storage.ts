@@ -9,7 +9,7 @@ const get = (() => {
       ? always('<running outside browser context>')
       : window && window.localStorage && window.localStorage.getItem.bind(window.localStorage);
   } catch (e) {
-    return always('<running outside browser context>');
+    return always(e);
   }
 })();
 
