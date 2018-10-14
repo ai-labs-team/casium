@@ -22,26 +22,7 @@ export type Empty = false | null | undefined;
 export type MessageOrEmpty = Message | Empty;
 export type GenericObject = { [key: string]: any };
 
-export type UpdateResult<M> = M |
-  ((model: M) => M) |
-  [M] |
-  [M, MessageOrEmpty] |
-  [M, MessageOrEmpty, MessageOrEmpty] |
-  [M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
-  [M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
-  [M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty] |
-  [
-    M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
-    MessageOrEmpty, MessageOrEmpty
-  ] |
-  [
-    M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
-    MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty
-  ] |
-  [
-    M, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty,
-    MessageOrEmpty, MessageOrEmpty, MessageOrEmpty, MessageOrEmpty
-  ];
+export type UpdateResult<M> = M | ((model: M) => M) | [M, ...MessageOrEmpty[]] | [M, MessageOrEmpty[]];
 
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
 export type UpdaterDef<M> = (model: M, message: GenericObject, relay: GenericObject) => UpdateResult<M>;
@@ -83,6 +64,10 @@ const { freeze, assign, defineProperty } = Object;
  */
 const toMap = ifElse(is(Array), constructN(1, Map as any), id);
 
+type ViewWrapDef<M> = { env: Environment, container: Container<M> };
+type Delegate = { delegate?: DelegateDef };
+type ViewProps<M> = Partial<M> & Delegate;
+
 /**
  * Wraps a container's view to extract container-specific props and inject `emit()` helper
  * function into the view's props.
@@ -95,14 +80,14 @@ const toMap = ifElse(is(Array), constructN(1, Map as any), id);
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView: <M>(defs: { env: Environment, container: Container<M> }) => any = ({ env, container }) => {
-  /* eslint-disable react/prop-types */
-  const mergeProps = pipe(defaultTo({}), omit(['delegate']));
-
-  return (props: GenericObject & { delegate?: DelegateDef } = {}) => React.createElement(ViewWrapper, {
-    childProps: mergeProps(props), container, delegate: props.delegate || container.delegate, env
-  } as any);
-};
+const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>> => (
+  <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
+    childProps: omit(['delegate'], props || {}),
+    container,
+    delegate: props.delegate || container.delegate,
+    env
+  })
+);
 
 /**
  * Maps default values of a container definition.
@@ -182,7 +167,7 @@ export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironm
  */
 export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer<M> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
-  const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => {}, stateManager });
+  const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => { }, stateManager });
   const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
 
   const container = assign(mapDef(ctr.identity()), overrides) as Container<M>;
@@ -200,7 +185,7 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
  */
 export function seq<M>(...updaters: Updater<M>[]) {
   return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): UpdateResult<M> {
-    const merge = ([{}, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
+    const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
     const reduce = (prev, cur) =>
       merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
 

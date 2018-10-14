@@ -3,10 +3,15 @@ import { Clear, Delete, Read, Write } from '../commands/local_storage';
 import Message from '../message';
 import { safeParse, safeStringify } from '../util';
 
-const get = (() => (
-  typeof window === 'undefined' ? always('<running outside browser context>') :
-    window && window.localStorage && window.localStorage.getItem.bind(window.localStorage)
-))();
+const get = (() => {
+  try {
+    return typeof window === 'undefined'
+      ? always('<running outside browser context>')
+      : window && window.localStorage && window.localStorage.getItem.bind(window.localStorage);
+  } catch (e) {
+    return always(e);
+  }
+})();
 
 export default new Map([
   [Read, ({ key, result }, dispatch) => pipe(

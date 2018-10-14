@@ -44,6 +44,7 @@ export type Environment = EnvDefPartial & {
  *         - identity: Returns the parameters that created this environment
  */
 export const create = ({ effects, dispatcher = null, log = null, stateManager = null }: EnvDef): Environment => ({
+  // tslint:disable:no-console
   dispatcher: (dispatcher || coreDispatcher)(effects),
   handler: handler(effects),
   identity: () => ({ effects, dispatcher, log, stateManager }),
