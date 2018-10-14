@@ -318,11 +318,11 @@ export default container({
 **Sidebar: Updater Return Formats ⬇**
 
 > Updaters support a number of different return formats to enable different programming patterns:
-> <li>**Just the model**: Returning an object will replace the current model with that object</li>
-> <li>**A model and a command**: As in `init` above, a 2-element array (or _tuple_) is used to update the model _and_ fire a command</li>
-> <li>**A model and multiple commands**: The above pattern can be extended to run multiple commands, just keep appending commands to the array</li>
-> <li>**A model and multiple commands, part deux**: Sometimes it's easier to put commands together in their own array&mdash;return a tuple where the first element is the model and the second is an array of any number of commands</li>
-> <li>**Update-ception**: Finally, in addition to the forms above, an updater function can return _another_ updater function... which can return another updater function (and so on)&mdash;the functions will continue to be called until one of the above formats is returned; this is useful for advanced function composition techniques</li>
+>  - **Just the model**: Returning an object will replace the current model with that object
+>  - **A model and a command**: As in `init` above, a 2-element array (or _tuple_) is used to update the model _and_ run a command
+>  - **A model and multiple commands**: The above pattern can be extended to run multiple commands, just keep appending commands to the array
+>  - **A model and multiple commands, part deux**: Sometimes it's easier to put commands together in their own array&mdash;return a tuple where the first element is the model and the second is an array of any number of commands
+>  - **Update-ception**: Finally, in addition to the forms above, an updater function can return _another_ updater function... which can return another updater function (and so on)&mdash;the functions will continue to be called until one of the above formats is returned; this is useful for advanced function composition techniques
 
 Again, we're changing the return value of `init()` to the array format we saw before, so that we have a way to return both our initial model _and_ the command. We construct a `Read` message with the `key` we want to read, and `result`, which is the message that will be sent back to the container with, you guessed it: the result. This is symmetrical to the `Write` command, except that the `key` and the `value` are spread across the command and result message, respectively.
 
