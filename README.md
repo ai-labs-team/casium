@@ -24,6 +24,9 @@ It does this by modeling the state of your application (yes, all of it) as a sin
 			</a></li>
 			<li><a href="#writing-tests">Writing tests</a></li>
 			<li><a href="#testing-commands">Testing commands</a></li>
+			<li><a href="#subscriptions">Subscriptions</a></li>
+			<li><a href="#adding-custom-effects">Adding custom effects</a></li>
+			<li><a href="#customizing-the-environment">Customizing the environment</a></li>
 			<li><a href="#adding-types-with-typescript">Adding types with TypeScript</a></li>
 		</ul>
   	</td>
@@ -90,7 +93,7 @@ You may have also noticed the `Increment` and `Decrement` classes up at the top 
 
 ### Messages with data
 
-In our initial example, we completed the cycle of...
+In the initial example, we completed the cycle of...
 
  1. Setting up the container with an initial model from `init`
  1. Rendering the `view` with the initial model
@@ -104,9 +107,9 @@ It looks a bit like this...
 
 ![Simple Architecture](docs/simple_architecture.png "Simple architecture example")
 
-This is a good start, but it's somewhat limiting. What if we need to step our counter by 100, or 1000? That's a lot of clicking. We could create up/down messages & buttons for powers of 10, but that's a lot of boilerplate.
+This is a good start, but it's somewhat limiting. What if we need to step the counter by 100, or 1000? That's a lot of clicking. We could create up/down messages & buttons for powers of 10, but that's a lot of boilerplate.
 
-Instead, we can turn our counter display into an `<input />` to allow users to type in arbitrary values, and wire our input up to the container with a new message:
+Instead, we can turn the counter display into an `<input />` to allow users to type in arbitrary values, and wire the input up to the container with a new message:
 
 ```javascript
 class Increment extends Message {}
@@ -139,9 +142,9 @@ export default container({
 });
 ```
 
-We've created a new message, `SetCounter`, to handle our new event.  You'll also notice that the updater for `SetCounter` looks a bit different from the ones before. In addition to being typed objects, messages hold _data_, either from the view, or from _commands_ (we'll get to that later). In the previous examples, our messages didn't use any data — we just took in the existing model (destructured it), and returned a new model.
+We've created a new message, `SetCounter`, to handle our new event.  You'll also notice that the updater for `SetCounter` looks a bit different from the ones before. In addition to being typed objects, messages hold _data_, either from the view, or from _commands_ (we'll get to that later). In the previous examples, none of the messages used data&mdash;we just took in the existing model, destructured it to the value(s) we cared about, and returned a new model.
 
-Updaters receive message data as their second parameter, and we can [destructure](http://2ality.com/2015/01/es6-destructuring.html) the part we care about, use it to calculate a new model object, and return it.
+Updaters receive message data as their second parameter, and we can likewise [destructure](http://2ality.com/2015/01/es6-destructuring.html) the part we care about, use it to calculate a new model, and return said model.
 
 By default, messages emitted from DOM events will have `value` and `checked` properties, which will match the properties of the element emitting the event, for convenience purposes.
 
@@ -379,8 +382,24 @@ export default container({
       <button onClick={emit(SaveCounter)}>Save</button>
     </div>
   )
-})
+});
 ```
+
+### Conditional command values
+
+In order to avoid unwieldy `if` blocks to return different forms when you only want to run a command _sometimes_, you're able to use `null`, `false` or `undefined` (they're all equivalent) anywhere a command is accepted. Suppose you only wanted to persist the counter for only the most committed of users, let's say when it's over 9000. You could rewrite the above as follows:
+
+```javascript
+[SaveCounter, (model) => [
+  model,
+  model.count > 9000 && new LocalStorage.Write({
+    key: 'counter',
+    value: model.count
+  })
+]]
+```
+
+Unless `count > 9000`, the overall expression of the second array element evalutes to `false`, and the `Write` command won't get run.
 
 ## Growing applications
 
@@ -412,7 +431,7 @@ export default class SignIn extends Post {
       url: '/oauth/token',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+        'Authorization': 'Basic ' + btoa(`${clientId}:${clientSecret}`)
       },
       data: formData({
         username: email,
@@ -483,6 +502,17 @@ describe('CounterContainer', () => {
   });
 });
 ```
+## Subscriptions
+
+**@TODO**
+
+## Adding custom effects
+
+**@TODO**
+
+## Customizing the environment
+
+**@TODO**
 
 ## Adding types with TypeScript
 
