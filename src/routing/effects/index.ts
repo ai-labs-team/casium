@@ -1,6 +1,6 @@
-import { services as coreServices } from '@uirouter/core/lib-esm/common/coreservices';
-import { UrlMatcher } from '@uirouter/core/lib-esm/url/urlMatcher';
-import { UrlMatcherFactory } from '@uirouter/core/lib-esm/url/urlMatcherFactory';
+import { services as coreServices } from '@uirouter/core/lib/common/coreservices';
+import { UrlMatcher } from '@uirouter/core/lib/url/urlMatcher';
+import { UrlMatcherFactory } from '@uirouter/core/lib/url/urlMatcherFactory';
 import {
   concat, curry, equals, ifElse, isEmpty, isNil, map, merge, omit, path,
   pick, pipe, prop, reduce, replace as replaceStr, split,
@@ -38,7 +38,7 @@ type DataType = {
   remoteData?: any[];
   redirect?: any;
   requestData: RequestDataType[];
-  componentsWithNeeds: { compoent: string, policy: string, needs: any[]};
+  componentsWithNeeds: { compoent: string, policy: string, needs: any[] };
 };
 
 type State = {
@@ -96,7 +96,7 @@ const urlBuilder = new UrlMatcherFactory();
 const defaultState = {
   state: {},
   components: [],
-  data: { title: '', breadcrumb: {},  hideHeader: false },
+  data: { title: '', breadcrumb: {}, hideHeader: false },
   requestData: [],
   conditions: [],
   remoteData: [],
@@ -300,7 +300,7 @@ export default new Map<MessageConstructor, EffectHandler>([
 
     const enqueueMsg = curry((msg, data) => (
       (!isEmpty(data) || msg === config.error)
-        && requestAnimationFrame(pipe(Message.construct(msg), dispatch).bind(null, data))
+      && requestAnimationFrame(pipe(Message.construct(msg), dispatch).bind(null, data))
     ));
 
     const browserNavHandler = (e) => {
@@ -348,7 +348,7 @@ export default new Map<MessageConstructor, EffectHandler>([
           requestedData: prop('requestData', data),
         });
 
-        current.remoteDataState =  RoutingState.RemoteDataLoading;
+        current.remoteDataState = RoutingState.RemoteDataLoading;
       }
     } else if (current.remoteDataState === RoutingState.RemoteDataLoading) {
       const { data, urlMatcher } = getStateKey(current.location.state, routesMap);
@@ -357,7 +357,7 @@ export default new Map<MessageConstructor, EffectHandler>([
 
       document.title = data.data.title;
 
-      current.remoteDataState =  RoutingState.RemoteDataLoaded;
+      current.remoteDataState = RoutingState.RemoteDataLoaded;
       enqueueMsg(config.result, { data, params: location.params });
     }
 
