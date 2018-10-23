@@ -11,7 +11,7 @@ export default [
       React: 'react',
     },
     output: {
-      name: 'casium/src',
+      name: 'casium',
       file: pkg.browser,
       format: 'umd',
     },

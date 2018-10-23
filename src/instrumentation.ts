@@ -1,12 +1,12 @@
 /**
- * Provides a mechanism for 'instrumentation' hooks to be applied to a casium/src
+ * Provides a mechanism for 'instrumentation' hooks to be applied to a Casium
  * application at runtime.
  *
  * Uses global state at `window[INSTRUMENTATION_KEY]` to allow
  * `withStateManager` and `onMessage` to by used both inside the main
  * application bundle (for example, to provide custom integration that is
  * internal to the application) or outside (for example, to implement external
- * tools such as the casium/src Developer Tools).
+ * tools such as the Casium Developer Tools).
  */
 import { Container, GenericObject } from './core';
 import ExecContext from './runtime/exec_context';
@@ -28,7 +28,7 @@ export type Message = {
   subs: any[];
 };
 
-export const INSTRUMENTATION_KEY = '__casium/src_INSTRUMENTATION__';
+export const INSTRUMENTATION_KEY = '__CASIUM_INSTRUMENTATION__';
 
 declare global {
   interface Window {
