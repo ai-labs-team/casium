@@ -14,7 +14,7 @@
     "lint": "NODE_ENV=test tslint -c tslint.json --format stylish \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
     "dev": "nodemon -e ts,tsx --exec yarn unit-test",
-    "unit-test": "nyc mocha -r test/setup.js --opts test/mocha.opts",
+    "unit-test": "NODE_ENV=test nyc mocha -r test/setup.js --opts test/mocha.opts",
     "debug-tests": "mocha -r test/setup.js --opts test/mocha.opts --inspect-brk"
   },
   "devDependencies": {

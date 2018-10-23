@@ -38,7 +38,7 @@ type DataType = {
   remoteData?: any[];
   redirect?: any;
   requestData: RequestDataType[];
-  componentsWithNeeds: { compoent: string, policy: string, needs: any[] };
+  componentsWithNeeds: { component: string, policy: string, needs: any[] };
 };
 
 type State = {
@@ -267,7 +267,8 @@ export default new Map<MessageConstructor, EffectHandler>([
         newQuery.delete('authToken');
         window.location.search = newQuery.toString();
       } catch (e) {
-        console.warn(`Failure to store auth ${authToken}`); // tslint:disbale:no-console
+        // tslint:disable-next-line:no-console
+        console.warn(`Failure to store auth ${authToken}`);
       }
     }
 
