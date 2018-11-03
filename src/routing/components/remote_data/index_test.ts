@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import 'mocha';
 
-import { defaultPolicy, itemsPassPolicy, loadedPolicy, sameResource } from '.';
+import { defaultPolicy, itemsPassPolicy, loadedPolicy } from '.';
 import * as RemoteData from '../../remote_data';
 
 describe('itemsPassPolicy', () => {
@@ -57,32 +57,4 @@ describe('itemsPassPolicy', () => {
         .to.deep.equal(false);
     });
   });
-});
-
-describe('sameResource', () => {
-
-  it('should return false when given id and unloaded resource', () => {
-    expect(sameResource(RemoteData.notLoaded(), 'foo')).to.deep.equal(false);
-  });
-
-  it('should return false when given id and loaded resource with a different furled id', () => {
-    expect(sameResource(RemoteData.loaded({
-      _links: {
-        self: {
-          href: '/foo',
-        }
-      }
-    }),                 '')).to.deep.equal(false);
-  });
-
-  it('should return true when given id and loaded resource with a same furled id', () => {
-    expect(sameResource(RemoteData.loaded({
-      _links: {
-        self: {
-          href: '/foo',
-        }
-      }
-    }),                 'Bpyy')).to.deep.equal(true);
-  });
-
 });

@@ -1,9 +1,8 @@
 import {
-  always, anyPass, assoc, either,
-  filter, ifElse, length, pipe, prop, reduce, toPairs, values
+  anyPass, assoc,
+  filter, length, pipe, reduce, toPairs, values
 } from 'ramda';
 import * as React from 'react';
-import { furl, self } from '../../../utils';
 import * as _RemoteData from '../../remote_data';
 
 import { default as _Loaded } from './loaded';
@@ -29,14 +28,6 @@ export const loadedPolicy = [
 ];
 
 const objectLength = pipe(values, length);
-
-const getResourceId = ifElse(
-  either(_RemoteData.is(_RemoteData.LOADED), _RemoteData.is(_RemoteData.RELOADING)),
-  pipe(prop('data'), self, furl),
-  always('')
-);
-
-export const sameResource = (resource, furledId) => getResourceId(resource) === furledId;
 
 export const itemsPassPolicy = (policy, data) =>
   objectLength(filter(anyPass(policy), data)) === objectLength(data);
