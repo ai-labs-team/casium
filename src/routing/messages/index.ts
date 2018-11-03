@@ -46,9 +46,6 @@ export class Navigation extends Message {
 export class Load extends Message {
 }
 
-export class LoadToken extends Message {
-}
-
 export class Navigate extends Message {
 
   constructor(config: { state: string, params?: { [key: string]: any } }) {

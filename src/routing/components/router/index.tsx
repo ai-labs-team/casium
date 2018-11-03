@@ -3,7 +3,7 @@ import * as React from 'react';
 import { Container, withProps } from '../../../index';
 
 type ComponentMap = {
-  [key: string]: React.ComponentType | Container<any>
+  [key: string]: React.ComponentType | Container<{}>
 };
 
 type RouterProps<T extends ComponentMap, K extends keyof T> = {

@@ -8,11 +8,10 @@ import {
 import Message, { MessageConstructor } from '../../message';
 import ExecContext from '../../runtime/exec_context';
 import { ProcessState } from '../../subscription';
-import { safeParse, safeStringify } from '../../util';
 import { exists } from '../../utils';
 import Maybe from '../../utils/maybe';
 
-import { LoadToken, Navigate, Navigation, NavigationUpdated } from '../messages';
+import { Navigate, Navigation, NavigationUpdated } from '../messages';
 
 type RequestDataType = {
   conditions: () => {},
@@ -255,26 +254,6 @@ const checkCurrent = (current, config) => current.location &&
 
 // tslint:disable:max-func-body-length
 export default new Map<MessageConstructor, EffectHandler>([
-  [LoadToken, ({ key, result, error }, dispatch, execContext: ExecContext<any>) => {
-    const query = window.location.search !== '' ? splitQuery(window.location.search) : {};
-
-    if (query.authToken) {
-      const { authToken } = query;
-
-      try {
-        window.localStorage.setItem(key, safeStringify(safeParse(window.atob(authToken))));
-        const newQuery = new URLSearchParams(window.location.search);
-        newQuery.delete('authToken');
-        window.location.search = newQuery.toString();
-      } catch (e) {
-        // tslint:disable-next-line:no-console
-        console.warn(`Failure to store auth ${authToken}`);
-      }
-    }
-
-    dispatch(Message.construct(result, { key, value: safeParse(window.localStorage[key] || null) }));
-  }],
-
   [Navigate, ({ ...props }, dispatch) => dispatch(new NavigationUpdated({
     ...props,
   }))],

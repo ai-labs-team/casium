@@ -160,7 +160,7 @@ export default [
         ...instantiateResources(model)(requestedData),
         routing: {
           navigation: {
-            route: route || model.routing.navigation.route, 
+            route: route || model.routing.navigation.route,
             data: back || model.routing.navigation.data,
           },
         },
