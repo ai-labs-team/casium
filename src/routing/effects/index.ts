@@ -126,7 +126,7 @@ const crawl = (index, parent, parentObject, states, routesMap) => {
           data: data.data || {}
         }]),
       conditions: obj.conditions.concat([data.conditions || null]),
-      data: merge(obj.data, data.data),
+      data: merge(omit(['redirectOnFailure'], obj.data), data.data),
       redirect: data.redirect,
       remoteData: obj.remoteData.concat([[data.remoteData || null]]),
       componentsWithNeeds:
@@ -171,7 +171,7 @@ const changeState = ({ data, matcher, params = {}, historyChange = 'push', locat
   if (historyChange !== 'back' && !equals(location.path, newPath)) {
     history[replace ? 'replaceState' : 'pushState']({ state: JSON.stringify(data.state), params }, '', newUrl);
 
-    window.scrollTo(0, 0);
+    window && window.scrollTo(0, 0);
   }
 
   return {
@@ -181,7 +181,7 @@ const changeState = ({ data, matcher, params = {}, historyChange = 'push', locat
   };
 };
 
-const findState = ({ route: state, params, data: { replace, back } }, routes, location, routesMap): any =>
+const findState = ({ route: state, params, data: { replace, back, ...rest } }, routes, location, routesMap): any =>
   Maybe.of(getStateKey(state, routesMap))
     .map(ifElse(
       path(['data', 'redirect']),
@@ -190,7 +190,7 @@ const findState = ({ route: state, params, data: { replace, back } }, routes, lo
         routes,
         location,
         routesMap
-      ),
+      ).value(),
       ({ data, urlMatcher }) => changeState({
         data,
         matcher: urlMatcher,
@@ -198,7 +198,7 @@ const findState = ({ route: state, params, data: { replace, back } }, routes, lo
         historyChange: back ? 'back' : replace ? 'replace' : 'push',
         location,
       }),
-    )).value();
+    ));
 
 /**
  *  @param path    the current url in the browser
@@ -213,11 +213,11 @@ const navigate = (location: Location, routes, routesMap): any => {
   const match = matchUrl(routes, location.path, location.query);
 
   if (match.data.redirect && !match.data.data.redirectOnFailure) {
-    return Maybe.of(findState({ route: match.data.redirect, params: match.params, data: match.data.data },
-                              routes,
-                              location,
-                              routesMap,
-    )).map(pick(['data', 'params', 'pathname'])).value();
+    return findState({ route: match.data.redirect, params: match.params, data: match.data.data },
+                     routes,
+                     location,
+                     routesMap,
+    ).map(pick(['data', 'params', 'pathname'])).value();
   }
 
   return match;
@@ -254,7 +254,7 @@ const checkCurrent = (current, config) => current.location &&
 
 // tslint:disable:max-func-body-length
 export default new Map<MessageConstructor, EffectHandler>([
-  [Navigate, ({ ...props }, dispatch) => dispatch(new NavigationUpdated({
+  [Navigate, (props, dispatch) => dispatch(new NavigationUpdated({
     ...props,
   }))],
 
@@ -318,7 +318,7 @@ export default new Map<MessageConstructor, EffectHandler>([
       enqueueMsg(config.load, { params, requestedData: prop('requestData', data) });
       current.remoteDataState = RoutingState.RemoteDataLoading;
     } else if (checkCurrent(current, config) && current.remoteDataState === RoutingState.RemoteDataLoaded) {
-      const foundState = findState(config.current, current.routes, location, routesMap);
+      const foundState = findState(config.current, current.routes, location, routesMap).value();
       if (exists(foundState)) {
         const { data, params } = foundState;
         location.state = data.state;

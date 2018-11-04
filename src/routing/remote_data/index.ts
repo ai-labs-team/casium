@@ -29,7 +29,9 @@ interface CurriedFunction2<T1, T2, R> {
   (v1: T1, v2: T2): R;
 }
 
-export const is: CurriedFunction2<State, RemoteData<any>, boolean> =
+export type RemoteDataIs = CurriedFunction2<State, RemoteData<any>, boolean>;
+
+export const is: RemoteDataIs =
   curry((type: State, data: RemoteData<any>) => data && data.state === type);
 
 export type RemoteData<T>

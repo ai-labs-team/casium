@@ -107,28 +107,6 @@ const createBatch = (model, { params, requestedData }, relay) => new Batch.All({
   passThrough: { params, requestedData: otherData(requestedData) }
 });
 
-const userLoaded = (model, { data }, { navigation, token, services }) => {
-  const userActions = [];
-
-  // if (data.user) {
-  //   const user = data.user.data.data;
-  //   const theme = Users.firm(user) && Users.firm(user).theme;
-  //   theme ? import(`styles/skins/${theme.toLowerCase()}/colors.scss`) : import(<any>'styles/colors.scss');
-
-  //   userActions = [
-  //     Users.isOnboarding(user) && navigation.state !== model.onboardingHref
-  //     && new Routing.Navigate({ state: model.onboardingHref }),
-  //     user.person && new AuthenticatedGet({
-  //       token,
-  //       url: services.api,
-  //       result: RootLinksReceived,
-  //     }),
-  //   ];
-  // }
-
-  return userActions;
-};
-
 export default [
 
   [NavigationUpdated, updateNavigation],
@@ -186,7 +164,7 @@ export default [
         () => [
           newModel,
           exists(requestedData) && createBatch(newModel, { params, requestedData }, relay),
-          ...userLoaded(newModel, { data }, relay)
+          ...model.dataLoaded(newModel, { data }, relay)
         ]);
     },
   )],

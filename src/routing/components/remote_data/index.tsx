@@ -15,7 +15,7 @@ type Props<T> = {
   data: { [K in keyof T]: _RemoteData.RemoteData<T[K]> };
   loading: () => React.Component<any>;
   loaded: (data: T) => React.Component<any>;
-  policy?: any[];
+  policy?: _RemoteData.RemoteDataIs[];
 };
 
 export const defaultPolicy = [
