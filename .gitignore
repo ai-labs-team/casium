@@ -1,8 +1,9 @@
 node_modules
-dist
+packages/core/node_modules
+packages/core/dist
+packages/core/coverage
+packages/core/.nyc_output
 .tmp
 .vscode
 .idea
-coverage
-.nyc_output
 .DS_Store

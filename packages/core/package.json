@@ -1,0 +1,80 @@
+{
+  "name": "casium",
+  "version": "3.0.0",
+  "description": "Casium — An application architecture for React",
+  "module": "./index.js",
+  "browser": "dist/casium.umd.js",
+  "types": "./index.d.ts",
+  "repository": "https://github.com/ai-labs-team/casium.git",
+  "author": "Nate Abele <natea@advisorinnovationlabs.com>",
+  "license": "Apache-2.0",
+  "scripts": {
+    "peers": "install-self-peers -- --ignore-scripts",
+    "build": "yarn peers; rm -r ./dist; tsc; cp package.json ./dist; cp README.md ./dist; rollup -c; yarn docs",
+    "docs": "typedoc --json dist/api.json --mode modules --tsconfig tdconfig.json",
+    "lint": "NODE_ENV=test tslint -c tslint.json --format stylish \"src/**/*.{js,ts,jsx,tsx}\"",
+    "test": "./run.sh 'npm run lint' 'npm run unit-test'",
+    "dev": "nodemon -e ts,tsx --exec yarn unit-test",
+    "unit-test": "nyc mocha -r test/setup.js --opts test/mocha.opts",
+    "debug-tests": "mocha -r test/setup.js --opts test/mocha.opts --inspect-brk"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0",
+    "@team-griffin/install-self-peers": "^1.1.1",
+    "@types/chai": "4.1.6",
+    "@types/enzyme": "3.1.14",
+    "@types/mocha": "5.2.5",
+    "@types/ramda": "types/npm-ramda",
+    "@types/react": "16.4.7",
+    "chai": "4.2.0",
+    "chai-enzyme": "1.0.0-beta.1",
+    "cheerio": "1.0.0-rc.2",
+    "enzyme": "3.7.0",
+    "enzyme-adapter-react-16": "1.6.0",
+    "jsdom": "12.2.0",
+    "jsdom-global": "3.0.2",
+    "jss": "9.8.7",
+    "mocha": "5.2.0",
+    "nodemon": "1.18.4",
+    "nyc": "13.0.1",
+    "react-addons-test-utils": "15.6.2",
+    "react-dom": "16.5.2",
+    "react-test-renderer": "16.5.2",
+    "rollup": "^0.66.6",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.11.0",
+    "typedoc": "^0.13.0",
+    "typescript": "^3.1.3",
+    "url-parse": "1.4.3"
+  },
+  "peerDependencies": {
+    "axios": "^0.16.0 || ^0.17.0 || ^0.18.0",
+    "deep-freeze-strict": "^1.1.0",
+    "js-cookie": "^2.1.4",
+    "prop-types": "^15.0.0-0 || ^16.0.0-0",
+    "ramda": "^0.25.0",
+    "react": "^16.2.0"
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.{ts,tsx}"
+    ],
+    "exclude": [
+      "**/*_test.{ts,tsx}",
+      "src/effects/*.{ts,tsx}",
+      "src/components/error.tsx"
+    ],
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "reporter": [
+      "text-summary",
+      "html",
+      "lcov"
+    ]
+  }
+}
