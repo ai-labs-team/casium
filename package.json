@@ -10,7 +10,8 @@
   "license": "Apache-2.0",
   "scripts": {
     "peers": "install-self-peers -- --ignore-scripts",
-    "build": "yarn peers; rm -r ./dist; tsc; cp package.json ./dist; cp README.md ./dist; rollup -c",
+    "build": "yarn peers; rm -r ./dist; tsc; cp package.json ./dist; cp README.md ./dist; rollup -c; yarn docs",
+    "docs": "typedoc --json dist/api.json --mode modules --tsconfig tdconfig.json",
     "lint": "NODE_ENV=test tslint -c tslint.json --format stylish \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
     "dev": "nodemon -e ts,tsx --exec yarn unit-test",
@@ -45,6 +46,7 @@
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.11.0",
+    "typedoc": "^0.13.0",
     "typescript": "^3.1.3",
     "url-parse": "1.4.3"
   },
