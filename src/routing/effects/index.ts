@@ -218,17 +218,9 @@ const buildRouteMap = (routes, parent: { urlMatcher?: any; [key: string]: any } 
   // });
 };
 
-const matchRoute = (routes, { pathname, search }) =>//} :Maybe<MatchedRoute> =>
+const matchRoute = (routes, { pathname, search }): Maybe<MatchedRoute> =>
    Maybe.of(Array.from(routes.entries()).find(([route, data]) => !isNil(data.urlMatcher.exec(pathname, search))))
-    .map(([route, data]) => ({ data: route, params: data.urlMatcher.exec(pathname, search), pathname }));
-
-// const matchRoute = (routes, { pathname, query }) => pathname && pathname !== '/' ?
-//   Maybe.of(routes.find(([{ }, matcher]) => !isNil(matcher.exec(pathname, query))))
-//     .map(([data, matcher]) => { console.log(data); return ({ data, params: matcher.exec(pathname, query), pathname })})
-//     .defaultTo({ data: {}, params: {}, pathname })
-//     : Maybe.of(routes.find(([data, matcher]) => data.data.defaultRoute))
-//     .map(([data, matcher]) => ({ data, params: matcher.exec(pathname), pathname }))
-//     .defaultTo({ data: {}, params: {}, pathname });
+    .map(([route, data]) => ({ route, params: data.urlMatcher.exec(pathname, search), url: pathname }));
 
 const updateHistory = (currentRoute: MatchedRoute) => {
   history.current = currentRoute;
