@@ -2,8 +2,8 @@ import { services as coreServices } from '@uirouter/core/lib/common/coreservices
 import { UrlMatcher } from '@uirouter/core/lib/url/urlMatcher';
 import { UrlMatcherFactory } from '@uirouter/core/lib/url/urlMatcherFactory';
 import {
-  concat, curry, equals, ifElse, isEmpty, isNil, map, merge, omit, path,
-  pick, pipe, prop, reduce, replace as replaceStr, split,
+  clone, concat, curry, equals, ifElse, isEmpty, isNil, map, merge, omit, path,
+  pick, pipe, prop, reduce, replace as replaceStr, split, toPairs,
 } from 'ramda';
 import Message, { MessageConstructor } from '../../message';
 import ExecContext from '../../runtime/exec_context';
@@ -37,7 +37,7 @@ type DataType = {
   remoteData?: any[];
   redirect?: any;
   requestData: RequestDataType[];
-  componentsWithNeeds: { component: string, policy: string, needs: any[] };
+  //componentsWithNeeds: { component: string, policy: string, needs: any[] };
 };
 
 type State = {
@@ -69,22 +69,77 @@ type RouteProcessState = {
 
 type EffectHandler = (data: ProcessState | any, dispatch: any, ctx: ExecContext<any>) => void | any;
 
-// tslint:disable-next-line:variable-name
-const History = () => ({
-  state: '/',
-  pushState(data: any, title: string, url?: string | null): void {
-    // tslint:disable-next-line:no-invalid-this
-    this.state = url;
-  },
-  replaceState(data: any, title: string, url?: string | null): void {
-    // tslint:disable-next-line:no-invalid-this
-    this.state = url;
-  },
-  subscribe: () => {},
-  unsubscribe: () => {},
-});
+interface RouteDef {
+  url?: string;
+  component?: string;
+  data?: { [key: string]: any };
+  conditions?: () => boolean;
+  requirements?: { [key: string]: Requirement };
+  redirect: any; //TODO fix type
+};
 
-export const history = typeof window === undefined || process.env.NODE_ENV === 'test' ? History() : window.history;
+interface Route {
+  $: RouteDef,
+  [key: string]: any; //TODO fix type
+};
+
+type Requirement = {
+  path: string[];
+  data?: { [key: string]: any };
+  dependencies?: string[];
+}
+
+type InternalRoute = RouteDef & {
+  parent?: {
+    //key of routemap
+  }
+};
+
+type MatchedRoute = {
+  route: Route;
+  params: { [key: string]: string };
+  url: string;
+};
+
+type RouteMap = Map<UrlMatcher, Route>;
+//Map<RouteDef, { urlMatcher: UrlMatcher, route: InternalRoute: { ...RouteDef,  parent: } }>
+type History = { 
+  prev?: MatchedRoute[]; 
+  current: MatchedRoute; 
+  next?: MatchedRoute[];
+};
+
+type InternalModel = {
+  routes?: RouteMap;
+  history?: History;
+};
+
+type Config = {
+  routes?: Route;
+  current?: MatchedRoute;
+};
+
+// tslint:disable-next-line:variable-name
+// const History = () => ({
+//   state: '/',
+//   pushState(data: any, title: string, url?: string | null): void {
+//     // tslint:disable-next-line:no-invalid-this
+//     this.state = url;
+//   },
+//   replaceState(data: any, title: string, url?: string | null): void {
+//     // tslint:disable-next-line:no-invalid-this
+//     this.state = url;
+//   },
+//   subscribe: () => {},
+//   unsubscribe: () => {},
+// });
+
+const getStateKey = (state, routesMap) => routesMap.get(state) || routesMap.get(Array.from(routesMap.keys())
+.find(key => equals(state, JSON.parse(JSON.stringify(key)))));
+
+//export const history = typeof window === undefined || process.env.NODE_ENV === 'test' ? History() : window.history;
+
+const history: History | { current?: MatchedRoute } = {};
 
 Object.assign(coreServices, {
   $injector: { invoke: fn => fn() }, $q: { when: Promise.resolve, reject: Promise.reject }
@@ -92,167 +147,97 @@ Object.assign(coreServices, {
 
 const urlBuilder = new UrlMatcherFactory();
 
-const defaultState = {
-  state: {},
-  components: [],
-  data: { title: '', breadcrumb: {}, hideHeader: false },
-  requestData: [],
-  conditions: [],
-  remoteData: [],
-  componentsWithNeeds: [],
+const routesMap: RouteMap = new Map();
+
+
+const buildRouteMap = (routes, parent: { urlMatcher?: any; [key: string]: any } = {} ) => {
+  return pipe(
+    toPairs,
+    reduce((acc, [key, val]) => {
+      console.log('KEY', key, 'VAL', val);
+      const route = clone(parent) || {};
+      const root = val.$;
+      const local = urlBuilder.compile(root.url, {
+        strict: false,
+        caseInsensitive: false,
+      });
+      
+      const qualified = exists(parent) ? parent.urlMatcher.append(local) : local
+      route.urlMatcher = qualified;
+      route.components =  root.component ? parent && parent.components ? parent.components.concat([root.component]) : [root.component] : [];
+      route.data = parent ? merge(parent.data, root.data) : root.data;
+      route.requirements = {};
+      return acc.concat([[val, route]]).concat(buildRouteMap(omit(['$'], val), route))
+    })([]),
+  )(routes);
+  // { key: val } -> toPairs -> map([key, val] => [[state, route]])
+  // [[state, route]].concat(buildRouteMap(state, state.children))
+  // return Object.keys(routes).map((route) => {
+    // const currentRoute = routes[route];
+    // const data = currentRoute.$;
+
+
+    // // {
+    // //   components: 'SOmething',
+    // //   parent: { components: 'parent'}
+    // // }
+
+    // const newObj = {
+    //   state: currentRoute,
+    //   components: parent.components ? data.component ? parent.components.concat(data.component) : parent.components : data.component ? [data.component] : [],
+      // requestData:
+      //   parent.requestData ? parent.requestData.concat([{
+      //     remoteData: data.remoteData || null,
+      //     conditions: data.conditions || null,
+      //     redirect: data.redirect || null,
+      //     data: data.data || {}
+      //   }]) : [{
+      //     remoteData: data.remoteData || null,
+      //     conditions: data.conditions || null,
+      //     redirect: data.redirect || null,
+      //     data: data.data || {}
+      //   }],
+      // conditions: parent.conditions ? parent.conditions.concat([data.conditions || null]) : [data.condtions || null],
+      // data: merge(parent.data, data.data),
+      // redirect: data.redirect,
+      // remoteData: parent.remoteData ? parent.remoteData.concat([[data.remoteData || null]]) : [data.remoteData || null],
+      // componentsWithNeeds:
+      //   parent.componentsWithNeeds ? parent.componentsWithNeeds.concat([{
+      //     component: data.component,
+      //     policy: 'Loaded',
+      //     needs: Object.keys(data.remoteData || {})
+      //   }]) : [{
+      //     component: data.component,
+      //     policy: 'Loaded',
+      //     needs: Object.keys(data.remoteData || {})
+      //   }],
+    //};
+
+  //   routesMap.set(currentRoute, { data: newObj, urlMatcher: qualified });
+  //   const children = omit(['$'], currentRoute);
+  //   exists(children) && buildRouteMap(children, { ...newObj, urlMatcher: local });
+  // });
 };
 
-const crawl = (index, parent, parentObject, states, routesMap) => {
-  const obj = !isEmpty(parentObject) ? parentObject : defaultState;
+const matchRoute = (routes, { pathname, search})=>{//} :Maybe<MatchedRoute> => {
+  // const some: MatchedRoute = { url: '', route: {}, params: { }};
+  console.log('MATCH ROUTE', routes, pathname, search);
+  // return pathname && pathname !== '/' ?
+  const entries = Array.from(routes.entries());
+    return Maybe.of(entries.map(([route, data]) => {
+      console.log(!isNil(data.urlMatcher.exec(pathname, search)))
+      const params = data.urlMatcher.exec(pathname, search);
+      const match = !isNil(params);
+      console.log(data.urlMatcher.exec(pathname, search));
+        return match && { url: data.urlMatcher.format(params), route: data, params: data.urlMatcher.exec(pathname, search)};
+      }).filter(value => value)[0]);
+}
 
-  return Object.keys(states).map((key) => {
-    const state = states[key];
-    const data = state.$;
-    const local = urlBuilder.compile(data.url, {
-      strict: false,
-      caseInsensitive: false,
-    });
+const updateHistory = (currentRoute: MatchedRoute) => {
+  history.current = currentRoute;
+  //TODO update prev/next arrays
+}
 
-    const qualified = parent ? parent.append(local) : local;
-
-    const newObj = merge(obj, {
-      state,
-      components: data.component ? obj.components.concat(data.component) : obj.components,
-      requestData:
-        obj.requestData.concat([{
-          remoteData: data.remoteData || null,
-          conditions: data.conditions || null,
-          redirect: data.redirect || null,
-          data: data.data || {}
-        }]),
-      conditions: obj.conditions.concat([data.conditions || null]),
-      data: merge(omit(['redirectOnFailure'], obj.data), data.data),
-      redirect: data.redirect,
-      remoteData: obj.remoteData.concat([[data.remoteData || null]]),
-      componentsWithNeeds:
-        obj.componentsWithNeeds.concat([{
-          component: data.component,
-          policy: 'Loaded',
-          needs: Object.keys(data.remoteData || {})
-        }])
-    });
-
-    const current = index.concat([[newObj, qualified]]);
-
-    routesMap.set(state, { data: newObj, urlMatcher: qualified });
-
-    return Object.keys(state).length === 0 ? current : current.concat(...crawl(
-      index,
-      qualified,
-      newObj,
-      omit(['$'], state),
-      routesMap,
-    ));
-  });
-};
-
-const matchUrl = (routes, pathname, query): State => pathname && pathname !== '/' ?
-  Maybe.of(routes.find(([{ }, matcher]) => !isNil(matcher.exec(pathname, query))))
-    .map(([data, matcher]) => ({ data, params: matcher.exec(pathname, query), pathname }))
-    .defaultTo({ data: {}, params: {}, pathname })
-    : Maybe.of(routes.find(([data, matcher]) => data.data.defaultRoute))
-    .map(([data, matcher]) => ({ data, params: matcher.exec(pathname), pathname }))
-    .defaultTo({ data: {}, params: {}, pathname });
-
-const getStateKey = (state, routesMap) => routesMap.get(state) || routesMap.get(Array.from(routesMap.keys())
-.find(key => equals(state, JSON.parse(JSON.stringify(key)))));
-
-const changeState = ({ data, matcher, params = {}, historyChange = 'push', location }) => {
-  const newPath = matcher.format(params);
-
-  const newUrl = [window.location.origin, newPath.replace(/^\//, '')].join('/');
-  const replace = data.data.replace || historyChange === 'replace';
-
-  if (historyChange !== 'back' && !equals(location.path, newPath)) {
-    history[replace ? 'replaceState' : 'pushState']({ state: JSON.stringify(data.state), params }, '', newUrl);
-
-    window && window.scrollTo(0, 0);
-  }
-
-  return {
-    data,
-    params: merge(location.query, params),
-    pathname: newPath,
-  };
-};
-
-const findState = ({ route: state, params, data: { replace, back, ...rest } }, routes, location, routesMap): any =>
-  Maybe.of(getStateKey(state, routesMap))
-    .map(ifElse(
-      path(['data', 'redirect']),
-      ({ data: { redirect } }) => findState(
-        { route: redirect, params, data: { replace: true, back } },
-        routes,
-        location,
-        routesMap
-      ).value(),
-      ({ data, urlMatcher }) => changeState({
-        data,
-        matcher: urlMatcher,
-        params,
-        historyChange: back ? 'back' : replace ? 'replace' : 'push',
-        location,
-      }),
-    ));
-
-/**
- *  @param path    the current url in the browser
- *  @param routes  all of the possible route states
- *
- *  @returns state
- *
- *  derieves a state from given path
- *
- */
-const navigate = (location: Location, routes, routesMap): any => {
-  const match = matchUrl(routes, location.path, location.query);
-
-  if (match.data.redirect && !match.data.data.redirectOnFailure) {
-    return findState({ route: match.data.redirect, params: match.params, data: match.data.data },
-                     routes,
-                     location,
-                     routesMap,
-    ).map(pick(['data', 'params', 'pathname'])).value();
-  }
-
-  return match;
-
-};
-
-const checkLocation = ({ current, location, e, path }) => {
-  const newLocation = exists(e.state) ? e.state : matchUrl(current.routes, path, location.query);
-
-  return equals((current.location || location), newLocation) ? null : newLocation;
-};
-
-const handler = (e: PopStateEvent, current, path, location, routesMap) =>
-  Maybe.of(checkLocation({ current, location, e, path }))
-  .map(({ state, params, data: matchedState }) => {
-    if (matchedState && matchedState.state) {
-      return { data: matchedState, params, pathname: path };
-    }
-
-    const { data, urlMatcher } = getStateKey(JSON.parse(state), routesMap);
-
-    return { data, params, pathname: urlMatcher.format(merge(params, location.query)) };
-  }).value();
-
-export const splitQuery = pipe(
-  replaceStr(/^\?/, ''),
-  split('&'),
-  map(split('=')),
-  reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {}),
-);
-
-const checkCurrent = (current, config) => current.location &&
-  !equals(current.location.state, config.current.state);
-
-// tslint:disable:max-func-body-length
 export default new Map<MessageConstructor, EffectHandler>([
   [Navigate, (props, dispatch) => dispatch(new NavigationUpdated({
     ...props,
@@ -261,91 +246,32 @@ export default new Map<MessageConstructor, EffectHandler>([
   // tslint:disable-next-line:cyclomatic-complexity
   [Navigation, (processState: ProcessState & any, dispatch, execContext: ExecContext<any>) => {
     const { data: navigation, state } = processState;
-    const config = navigation[0].data;
-    const current: RouteProcessState = processState.current || {
-      routes: null,
-      location: null,
-      pending: null,
-      unsubscribe: null,
-      remoteDataState: RoutingState.RemoteDataNotLoaded,
-    };
-    const isInitializing = !exists(current.routes) && exists(config.states);
-    const routesMap = new Map();
-    const { remoteDataState } = current;
+    const current: InternalModel = processState.current || { routes: null, history: null };
+    const config: Config = navigation[0].data;
 
-    const pathname = window.location.pathname !== 'blank' ? window.location.pathname : history.state;
-    const query = window.location.search !== '' ? splitQuery(window.location.search) : {};
-
-    const location: Location = { state: [], params: {}, path: pathname, query };
-
-    const enqueueMsg = curry((msg, data) => (
-      (!isEmpty(data) || msg === config.error)
-      && requestAnimationFrame(pipe(Message.construct(msg), dispatch).bind(null, data))
-    ));
-
-    const browserNavHandler = (e) => {
-      if (e.defaultPrevented) {
-        return;
-      }
-
-      const state = handler(e, current, pathname, location, routesMap);
-      location.params = state.params;
-      location.state = state.data.state;
-
-      enqueueMsg(config.load, {
-        params: state.params,
-        requestedData: prop('requestData', state.data),
-        route: state.data.state,
-        back: true,
-      });
-
-      current.remoteDataState = RoutingState.RemoteDataLoading;
-    };
-
-    if (state === ProcessState.STOPPED) {
-      current.unsubscribe && current.unsubscribe();
-
-      return processState.set({});
+    if(!current.routes && !config.routes) {
+      return;
     }
 
-    current.routes = exists(config.states) && reduce(concat, [], crawl([], null, {}, config.states, routesMap)) || [];
-
-    if (isInitializing && remoteDataState === RoutingState.RemoteDataNotLoaded) {
-      const { data, params }: State = navigate(location, current.routes, routesMap);
-      location.state = data.state;
-      location.params = params;
-
-      enqueueMsg(config.load, { params, requestedData: prop('requestData', data) });
-      current.remoteDataState = RoutingState.RemoteDataLoading;
-    } else if (checkCurrent(current, config) && current.remoteDataState === RoutingState.RemoteDataLoaded) {
-      const foundState = findState(config.current, current.routes, location, routesMap).value();
-      if (exists(foundState)) {
-        const { data, params } = foundState;
-        location.state = data.state;
-        location.params = params;
-        enqueueMsg(config.load, {
-          params,
-          requestedData: prop('requestData', data),
-        });
-
-        current.remoteDataState = RoutingState.RemoteDataLoading;
-      }
-    } else if (current.remoteDataState === RoutingState.RemoteDataLoading) {
-      const { data, urlMatcher } = getStateKey(current.location.state, routesMap);
-      location.state = data.state;
-      location.params = urlMatcher.exec(location.path, location.query);
-
-      document.title = data.data.title;
-
-      current.remoteDataState = RoutingState.RemoteDataLoaded;
-      enqueueMsg(config.result, { data, params: location.params });
+    if(!current.routes && config.routes) {
+      current.routes = new Map(buildRouteMap(config.routes, null));
     }
 
-    if (!current.unsubscribe && exists(current.routes)) {
-      window.addEventListener('popstate', browserNavHandler);
-      current.unsubscribe = () => window.removeEventListener('popstate', browserNavHandler);
+    console.log('HISTORY', history);
+    if(!exists(history)) {
+      const matchedRoute: Maybe<MatchedRoute> = matchRoute(current.routes, window.location);
+      console.log('MATCHED ROUTE', matchedRoute);
+      updateHistory(matchedRoute.value());
+      console.log(history);
     }
 
-    processState.set(merge(current, { location }));
   }],
-]);
+
+  ]);
+
+// if (!current.unsubscribe && exists(current.routes)) {
+//   window.addEventListener('popstate', browserNavHandler);
+//   current.unsubscribe = () => window.removeEventListener('popstate', browserNavHandler);
+// }
+
+// processState.set(merge(current, { location }));
