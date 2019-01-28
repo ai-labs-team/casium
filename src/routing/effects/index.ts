@@ -149,7 +149,6 @@ const urlBuilder = new UrlMatcherFactory();
 
 const routesMap: RouteMap = new Map();
 
-
 const buildRouteMap = (routes, parent: { urlMatcher?: any; [key: string]: any } = {} ) => {
   return pipe(
     toPairs,
@@ -219,19 +218,17 @@ const buildRouteMap = (routes, parent: { urlMatcher?: any; [key: string]: any } 
   // });
 };
 
-const matchRoute = (routes, { pathname, search})=>{//} :Maybe<MatchedRoute> => {
-  // const some: MatchedRoute = { url: '', route: {}, params: { }};
-  console.log('MATCH ROUTE', routes, pathname, search);
-  // return pathname && pathname !== '/' ?
-  const entries = Array.from(routes.entries());
-    return Maybe.of(entries.map(([route, data]) => {
-      console.log(!isNil(data.urlMatcher.exec(pathname, search)))
-      const params = data.urlMatcher.exec(pathname, search);
-      const match = !isNil(params);
-      console.log(data.urlMatcher.exec(pathname, search));
-        return match && { url: data.urlMatcher.format(params), route: data, params: data.urlMatcher.exec(pathname, search)};
-      }).filter(value => value)[0]);
-}
+const matchRoute = (routes, { pathname, search }) =>//} :Maybe<MatchedRoute> =>
+   Maybe.of(Array.from(routes.entries()).find(([route, data]) => !isNil(data.urlMatcher.exec(pathname, search))))
+    .map(([route, data]) => ({ data: route, params: data.urlMatcher.exec(pathname, search), pathname }));
+
+// const matchRoute = (routes, { pathname, query }) => pathname && pathname !== '/' ?
+//   Maybe.of(routes.find(([{ }, matcher]) => !isNil(matcher.exec(pathname, query))))
+//     .map(([data, matcher]) => { console.log(data); return ({ data, params: matcher.exec(pathname, query), pathname })})
+//     .defaultTo({ data: {}, params: {}, pathname })
+//     : Maybe.of(routes.find(([data, matcher]) => data.data.defaultRoute))
+//     .map(([data, matcher]) => ({ data, params: matcher.exec(pathname), pathname }))
+//     .defaultTo({ data: {}, params: {}, pathname });
 
 const updateHistory = (currentRoute: MatchedRoute) => {
   history.current = currentRoute;
