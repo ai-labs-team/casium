@@ -2,7 +2,7 @@ import { services as coreServices } from '@uirouter/core/lib/common/coreservices
 import { UrlMatcher } from '@uirouter/core/lib/url/urlMatcher';
 import { UrlMatcherFactory } from '@uirouter/core/lib/url/urlMatcherFactory';
 import {
-  clone, concat, curry, equals, ifElse, isEmpty, isNil, map, merge, omit, path,
+  assoc, clone, concat, curry, equals, ifElse, isEmpty, isNil, map, merge, omit, path,
   pick, pipe, prop, reduce, replace as replaceStr, split, toPairs,
 } from 'ramda';
 import Message, { MessageConstructor } from '../../message';
@@ -92,7 +92,8 @@ type Requirement = {
 type InternalRoute = RouteDef & {
   parent?: {
     //key of routemap
-  }
+  },
+  urlMatcher: UrlMatcher
 };
 
 type MatchedRoute = {
@@ -101,7 +102,7 @@ type MatchedRoute = {
   url: string;
 };
 
-type RouteMap = Map<UrlMatcher, Route>;
+type RouteMap = Map<RouteDef, InternalRoute>;
 //Map<RouteDef, { urlMatcher: UrlMatcher, route: InternalRoute: { ...RouteDef,  parent: } }>
 type History = { 
   prev?: MatchedRoute[]; 
@@ -139,7 +140,7 @@ const getStateKey = (state, routesMap) => routesMap.get(state) || routesMap.get(
 
 //export const history = typeof window === undefined || process.env.NODE_ENV === 'test' ? History() : window.history;
 
-const history: History | { current?: MatchedRoute } = {};
+const history: History | { current?: MatchedRoute, prev?: MatchedRoute[], next?: MatchedRoute[] } = {};
 
 Object.assign(coreServices, {
   $injector: { invoke: fn => fn() }, $q: { when: Promise.resolve, reject: Promise.reject }
@@ -149,23 +150,22 @@ const urlBuilder = new UrlMatcherFactory();
 
 const routesMap: RouteMap = new Map();
 
-const buildRouteMap = (routes, parent: { urlMatcher?: any; [key: string]: any } = {} ) => {
+const buildRouteMap = (routes, parent: { urlMatcher?: any; [key: string]: any } = {} ): [Route, InternalRoute][] => {
   return pipe(
     toPairs,
     reduce((acc, [key, val]) => {
-      console.log('KEY', key, 'VAL', val);
-      const route = clone(parent) || {};
+     // const route = clone(parent) || {};
       const root = val.$;
       const local = urlBuilder.compile(root.url, {
         strict: false,
         caseInsensitive: false,
       });
-      
-      const qualified = exists(parent) ? parent.urlMatcher.append(local) : local
+
+      const qualified = exists(parent) ? parent.urlMatcher.append(local) : local;
+      let route = clone(val);
       route.urlMatcher = qualified;
-      route.components =  root.component ? parent && parent.components ? parent.components.concat([root.component]) : [root.component] : [];
-      route.data = parent ? merge(parent.data, root.data) : root.data;
-      route.requirements = {};
+      route = parent ? assoc('parent', parent, route) : route;
+
       return acc.concat([[val, route]]).concat(buildRouteMap(omit(['$'], val), route))
     })([]),
   )(routes);
@@ -219,12 +219,13 @@ const buildRouteMap = (routes, parent: { urlMatcher?: any; [key: string]: any } 
 };
 
 const matchRoute = (routes, { pathname, search }): Maybe<MatchedRoute> =>
-   Maybe.of(Array.from(routes.entries()).find(([route, data]) => !isNil(data.urlMatcher.exec(pathname, search))))
-    .map(([route, data]) => ({ route, params: data.urlMatcher.exec(pathname, search), url: pathname }));
+   Maybe.of(Array.from(routes.entries()).find(([route, data]) => !isNil(data.urlMatcher.exec(pathname, search)))) 
+    .map(([route, data]) => ({ route: data, params: data.urlMatcher.exec(pathname, search), url: pathname }));
 
 const updateHistory = (currentRoute: MatchedRoute) => {
-  history.current = currentRoute;
   //TODO update prev/next arrays
+  // history.prev = history.prev.push(history.current);
+  history.current = currentRoute;
 }
 
 export default new Map<MessageConstructor, EffectHandler>([
@@ -246,12 +247,10 @@ export default new Map<MessageConstructor, EffectHandler>([
       current.routes = new Map(buildRouteMap(config.routes, null));
     }
 
-    console.log('HISTORY', history);
     if(!exists(history)) {
       const matchedRoute: Maybe<MatchedRoute> = matchRoute(current.routes, window.location);
-      console.log('MATCHED ROUTE', matchedRoute);
+      console.log(matchedRoute.value());
       updateHistory(matchedRoute.value());
-      console.log(history);
     }
 
   }],
