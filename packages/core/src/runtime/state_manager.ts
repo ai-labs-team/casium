@@ -1,5 +1,5 @@
 import { both, contains, defaultTo, flip, lensPath, nth, pipe, set, view, when } from 'ramda';
-import { MessageConstructor } from '../message';
+import Message, { Constructor } from '../message';
 import { EffectType, Process, ProcessState } from '../subscription';
 import { compareOffsets } from '../util';
 import ExecContext from './exec_context';
@@ -14,7 +14,7 @@ export default class StateManager {
 
   public state: [object] = [{}];
   public listeners: [any, Callback][] = [];
-  public processes: Map<MessageConstructor, Map<any, Process | Process[]>> = new Map();
+  public processes: Map<Constructor<any, Message<any>>, Map<any, Process<any> | Process<any>[]>> = new Map();
 
   constructor(state: object = {}) {
     Object.assign(this, { state: [state] });

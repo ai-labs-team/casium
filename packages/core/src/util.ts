@@ -1,13 +1,13 @@
 import * as deepFreeze from 'deep-freeze-strict';
 import {
-  __, all, always, both, cond, curry, equals, evolve, filter, flip, identity,
-  ifElse, is, keys, map, merge, mergeDeepWith, not, nth, pathOr, pickAll, pipe,
-  propEq, reduce, union, when, zipWith
+  __, all, always, both, cond, curry, equals, flip, identity, ifElse, is, merge, mergeDeepWith,
+  pathOr, propEq, reduce, union, when, zipWith
 } from 'ramda';
-import * as React from 'react';
+import { Constructor } from './message';
 
-// tslint:disable-next-line:ban-types
-export const moduleName = (prefix: string) => (constructor: Function) => {
+export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+
+export const moduleName = (prefix: string) => <T extends Constructor<any, any>>(constructor: T) => {
   Object.defineProperty(constructor, 'name', { value: `${prefix}.${constructor.name}` });
 };
 
@@ -17,6 +17,7 @@ export const moduleName = (prefix: string) => (constructor: Function) => {
  * @param  {Object} left
  * @param  {Object} right
  * @return {Object}
+ * @deprecated
  */
 export const mergeDeep = mergeDeepWith((left, right) => (
   all(is(Array), [left, right]) ? union(left, right) : right
@@ -43,73 +44,6 @@ export const replace = flip(merge);
  * @return {Boolean} Returns true if `a` is the prefix of `b`.
  */
 export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, a, b)));
-
-/**
- * Accepts a validator object where the values are functions that return boolean, and
- * returns a function that accepts an object to check against the validator.
- *
- * @example
- * ```
- * getValidationFailures({ foo: is(String), bar: is(Function) })
- *   ({ foo: "Hello", bar: "not Func" }) -> ["bar"]
- * ```
- */
-export const getValidationFailures = spec => pipe(
-  pickAll(keys(spec)),
-  evolve(spec),
-  filter(not),
-  keys
-);
-
-/**
- * Accepts an object of key/function pairs and a pure component function, and returns
- * a new pure component that will generate and inject new props into the pass component
- * function.
- * @param  {Object<Function>} An object hash of functions used to generate new props
- * @param  {Component} A pure function that returns React DOM
- * @params {Object} Accepts props passed from parent
- * @return {Component} Returns a new component that generates new props from passed props
- *
- * @example
- * ```
- * const FullName = (props) => (<span>{props.fullName}</span>);
- *
- * const Name = withProps(
- *   {
- *     fullName: (props) => `${props.first} ${props.last}`
- *   },
- *   FullName
- * );
- *
- * <Name first="Bob" last="Loblaw" />
- * ```
- */
-export type PropMap<Input, Generated> = {
-  [K in keyof Generated]: (props: Input) => Generated[K]
-};
-export function withProps<Input, Generated>(
-  fnMap: PropMap<Input, Generated>,
-  component: React.StatelessComponent<Input & Generated>
-) {
-  return (props: Input) => component(merge(props, map(fn => fn(props), fnMap)) as Input & Generated);
-}
-
-export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
-  const mapProps = (child) => {
-    const props = is(Function, newProps) ? newProps(child) : newProps;
-    const hasChildren = child.props && child.props.children;
-    const mapper = hasChildren && is(Array, child.props.children) ? identity : nth(0);
-    const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
-    return mergeDeep(props || {}, { children });
-  };
-  return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
-});
-
-export const clone = (children, newProps) => React.Children.map(children, (child: React.ReactElement<any>) => (
-  React.cloneElement(child, mergeDeep(React.isValidElement(child) ? newProps : {}, {
-    children: child.props.children,
-  }))
-));
 
 export const suppressEvent = (e) => {
   e.preventDefault();

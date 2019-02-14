@@ -7,13 +7,13 @@ import { commands, container, isolate, mapModel, message, seq } from './core';
 import Message from './message';
 import StateManager from './runtime/state_manager';
 
-describe('app', () => {
+describe('core', () => {
 
-  class Cmd extends Message { }
-  class Cmd2 extends Message { }
+  class Cmd extends Message<any> { }
+  class Cmd2 extends Message<any> { }
 
-  class Msg extends Message { }
-  class Msg2 extends Message { }
+  class Msg extends Message<any> { }
+  class Msg2 extends Message<any> { }
 
   describe('environment()', () => {
 
@@ -35,7 +35,7 @@ describe('app', () => {
         ],
       }));
 
-      const commands = ctr.dispatch(new Msg());
+      const commands = ctr.dispatch(new Msg({}));
       expect(commands).to.deep.equal([new Cmd({ fooBar: true })]);
       expect(commands[0]).to.be.an.instanceof(Cmd);
     });
@@ -53,8 +53,8 @@ describe('app', () => {
         ],
       }));
 
-      expect(ctr.dispatch(new Msg())).to.be.an.instanceof(TypeError);
-      expect(ctr.dispatch(new Msg2())).to.be.an.instanceof(TypeError);
+      expect(ctr.dispatch(new Msg({}))).to.be.an.instanceof(TypeError);
+      expect(ctr.dispatch(new Msg2({}))).to.be.an.instanceof(TypeError);
     });
 
     it('throws on invalid message', () => {
@@ -74,13 +74,13 @@ describe('app', () => {
         ],
       }));
 
-      expect(ctr.dispatch(new Msg())).to.be.an.instanceof(TypeError);
+      expect(ctr.dispatch(new Msg({}))).to.be.an.instanceof(TypeError);
     });
 
     it('throws on unhandled messages', () => {
       const ctr = isolate(container({ name: 'FooContainer', update: [[Msg, always([])]] }), { catchAll: false });
 
-      expect(() => ctr.dispatch(new Msg2())).to.throw(`Unhandled message type 'Msg2' in container 'FooContainer'`);
+      expect(() => ctr.dispatch(new Msg2({}))).to.throw(`Unhandled message type 'Msg2' in container 'FooContainer'`);
     });
 
     it('accepts a flattened array with state and commands', () => {
@@ -90,16 +90,16 @@ describe('app', () => {
         ],
       }));
 
-      expect(ctr.dispatch(new Msg())).to.deep.equal([
+      expect(ctr.dispatch(new Msg({}))).to.deep.equal([
         new Cmd({ foo: true }),
         new Cmd({ bar: false }),
       ]);
     });
 
     it('recursively calls functions returned by an updater', () => {
-      const ctr = isolate(container({
+      const ctr = isolate(container<any>({
         update: [
-          [Msg, (model, msg) => evolve({ count: add(msg.step) })],
+          [Msg, ({}, msg) => evolve({ count: add(msg.step) })],
           [Msg2, seq(
             evolve({ count: inc }),
             evolve({ flag: not })
@@ -112,7 +112,7 @@ describe('app', () => {
       ctr.dispatch(new Msg({ step: 2 }));
       expect(ctr.state()).to.deep.equal({ count: 3, flag: false });
 
-      ctr.dispatch(new Msg2());
+      ctr.dispatch(new Msg2({}));
       expect(ctr.state()).to.deep.equal({ count: 4, flag: true });
     });
 
@@ -120,11 +120,11 @@ describe('app', () => {
       it('is called with the new model value after init and every Updater', () => {
         const log = [];
 
-        const ctr = isolate(container({
-          subscriptions: model => log.push(model),
+        const ctr = isolate(container<any>({
+          subscriptions: ((model) => { log.push(model); }) as any,
 
           update: [
-            [Msg, (model, { count }) => ({ test: count })],
+            [Msg, ({}, { count }) => ({ test: count })],
           ],
         }));
 
@@ -160,14 +160,14 @@ describe('app', () => {
     });
 
     it('correctly maps DOM events from text inputs', () => {
-      class InputEvent extends Message { }
+      class InputEvent extends Message<any> { }
       const log = [];
 
       const ctr = isolate(container({
         update: [
-          [InputEvent, (state, input) => {
+          [InputEvent, (model, input) => {
             log.push(input);
-            return state;
+            return model;
           }],
         ],
 
@@ -188,16 +188,16 @@ describe('app', () => {
     });
 
     it('correctly maps DOM events from checkboxes', () => {
-      class CheckboxEvent extends Message { }
+      class CheckboxEvent extends Message<any> { }
       const log = [];
 
       const ctr = isolate(container<any>({
         init: always({ checked: false }),
 
         update: [
-          [CheckboxEvent, (state, input) => {
+          [CheckboxEvent, (model, input) => {
             log.push(input);
-            return { checked: !state.checked };
+            return { checked: !model.checked };
           }],
         ],
 
@@ -248,19 +248,19 @@ describe('app', () => {
   describe('seq', () => {
     it('maps model changes across multiple updaters', () => {
       const updater = seq(evolve({ foo: not }), evolve({ bar: inc }));
-      expect(updater({ foo: false, bar: 41 })).to.deep.equal([{ foo: true, bar: 42 }, []]);
+      expect(updater({ foo: false, bar: 41 }, {}, {})).to.deep.equal([{ foo: true, bar: 42 }, []]);
     });
 
     it('aggregates commands across multiple updaters', () => {
-      const updater = seq(commands(Cmd, { first: 1 }), commands(Cmd2, { second: 2 }));
-      expect(updater({ foo: true, bar: 42 })).to.deep.equal([
+      const updater = seq(evolve({ foo: identity }), commands(Cmd, { first: 1 }), commands(Cmd2, { second: 2 }));
+      expect(updater({ foo: true, bar: 42 } as any, {}, {})).to.deep.equal([
         { foo: true, bar: 42 },
         [new Cmd({ first: 1 }), new Cmd2({ second: 2 })]
       ]);
     });
 
     it('passes through all updater params', () => {
-      const updater = seq((state, message, relay) => mergeAll([state, message, relay]));
+      const updater = seq((model, message, relay) => mergeAll([model, message, relay]));
       expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
         foo: true, bar: false, baz: true
       }, []]);
@@ -293,7 +293,7 @@ describe('app', () => {
 
     it('works with parameter helpers, v2', () => {
       const updater = mapModel(message(
-        ({ value }) => value ? { rememberMe: true, form: { email: value } } : { rememberMe: false }
+        ({ value }) => value ? { rememberMe: true, form: { email: value } } : { rememberMe: false } as any
       ));
       expect(updater({ rememberMe: null, form: {} }, { value: 'foo@bar.com' })).to.deep.equal({
         rememberMe: true, form: { email: 'foo@bar.com' }

@@ -1,19 +1,19 @@
 import { always, cond, curry, flip, is, pipe, prop, T } from 'ramda';
-import Message, { MessageConstructor } from './message';
+import { Command, Constructor } from './message';
 import ExecContext from './runtime/exec_context';
 import { EffectType, ProcessState } from './subscription';
 import { safeStringify } from './util';
 
-export type EffectMap = Map<MessageConstructor, (...args: any[]) => any>;
+export type EffectMap = Map<Constructor<any, Command<any>>, (...args: any[]) => any>;
 
 const unbox = cond([
-  [is(Message), pipe(prop('data'), Array.of)],
+  [is(Command), pipe(prop('data'), Array.of)],
   [is(ProcessState), Array.of],
   [T, always(null)]
 ]);
 
-export const handler = curry((effects: EffectMap, msg: Message) => {
-  const key = msg && msg[EffectType] || (msg.constructor as MessageConstructor);
+export const handler = curry(<T>(effects: EffectMap, msg: Command<T>) => {
+  const key = msg && msg[EffectType] || msg.constructor;
   return effects.get(key) && key || Array.from(effects.keys()).find(flip(is)(msg));
 });
 
@@ -26,7 +26,7 @@ export const handler = curry((effects: EffectMap, msg: Message) => {
  * @param {Message} msg A command message to dispatch
  * @return {*} returns the result of calling the effect handler
  */
-export default curry((effects: EffectMap, execContext: ExecContext<any>, msg: Message) => {
+export default curry((effects: EffectMap, execContext: ExecContext<any>, msg: Command<any>) => {
   const ctor = msg && msg.constructor, data = unbox(msg), callback = effects.get(handler(effects, msg));
 
   if (!data) {

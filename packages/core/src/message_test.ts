@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import { is } from 'ramda';
+import { always } from 'ramda';
 import Message from './message';
 
 describe('Message', () => {
@@ -14,7 +14,7 @@ describe('Message', () => {
     });
 
     it('accepts a Message', () => {
-      class CoolMessage extends Message {}
+      class CoolMessage extends Message<any> {}
       expect(Message.is(CoolMessage)).to.be.true;
     });
 
@@ -23,58 +23,36 @@ describe('Message', () => {
     });
 
     it('accepts a subclass of a subclass of a subclass of Message', () => {
-      class SubClass extends Message {}
+      class SubClass extends Message<any> {}
       class SubSubClass extends SubClass {}
       class SubSubSubClass extends SubSubClass {}
       expect(Message.is(SubSubSubClass)).to.be.true;
     });
   });
 
-  describe('#constructor', () => {
+  describe('constructor()', () => {
     it('populates data on init', () => {
-      expect((new Message({ foo: true })).data).to.deep.equal({ foo: true });
+      expect((new Message({ foo: true }))).to.deep.equal({ foo: true });
     });
 
     it('freezes data', () => {
       const msg = new Message({ foo: true });
 
       expect(() => { (msg as any).rando = false; }).to.throw(TypeError);
+      expect(() => { (msg as any).data.bar = true; }).to.throw(TypeError);
       expect(() => { msg.data.foo = false; }).to.throw(TypeError);
-      expect(() => { msg.data.bar = true; }).to.throw(TypeError);
 
       expect(msg.data).to.deep.equal({ foo: true });
     });
-
-    it('validates its inputs', () => {
-      class Msg extends Message { public static expects = { foo: is(Function) }; }
-
-      expect(() => new Msg({ foo: null })).to.throw(TypeError);
-      expect(() => new Msg({})).to.throw(TypeError);
-    });
   });
 
-  describe('#map', () => {
+  describe('map()', () => {
     it('uses the correct constructor', () => {
-      class Foo extends Message {}
-      const msg = (new Foo({ bar: true })).map({ bar: false, baz: true });
+      class Foo extends Message<any> {}
+      const msg = (new Foo({ bar: true })).map(always({ bar: false, baz: true }));
 
       expect(msg.data).to.deep.equal({ bar: false, baz: true });
       expect(msg).to.be.an.instanceof(Foo);
     });
   });
-
-  describe('#validate', () => {
-    it('passes on empty messages', () => {
-      expect(() => new Message()).to.not.throw();
-    });
-
-    it('throws on unmatched expectations', () => {
-      class Foo extends Message {
-        public static expects = { foo: is(String), bar: is(Number) };
-      }
-      expect(() => new Foo({ foo: 'hello', bar: 1138 })).to.not.throw();
-      expect(() => new Foo({ foo: 1138, bar: 1138 })).to.throw(TypeError);
-    });
-  });
-
 });

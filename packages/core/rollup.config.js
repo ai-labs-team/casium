@@ -11,9 +11,13 @@ export default [
       React: 'react',
     },
     output: {
-      name: 'casium',
+      name: 'casium-core',
       file: pkg.browser,
       format: 'umd',
+    },
+    treeshake: {
+      propertyReadSideEffects: false,
+      pureExternalModules: true
     },
     plugins: [
       resolve({

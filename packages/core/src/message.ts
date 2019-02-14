@@ -1,57 +1,29 @@
 import * as deepFreeze from 'deep-freeze-strict';
-import {
-  always, both, complement as not, curry, either as or, identity, ifElse,
-  is, isEmpty, join, merge, mergeAll, nth, pickBy, pipe
-} from 'ramda';
-import { getValidationFailures, safeStringify, suppressEvent } from './util';
+import { always, complement as not, curry, is, merge, pickBy, when } from 'ramda';
+import { suppressEvent } from './util';
 
-export interface MessageConstructor {
-  new(data?: any, opts?: any): Message;
+export type MessageConstructor<T> = Constructor<T, Message<T>>;
+
+type BaseEmittable<T> = MessageConstructor<T> | [MessageConstructor<T>, Partial<T>];
+export type Emittable<T> = BaseEmittable<T> | [BaseEmittable<T>, Partial<T>];
+
+export interface Constructor<M, T extends AbstractMessage<M>> {
+  defaults: Partial<M>;
+  new(data?: M, opts?: MessageOptions): T;
 }
 
 export type MessageOptions = {
   shallow?: boolean;
 };
 
-export default class Message {
-  // tslint:disable member-ordering
+abstract class AbstractMessage<T> {
 
-  /**
-   * Maps an emittable and message data to a message.
-   */
-  public static construct = curry((msgType: MessageConstructor, data: any) => {
-    const [type, extra] = Message.toEmittable(msgType);
-    return new type(merge(data, extra));
-  });
+  public static defaults: object = {};
+  public data: T;
 
-  /**
-   * Checks that a value is a message constructor.
-   */
-  public static is = val => val && val.prototype && val.prototype instanceof Message;
-
-  /**
-   * Checks that a value is emittable as a message constructor
-   */
-  public static isEmittable = or(Message.is, both(is(Array), pipe(nth(0), Message.is)));
-
-  public static toEmittable = ifElse(is(Array), identity, type => [type, {}]);
-
-  protected static defaults: object = {};
-  protected static expects: object = {};
-
-  public data: any;
-
-  constructor(data: any = {}, opts: MessageOptions = {}) {
-    const ctor = this.constructor as MessageConstructor & any;
-    ctor.check(ctor, data);
+  constructor(data: T, opts: MessageOptions = {}) {
+    const ctor = this.constructor as MessageConstructor<T>;
     this.data = merge(ctor.defaults, data);
-
-    const invalidTypes = getValidationFailures(ctor.expects)(this.data);
-
-    if (!isEmpty(invalidTypes)) {
-      const msgData = safeStringify(data), types = join(', ', invalidTypes);
-      throw new TypeError(`Message data ${msgData} failed expectations in ${ctor.name}: ${types}`);
-    }
 
     if (opts && opts.shallow) {
       Object.freeze(this);
@@ -61,16 +33,26 @@ export default class Message {
     }
   }
 
-  public map(data): Message {
-    return new (this.constructor as any)(merge(this.data, data));
+  public map<U>(fn: (data: T) => U): AbstractMessage<U> {
+    const ctor = this.constructor as Constructor<U, AbstractMessage<U>>;
+    return new ctor(fn(this.data));
   }
+}
 
-  protected static check(ctor: MessageConstructor, data) {
-    if (is(Object, data)) {
-      return;
-    }
-    throw new Error(`Message data must be an object in message ${ctor.name} but is ${safeStringify(data)}`);
-  }
+export class Command<T> extends AbstractMessage<T> {}
+
+export default class Message<T> extends AbstractMessage<T> {
+  // tslint:disable member-ordering
+
+  /**
+   * Maps an emittable and message data to a message.
+   */
+  public static construct = curry(<T>(msgType: MessageConstructor<T>, data: any) => {
+    const [type, extra] = Message.toEmittable(msgType);
+    return new type(merge(data, extra));
+  });
+
+  public static toEmittable = when(not(is(Array)), type => [type, {}]);
 
  /**
   * Maps an Event object to a hash that will be wrapped in a Message.
@@ -85,10 +67,10 @@ export default class Message {
     if (isDomEvent && !isCheckbox && extra.preventDefault !== false) {
       suppressEvent(event);
     }
-    return mergeAll([{ event: always(event) }, eventVal, extra]);
+    return [{ event: always(event) }, eventVal, extra].reduce(merge);
   });
 }
 
-export class Activate extends Message {}
-export class Refresh extends Message {}
-export class Deactivate extends Message {}
+export class Activate<T> extends Message<T> {}
+export class Refresh<T> extends Message<T> {}
+export class Deactivate<T> extends Message<T> {}

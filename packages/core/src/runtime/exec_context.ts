@@ -1,14 +1,16 @@
 import {
   complement as not, concat, curry, defaultTo, equals, filter, flatten,
-  identity, is, isEmpty, keys, map, merge, nth, pick, pipe, prop, values
+  identity, is, isEmpty, keys, map, merge, pick, pipe, prop, tap
 } from 'ramda';
 
-import { Container, DelegateDef, PARENT } from '../core';
+import { Container, Delegate, DelegatePath, PARENT } from '../core';
 import * as Environment from '../environment';
 import { intercept, notify } from '../instrumentation';
-import Message, { MessageConstructor } from '../message';
+import Message, { Command, Constructor, Emittable } from '../message';
 import { cmdName, mapResult, msgName, reduceUpdater, replace, toArray, trap } from '../util';
 import StateManager, { Callback, Config } from './state_manager';
+
+import * as Validator from './validator';
 
 export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) => object, path?: string[] };
 
@@ -16,7 +18,7 @@ export type ExecContextDef<M> = {
   env?: Environment.Environment,
   container: Container<M>,
   parent?: ExecContext<M> | ExecContextPartial,
-  delegate?: DelegateDef
+  delegate?: Delegate
 };
 
 const { assign, freeze } = Object;
@@ -57,16 +59,6 @@ const logCmdError = curry((logger, msg, err, cmd) => {
 });
 
 /**
- * Walk up a container hierarchy looking for a value.
- *
- * @param  {Function} Callback to check an execution context for a value
- * @param  {Object} The starting (child) execution context to walk up from
- * @param  {*} args Arguments to pass to `cb`
- * @return {*}
- */
-const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, exec.parent, val));
-
-/**
  * Attaches a container's state manager to a Redux store to receive updates.
  *
  * @param  {Object} config The attachment configuration
@@ -79,45 +71,12 @@ const attachStore = (config, ctx) => {
   return getState();
 };
 
-/**
- * Maps a state & a message to a new state and optional command (or list of commands).
- */
-const mapMessage = (handler, state, msg, relay) => {
-  if (!is(Message, msg)) {
-    const ctor = msg && msg.constructor && msg.constructor.name || '{Unknown}';
-    throw new TypeError(`Message of type '${ctor}' is not an instance of Message`);
-  }
-  if (!handler || !is(Function, handler)) {
-    throw new TypeError(`Invalid handler for message type '${msg.constructor.name}'`);
-  }
-
-  return mapResult(reduceUpdater(handler, state, msg.data, relay));
-};
-
-/**
- * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
- */
-const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
-  const unhandled = pipe(prop('data'), values, filter(Message.isEmittable), filter(not(exec.handles)));
-  const msgs = unhandled(cmd);
-
-  if (!msgs.length) {
-    return cmd;
-  }
-  throw new Error([
-    `A ${cmdName(cmd)} command was sent from container ${exec.container.name} `,
-    'with one or more result messages that are unhandled by the container (or its ancestors): ',
-    msgs.map(prop('name')).join(', '),
-  ].join(''));
-});
-
-type ReduxAction = {
+type ReduxAction<T> = T & {
   type: string;
-  [key: string]: any;
 };
 
-type ReduxMessageMap = {
-  [key: string]: MessageConstructor;
+type ReduxMessageMap<T> = {
+  [key: string]: Constructor<T, Message<T>>;
 };
 
 /**
@@ -129,8 +88,12 @@ type ReduxMessageMap = {
  *                  constructors
  * @param  action A Redux action
  */
-const dispatchAction = <M>(exec: ExecContext<M>, messageTypes: ReduxMessageMap, action: ReduxAction) => {
-  action && action.type && messageTypes[action.type] && exec.dispatch(new messageTypes[action.type](action));
+const dispatchAction = <Model, T, Action extends ReduxAction<T>>(
+  exec: ExecContext<Model>,
+  msgTypes: ReduxMessageMap<T>,
+  action: Action
+) => {
+  action && action.type && msgTypes[action.type] && exec.dispatch(new msgTypes[action.type](action));
 };
 
 /**
@@ -155,7 +118,7 @@ const groupEffects = keyFn => (prev, current) => {
  *           is invoked
  *         - dispatch: Accepts a message to dispatch to the container
  */
-export default class ExecContext<M> {
+export default class ExecContext<Model> {
 
   /**
    * Returns true if the passed context is a partial definition and not a full `ExecContext` instance.
@@ -164,17 +127,17 @@ export default class ExecContext<M> {
 
   public id: string = Math.round(Math.random() * Math.pow(2, 50)).toString();
 
-  public parent?: ExecContext<M> = null;
-  public delegate?: DelegateDef = null;
+  public parent?: ExecContext<Model> = null;
+  public delegate?: Delegate = null;
   public path: (string | symbol)[] = [];
   public env?: Environment.Environment = null;
   public container?: Container<any> = null;
 
   protected errLog;
-  protected getState: (params?: object) => object = null;
+  protected getState: (params?: { path: DelegatePath }) => object = null;
   protected stateMgr?: StateManager = null;
 
-  constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
+  constructor({ env, container, parent, delegate }: ExecContextDef<Model>) {
     const ctrEnv = Environment.merge(parent, env);
     const path = concat(parent && parent.path || [], (delegate && delegate !== PARENT) ? toArray(delegate) : []);
     let hasInitialized = false;
@@ -217,21 +180,33 @@ export default class ExecContext<M> {
   /**
    * Checks that a Message object is valid and is handled by the bound container, then dispatches it.
    */
-  public dispatch(msg: Message) {
-    const msgType = msg.constructor as MessageConstructor;
+  public dispatch<T>(msg: Message<T>) {
+    Validator.check('dispatch', { msg, exec: this });
 
-    if ((msgType as any) === Function) {
-      throw new TypeError(`Attempted to dispatch message constructor '${(msg as any).name}' — should be an instance`);
-    }
-    if (!this.handles(msgType)) {
-      throw new TypeError(`Unhandled message type '${msgType.name}' in container '${this.container.name}'`);
-    }
-    return trap(logMsgError(this.env.log), this.internalDispatch.bind(this))(msg);
+    return trap(
+      logMsgError(this.env.log),
+      (msg: Message<T>) => {
+        const { dispatch, parent, getState, relay } = this, msgType = msg.constructor as Constructor<T, Message<T>>;
+        const updater = this.container.update.get(msgType);
+        const model = getState();
+        Validator.check('msg', { updater, msg });
+
+        return updater
+          ? (dispatch as any).run(msg, mapResult(reduceUpdater(updater, model, msg.data, relay())))
+          : parent.dispatch(msg);
+      }
+    )(msg);
   }
 
   public commands(msg, cmds) {
     return pipe(flatten, filter(is(Object)), map(
-      trap(logCmdError(this.env.log, msg), pipe(checkCmdMsgs(this), this.commandDispatcher()))
+      trap(
+        logCmdError(this.env.log, msg),
+        pipe(
+          tap((cmd: Command<any>) => Validator.check('cmd', { exec: this, cmd })),
+          this.commandDispatcher()
+        )
+      )
     ))(cmds);
   }
 
@@ -249,7 +224,7 @@ export default class ExecContext<M> {
     return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
   }
 
-  public state(cfg?: object): object {
+  public state(cfg?: { path: DelegatePath }): object {
     return this.getState(cfg);
   }
 
@@ -268,7 +243,7 @@ export default class ExecContext<M> {
    * @param  {Object} msgTypes
    */
   public reducer(msgTypes = {}) {
-    return (prev, action) => {
+    return ({}, action) => {
       dispatchAction((this.dispatch as any).run, msgTypes, action);
       return this.getState();
     };
@@ -277,16 +252,12 @@ export default class ExecContext<M> {
   /**
    * Returns a function that wraps a DOM event in a message and dispatches it to the attached container.
    */
-  public emit(msgType) {
+  public emit<T>(msgType: Emittable<T>) {
     const em = Message.toEmittable(msgType),
-      [type, extra] = em,
-      ctr = this.container.name,
-      name = type && type.name || '??';
+      [msgCtor, extra] = em;
 
-    if (this.handles(em)) {
-      return pipe(defaultTo({}), Message.mapEvent(extra), Message.construct(type), this.dispatch);
-    }
-    throw new Error(`Messages of type '${name}' are not handled by container '${ctr}' or any of its ancestors`);
+    Validator.check('emit', { msgCtor, exec: this });
+    return pipe(defaultTo({}), Message.mapEvent(extra), Message.construct(msgCtor), this.dispatch);
   }
 
   /**
@@ -295,38 +266,21 @@ export default class ExecContext<M> {
   public destroy() {
     this.stateManager().stop(
       this,
-      this.subscriptions(this.state() as any as M),
+      this.subscriptions(this.state() as any as Model),
       this.commandDispatcher()
     );
   }
 
-  /**
-   * Checks if the container or container's ancestor handles messages of a given type
-   *
-   * @param  msgType A message constructor
-   * @return Returns true if the container (or an ancestor) has an update handler matching
-   *         the given constructor, otherwise false.
-   */
-  public get handles(): (msgType: MessageConstructor) => boolean {
-    return pipe(Message.toEmittable, nth(0), walk((exec, type) => exec.container.accepts(type), this));
-  }
-
   public stateManager(): StateManager {
-    const parent = this.parent as ExecContext<M>;
+    const parent = this.parent as ExecContext<Model>;
     return this.stateMgr || parent.stateManager && parent.stateManager();
   }
 
-  private subscriptions(model: M) {
+  private subscriptions(model: Model) {
     const { container, env } = this;
     return (
       !container.subscriptions && [] ||
       toArray(container.subscriptions(model, this.relay()))
     ).filter(not(isEmpty)).reduce(groupEffects(env.handler), new Map());
-  }
-
-  private internalDispatch(msg: Message) {
-    const { dispatch, parent, getState, relay } = this, msgType = msg.constructor as MessageConstructor;
-    const updater = this.container.update.get(msgType);
-    return updater ? (dispatch as any).run(msg, mapMessage(updater, getState(), msg, relay())) : parent.dispatch(msg);
   }
 }

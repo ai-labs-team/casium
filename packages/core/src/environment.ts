@@ -1,8 +1,7 @@
-import { always, cond, mergeDeepWithKey, path, pipe, prop, T } from 'ramda';
-import { Container } from './core';
+import { always, cond, identity, mergeDeepWithKey, path, pipe, prop } from 'ramda';
+import { Container, Delegate, Emitter } from './core';
 import { default as coreDispatcher, handler } from './dispatcher';
-import effects from './effects';
-import Message, { MessageConstructor } from './message';
+import { Command, Constructor } from './message';
 import ExecContext, { ExecContextPartial } from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 import { ProcessState } from './subscription';
@@ -13,17 +12,27 @@ export type CommandDispatcher = (data: object, dispatch: Dispatcher) => any | vo
 export type SubscriptionDispatcher = (processState: ProcessState, dispatch: Dispatcher) => any | void;
 
 export type EnvDefPartial = {
-  dispatcher: any;
+  dispatcher: Dispatcher;
   log?: (...args: any[]) => any | void;
   stateManager?: (container?: Container<any>) => StateManager;
+  renderer: Renderer;
 };
 
 export type EnvDef = EnvDefPartial & {
-  effects: Map<MessageConstructor, CommandDispatcher | SubscriptionDispatcher>;
+  effects: Map<Constructor<any, Command<any>>, CommandDispatcher | SubscriptionDispatcher>;
 };
 
+export type RenderProps = {
+  childProps: { [key: string]: any } & { emit: Emitter };
+  container: Container<any>;
+  delegate: Delegate;
+  env: Environment;
+};
+
+export type Renderer = (props: RenderProps) => any;
+
 export type Environment = EnvDefPartial & {
-  handler: (msg: Message) => MessageConstructor;
+  handler: (msg: Command<any>) => Constructor<any, Command<any>>;
   identity: () => EnvDef;
 };
 
@@ -43,16 +52,21 @@ export type Environment = EnvDefPartial & {
  *         - stateManager: A StateManager factory function
  *         - identity: Returns the parameters that created this environment
  */
-export const create = ({ effects, dispatcher = null, log = null, stateManager = null }: EnvDef): Environment => ({
+export const create = ({
+  effects,
+  dispatcher = null,
+  log = null,
+  stateManager = null,
+  renderer = identity
+}: EnvDef): Environment => ({
   // tslint:disable:no-console
   dispatcher: (dispatcher || coreDispatcher)(effects),
   handler: handler(effects),
-  identity: () => ({ effects, dispatcher, log, stateManager }),
+  identity: () => ({ effects, dispatcher, log, stateManager, renderer }),
   log: log || console.error.bind(console),
-  stateManager: stateManager || (() => new StateManager())
+  stateManager: stateManager || (() => new StateManager()),
+  renderer
 });
-
-export const root: Environment = create({ effects, dispatcher: coreDispatcher });
 
 /**
  * Helper function for `create()`, to merge effects maps
@@ -76,6 +90,6 @@ export const merge: <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Envi
     [prop('canMerge'), ({ parent, env }) => create(mergeWithEffects(parent.env.identity(), env.identity()))],
     [prop('hasOnlyParent'), path(['parent', 'env'])],
     [prop('isOnlyChild'), prop('env')],
-    [T, always(root)]
+    [always(true), () => { throw new Error('@TODO: Something bad happened'); }]
   ])
 );

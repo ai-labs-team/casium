@@ -1,0 +1,40 @@
+{
+  "name": "@casium/react",
+  "version": "1.0.1",
+  "description": "Rendering interface to use Casium in React applications",
+  "module": "./index.js",
+  "browser": "dist/casium-react.umd.js",
+  "types": "./index.d.ts",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ai-labs-team/casium.git"
+  },
+  "author": "Nate Abele <natea@advisorinnovationlabs.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ai-labs-team/casium/issues"
+  },
+  "homepage": "https://github.com/ai-labs-team/casium#readme",
+  "devDependencies": {
+    "@types/react": "16.4.7",
+    "@types/ramda": "types/npm-ramda",
+    "enzyme-adapter-react-16": "1.6.0",
+    "jsdom": "12.2.0",
+    "jsdom-global": "3.0.2",
+    "react-addons-test-utils": "15.6.2",
+    "react-dom": "16.5.2",
+    "react-test-renderer": "16.5.2",
+    "prop-types": "^15.0.0-0 || ^16.0.0-0",
+    "react": "^16.2.0"
+  },
+  "peerDependencies": {
+    "prop-types": "^15.0.0-0 || ^16.0.0-0 || ^17.0.0-0",
+    "react": "^16.2.0 || ^17.0.0"
+  },
+  "dependencies": {
+    "@casium/core": "file:../core/src",
+    "ramda": "^0.25.0"
+  }
+}

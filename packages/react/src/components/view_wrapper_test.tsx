@@ -4,10 +4,12 @@ import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { always, merge, pipe } from 'ramda';
 import * as React from 'react';
-import { container, PARENT, withEnvironment } from './core';
+import { PARENT, withEnvironment } from './core';
+import { container } from '../index';
 import dispatcher from './dispatcher';
 import { create as environment } from './environment';
-import Message, { Activate, Deactivate, Refresh } from './message';
+import Message, { Activate, Command, Deactivate, Emittable, Refresh } from './message';
+import ViewWrapper from './view_wrapper';
 
 describe('ViewWrapper', () => {
 
@@ -143,11 +145,8 @@ describe('ViewWrapper', () => {
       let ContainerB, ContainerA;
 
       beforeEach(() => {
-        class TestCommand extends Message {
-          public static expects = { result: Message.isEmittable };
-        }
-
-        class TestCommandResult extends Message {}
+        class TestCommand extends Command<{ result: Emittable<any> }> {}
+        class TestCommandResult extends Message<any> {}
 
         const testEffect = new Map([
           [TestCommand, ({ result }, dispatch) => pipe(Message.construct(result), dispatch)({})]
@@ -168,7 +167,11 @@ describe('ViewWrapper', () => {
           ),
         });
 
-        ContainerA = withEnvironment(environment({ effects: testEffect, dispatcher }), {
+        ContainerA = withEnvironment(environment({
+          effects: testEffect,
+          dispatcher,
+          renderer: props => React.createElement(ViewWrapper, props),
+        }), {
           init: always({ foo: true }),
           view: state => (
             <span>

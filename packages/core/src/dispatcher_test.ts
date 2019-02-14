@@ -10,7 +10,7 @@ describe('dispatcher', () => {
 
   describe('handler()', () => {
 
-    class Msg extends Message {}
+    class Msg extends Message<any> {}
 
     it('returns the message constructor when a match is found', () => {
       expect(handler(effects, new Read({ key: 'foo', result: Msg }))).to.deep.equal(Read);
@@ -27,9 +27,9 @@ describe('dispatcher', () => {
     });
 
     it('throws when dispatching an unhandled message', () => {
-      class Msg extends Message {}
+      class Msg extends Message<any> {}
 
-      expect(() => dispatcher(new Map([]), {}, new Msg())).to.throw(TypeError, /Unhandled/);
+      expect(() => dispatcher(new Map([]), {}, new Msg({}))).to.throw(TypeError, /Unhandled/);
     });
 
   });

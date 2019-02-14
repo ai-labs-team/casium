@@ -4,7 +4,7 @@ import StateManager from './state_manager';
 
 describe('StateManager', () => {
 
-  describe('#set', () => {
+  describe('set()', () => {
 
     it('sends state updates to listeners', () => {
       const stateMgr = new StateManager({ foo: true }), log = [];

@@ -1,0 +1,28 @@
+{
+  "name": "@casium/framework",
+  "version": "1.0.1",
+  "description": "Batteries-included framework for using Casium with React",
+  "module": "./index.js",
+  "browser": "dist/casium-framework.umd.js",
+  "types": "./index.d.ts",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ai-labs-team/casium.git"
+  },
+  "author": "Nate Abele <natea@advisorinnovationlabs.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ai-labs-team/casium/issues"
+  },
+  "homepage": "https://github.com/ai-labs-team/casium#readme",
+  "dependencies": {
+    "@casium/cookies": "file:../cookies/src",
+    "@casium/history": "file:../history/src",
+    "@casium/http": "file:../http/src",
+    "@casium/local_storage": "file:../local_storage/src",
+    "@casium/react": "file:../react/src",
+    "@casium/timer": "file:../timer/src"
+  }
+}

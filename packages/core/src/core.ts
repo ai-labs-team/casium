@@ -1,16 +1,13 @@
 import {
   always, constructN, curry, defaultTo, evolve, flatten, identity as id,
-  ifElse, is, map, merge, nthArg, omit, pick, pipe, splitEvery
+  is, map, merge, nthArg, omit, pick, pipe, splitEvery, when
 } from 'ramda';
 
-import * as React from 'react';
-
-import { create, Environment, root } from './environment';
-import Message, { MessageConstructor } from './message';
+import { create, Environment } from './environment'; 
+import Message, { Command, Constructor } from './message';
 import ExecContext from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 import { mapResult, reduceUpdater } from './util';
-import ViewWrapper from './view_wrapper';
 
 /**
  *  A global symbol that allows users to opt into what is currently the default delegate behavior
@@ -19,42 +16,53 @@ import ViewWrapper from './view_wrapper';
 export const PARENT = Symbol.for('@delegate/parent');
 
 export type Empty = false | null | undefined;
-export type MessageOrEmpty = Message | Empty;
+export type CommandOrEmpty = Command<any> | Empty;
 export type GenericObject = { [key: string]: any };
 
-export type UpdateResult<M> = M | ((model: M) => M) | [M, ...MessageOrEmpty[]] | [M, MessageOrEmpty[]];
+export type BaseResult<Model> = Model | [Model, ...CommandOrEmpty[]] | [Model, CommandOrEmpty[]];
+export type BaseUpdater<Model, MsgData> = (model: Model, msg?: MsgData, relay?: GenericObject) => BaseResult<Model>;
+export type Updater<Model, MsgData> = (
+  (BaseUpdater<Model, MsgData>) |
+  ((model: Model, msg?: MsgData, relay?: GenericObject) => Updater<Model, MsgData>)
+);
 
-export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
-export type UpdaterDef<M> = (model: M, message: GenericObject, relay: GenericObject) => UpdateResult<M>;
+export type Delegate = symbol | string | DelegatePath;
+export type DelegatePath = (string | symbol)[];
+export type UpdaterPair<Model, MsgData> = [Constructor<MsgData, Message<MsgData>>, Updater<Model, MsgData>];
+export type UpdateMap<Model, MsgData> = Map<Constructor<MsgData, Message<MsgData>>, Updater<Model, MsgData>>;
 
-export type DelegateDef = symbol | string;
-export type UpdateMapDef<M> = [MessageConstructor, UpdaterDef<M>][];
-export type UpdateMap<M> = Map<MessageConstructor, UpdaterDef<M>>;
-
-export type ContainerDefPartial<M> = { update?: UpdateMapDef<M>, name?: string };
-export type ContainerDefMapped<M> = { update: UpdateMap<M>, name: string };
-export type ContainerPartial<M> = {
-  delegate?: DelegateDef;
-  init?: (model: M, relay: GenericObject) => UpdateResult<M>;
-  relay?: { [key: string]: (model: M, relay: GenericObject) => M & GenericObject };
-  view?: ContainerViewDef<M>;
+export type ContainerDefPartial<Model> = { update?: UpdaterPair<Model, any>[], name?: string };
+export type ContainerDefMapped<Model> = { update: UpdateMap<Model, any>, name: string };
+export type ContainerPartial<Model> = {
+  delegate?: Delegate;
+  init?: (model: Model, relay: GenericObject) => BaseResult<Model>;
+  relay?: { [key: string]: <RelayValue>(model: Model, relay: GenericObject) => RelayValue };
+  view?: ContainerView<Model>;
   attach?: { store: GenericObject, key?: string };
-  subscriptions?: (model: M, relay: GenericObject) => any | any[];
+  subscriptions?: (model: Model, relay: GenericObject) => CommandOrEmpty | CommandOrEmpty[];
 };
-export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
 
-export type Emitter = (msg: MessageConstructor | [MessageConstructor, GenericObject]) => any;
-export type ContainerViewProps<M> = M & { emit: Emitter, relay: GenericObject };
-export type ContainerViewDef<M> = (props: ContainerViewProps<M>) => any;
-export type ContainerView<M> = (props?: ContainerViewProps<M>) => any;
-export type Container<M> = ContainerView<M> & ContainerPartial<M> & ContainerDefMapped<M> & {
-  accepts: (m: MessageConstructor) => boolean;
-  identity: () => ContainerDef<M>;
-};
-export type IsolatedContainer<M> = Container<M> & {
+export type ContainerDef<Model> = ContainerDefPartial<Model> & ContainerPartial<Model>;
+
+export type Emitter = <MsgData>(
+  msg: Constructor<MsgData, Message<MsgData>> | [Constructor<MsgData, Message<MsgData>>, Partial<MsgData>]
+) => (e: any) => void;
+
+export type ContainerView<Model> = (props?: Model & {
+  emit: Emitter,
+  relay: GenericObject
+}) => any;
+
+export type Container<Model> = (
+  ContainerView<Model> & ContainerPartial<Model> & ContainerDefMapped<Model> & {
+    accepts: <MsgData>(m: Constructor<MsgData, Message<MsgData>>) => boolean;
+    identity: () => ContainerDef<Model>;
+  }
+);
+export type IsolatedContainer<Model> = Container<Model> & {
   dispatch: any;
-  state: () => M;
-  push: (state: M) => void;
+  state: () => Model;
+  push: (model: Model) => void;
 };
 
 const { freeze, assign, defineProperty } = Object;
@@ -62,11 +70,10 @@ const { freeze, assign, defineProperty } = Object;
 /**
  * Takes a value that may be an array or a Map, and converts it to a Map.
  */
-const toMap = ifElse(is(Array), constructN(1, Map as any), id);
+const toMap: <K, V>(list: [K, V][] | Map<K, V>) => Map<K, V> = when(is(Array), constructN(1, Map));
 
-type ViewWrapDef<M> = { env: Environment, container: Container<M> };
-type Delegate = { delegate?: DelegateDef };
-type ViewProps<M> = Partial<M> & Delegate;
+type ViewWrapDef<Model> = { env: Environment, container: Container<Model> };
+type ViewProps<Model> = Partial<Model> & { delegate?: Delegate };
 
 /**
  * Wraps a container's view to extract container-specific props and inject `emit()` helper
@@ -80,8 +87,8 @@ type ViewProps<M> = Partial<M> & Delegate;
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>> => (
-  <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
+const wrapView = <Model>({ env, container }: ViewWrapDef<Model>): React.SFC<ViewProps<Model>> => (
+  env.renderer({
     childProps: omit(['delegate'], props || {}),
     container,
     delegate: props.delegate || container.delegate,
@@ -92,10 +99,15 @@ const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>
 /**
  * Maps default values of a container definition.
  */
-const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
+const mapDef: <Model>(def: ContainerDefPartial<Model>) => ContainerDefMapped<Model> = pipe(
   merge({ name: null, update: [] }),
   evolve({ update: toMap, name: defaultTo('UnknownContainer') })
 );
+
+export interface WithEnvironment {
+  (env: Environment): <Model>(def: ContainerDef<Model>) => Container<Model>;
+  <Model>(env: Environment, def: ContainerDef<Model>): Container<Model>;
+}
 
 /**
  * Creates a container bound to an execution environment
@@ -104,17 +116,22 @@ const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
  * @param  {Object} container The container definition
  * @return {Component} Returns a renderable React component
  */
-export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>): Container<M> => {
+export const withEnvironment: WithEnvironment = curry(<Model, MsgData>(
+  env: Environment,
+  def: ContainerDef<Model>
+): Container<Model> => {
   let ctr;
   const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
   ctr = assign(mapDef(def), fns);
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 });
 
+type ContainerFactory = <Model>(def: ContainerDef<Model>) => Container<Model>;
+
 /**
  * Creates a new container.
  *
- * @param  {Object} An object with the following functions:
+ * @param  An object with the following properties:
  *         - `init`: Returns an update result, representing the initial value of the container's model.
  *           See "Update Results" below for details.
  *         - `update`: A function that accepts the current model as an object,
@@ -159,7 +176,7 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
-export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(root);
+export const container: ContainerFactory = withEnvironment(root);
 
 export type IsolateOptions = {
   stateManager?: StateManager;
@@ -192,43 +209,61 @@ export const isolate = <Model>(
 /**
  * Helper function for sequencing multiple updaters together using left-to-right composition.
  * Each subsequent updater will receive the model returned by the preceding updater, and command messages
- * returned will be aggregated across all updaters. If any updater returns a function, that function
- * will be treated as an updater.
+ * returned will be aggregated across all updaters.
+ *
+ * Improves container refactoring by allowing you to extract and recompose shared logic.
  */
-export function seq<M>(...updaters: Updater<M>[]) {
-  return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): UpdateResult<M> {
+export function seq<Model, MsgData>(...updaters: Updater<Model, MsgData>[]) {
+  return function (model: Model, msg: MsgData, relay: GenericObject = {}): Updater<Model, MsgData> {
     const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
-    const reduce = (prev, cur) =>
-      merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
+    const reduce = (prev, cur) => merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
 
-    return updaters.reduce(reduce, [model, []]) as UpdateResult<M>;
+    return updaters.reduce(reduce, [model, []]) as Updater<Model, MsgData>;
   };
 }
 
-export type ModelMapperFn<M> = (model: M, message?: GenericObject, relay?: GenericObject) => M;
-export type ModelMapper<M> = ModelMapperFn<M> | { [key: string]: ModelMapperFn<M> };
+export type ModelMapperFn<Model, MsgData, R> = (model: Model, msg?: MsgData, relay?: GenericObject) => R;
+
+export type ModelMapper<Model, MsgData> = (ModelMapperFn<Model, MsgData, Model> | {
+  [K in keyof Model]: ModelMapperFn<Model, MsgData, Model[K]>
+});
 
 /**
  * Accepts a mapper that transforms a model. The mapper can be an updater, or an object that pairs
  * keys to updater-signature functions that return a value. The returned values are then paired to the
  * mapper's keys and merged into the model.
  */
-export const mapModel = <M>(mapper: ModelMapper<M>) =>
-  (model: M, message?: GenericObject, relay?: GenericObject): UpdateResult<M> => {
-    const update = fn => fn(model, message, relay);
-    return merge(model, is(Function, mapper) ? update(mapper) : map(update, mapper));
-  };
+export const mapModel = <Model, MsgData>(mapper: ModelMapper<Model, MsgData>) => (
+  model: MsgData,
+  msg?: MsgData,
+  relay?: GenericObject
+): Updater<Model, MsgData> => {
+  const update = fn => fn(model, msg, relay);
+  return merge(model, is(Function, mapper) ? update(mapper) : map(update, mapper));
+};
 
-export const relay = <M>(fn?: (r: any) => UpdateResult<M>) => pipe(nthArg(2), (fn || id));
-export const message = <M>(fn?: (m: any) => UpdateResult<M>) => pipe(nthArg(1), (fn || id));
-export const union = <M>(fn?: (u: { model: M, message?: GenericObject, relay?: GenericObject }) => UpdateResult<M>) =>
-  (model: M, message = {}, relay = {}) => (fn || id)({ model, message, relay });
+export const relay = <Model, MsgData>(fn?: (r: GenericObject) => Updater<Model, MsgData>) => pipe(
+  nthArg(2), (fn || id)
+);
+export const message = <Model, MsgData>(fn?: (m: MsgData) => Updater<Model, MsgData>) => pipe(nthArg(1), (fn || id));
+export const union = <Model, MsgData>(
+  fn?: (u: { model: Model, msg?: MsgData, relay?: GenericObject }) => Updater<Model, MsgData>
+) => (model: Model, msg = {}, relay = {}) => (fn || id)({ model, msg, relay });
 
-const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), id);
+const mapData = (model, msg, relay) => when(is(Function), fn => fn(model, msg, relay));
 const consCommands = (model, msg, relay) => pipe(
   splitEvery(2),
   map(([cmd, data]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null)
 );
+
+export type CommandParam<Model, MsgData, CmdData> = (
+  Constructor<any, Command<any>> | Empty | GenericObject | UpdateCommandMapper<Model, MsgData, CmdData>
+);
+export type UpdateCommandMapper<Model, MsgData, CmdData> = (
+  model: Model,
+  msg: MsgData,
+  relay: GenericObject
+) => CmdData;
 
 /**
  * Helper function for updaters that only issue commands. Pass in alternating command constructors and
@@ -244,12 +279,45 @@ const consCommands = (model, msg, relay) => pipe(
  * ```
  * [FooMessage, commands(Http.Post, (model, msg) => ({ url: '/foo', data: [model.someData, msg.otherData] }))]]
  * ```
+ *
+ * @deprecated
  */
-export type CommandParam<M> = MessageConstructor | Empty | GenericObject | UpdateCommandMapper<M>;
-export type UpdateCommandMapper<M> = (model: M, message: GenericObject, relay: GenericObject) => GenericObject;
-export const commands = <M>(...args: CommandParam<M>[]): Updater<M> => {
+export const commands = <Model extends {}, MsgData extends {}>(
+  ...args: CommandParam<Model, MsgData, any>[]
+): Updater<Model, MsgData> => {
   if (args.length % 2 !== 0) {
     throw new TypeError('commands() must be called with an equal number of command constructors & data parameters');
   }
   return (model, msg?, relay?) => [model, consCommands(model, msg, relay)(args)];
 };
+
+/**
+ * Helper function for updaters that issue commands. Pass in a command constructor and
+ * command data, i.e.:
+ *
+ * ```
+ * [FooMessage, command(LocalStorage.Write, { key: 'foo' })]
+ * ```
+ *
+ * Command data arguments can also be functions that return data. These functions have the same type
+ * signature as updaters:
+ *
+ * ```
+ * [FooMessage, command(Http.Post, (model, msg) => ({ url: '/foo', data: [model.someData, msg.otherData] }))]]
+ * ```
+ *
+ * To sequence multiple commands together, use the `seq()` helper function:
+ *
+ * ```
+ * [FooMessage, seq(
+ *   command(LocalStorage.Write, { key: 'foo' }),
+ *   command(LocalStorage.Delete, { key: 'bar' })
+ * )]
+ * ```
+ */
+export const command = <Model, MsgData, CmdData>(
+  cmd: Constructor<CmdData, Command<CmdData>> | Empty,
+  data: CmdData | UpdateCommandMapper<Model, MsgData, CmdData>
+) => (
+  (model: Model, msg?: MsgData, relay?: GenericObject) => [model, cmd && new cmd(mapData(model, msg, relay)(data))]
+);

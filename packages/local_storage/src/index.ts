@@ -1,7 +1,18 @@
 import { always, merge, objOf, pipe } from 'ramda';
-import { Clear, Delete, Read, Write } from '../commands/local_storage';
-import Message from '../message';
-import { safeParse, safeStringify } from '../util';
+import Message, { Constructor, Emittable } from '@casium/core/message';
+import { moduleName, safeParse, safeStringify } from '@casium/core/util';
+
+@moduleName('LocalStorage')
+export class Read extends Message<{ key: string, result: Emittable<any> }> {}
+
+@moduleName('LocalStorage')
+export class Write extends Message<{ key: string; value: any }> {}
+
+@moduleName('LocalStorage')
+export class Delete extends Message<{ key: string }> {}
+
+@moduleName('LocalStorage')
+export class Clear extends Message<{}> {}
 
 const get = (() => {
   try {
@@ -13,7 +24,7 @@ const get = (() => {
   }
 })();
 
-export default new Map([
+export default new Map<Constructor<any, Message<any>>, (data: any, dispatch: any) => any>([
   [Read, ({ key, result }, dispatch) => pipe(
     get, safeParse, objOf('value'), merge({ key }), Message.construct(result), dispatch
   )(key)],

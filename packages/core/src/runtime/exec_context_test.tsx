@@ -9,7 +9,7 @@ import StateManager from './state_manager';
 
 import Message from '../message';
 
-class Cmd extends Message {}
+class Cmd extends Message<any> {}
 
 describe('ExecutionContext', () => {
   let ctr: any;
@@ -19,11 +19,7 @@ describe('ExecutionContext', () => {
     ctr =  isolate(container({
       init: always({ foo: true }),
       update: [[Cmd, model => model]],
-      subscriptions: () => [
-        {},
-        null,
-        false,
-      ],
+      subscriptions: () => [undefined, null, false],
       view: () => (<div/>),
     }));
     execContext = new ExecutionContext({

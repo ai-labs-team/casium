@@ -8,7 +8,7 @@
  * internal to the application) or outside (for example, to implement external
  * tools such as the Casium Developer Tools).
  */
-import { Container, GenericObject } from './core';
+import { Container, DelegateDef, GenericObject } from './core';
 import ExecContext from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 
@@ -23,7 +23,7 @@ export type Message = {
   msg: GenericObject | null;
   prev: GenericObject | null;
   next: GenericObject;
-  path: (string | symbol)[];
+  path: DelegateDef;
   cmds: any[];
   subs: any[];
 };
@@ -51,9 +51,9 @@ export const withStateManager = (callback: StateManagerCallback) => {
 
   const { stateManager } = window[INSTRUMENTATION_KEY];
 
-  stateManager ?
-    callback(stateManager) :
-    window[INSTRUMENTATION_KEY].withStateManager.push(callback);
+  stateManager
+    ? callback(stateManager)
+    : window[INSTRUMENTATION_KEY].withStateManager.push(callback);
 };
 
 /**
@@ -99,6 +99,7 @@ export const intercept = (stateMgr: StateManager) => {
      * `withStateManager` hook sequentially
      */
     const { withStateManager } = window[INSTRUMENTATION_KEY];
+
     while (withStateManager.length > 0) {
       withStateManager.pop()(stateMgr);
     }
@@ -107,17 +108,12 @@ export const intercept = (stateMgr: StateManager) => {
   return stateMgr;
 };
 
-const hasWindow = () =>
-  typeof window !== 'undefined';
+const hasWindow = () => typeof window !== 'undefined';
 
-const hasInstrumentation = () =>
-  typeof window[INSTRUMENTATION_KEY] !== 'undefined';
+const hasInstrumentation = () => typeof window[INSTRUMENTATION_KEY] !== 'undefined';
 
-const init = () =>
-  hasWindow() &&
-  !hasInstrumentation() &&
-  (window[INSTRUMENTATION_KEY] = {
-    stateManager: undefined,
-    withStateManager: [],
-    onMessage: []
-  });
+const init = () => hasWindow() && !hasInstrumentation() && (window[INSTRUMENTATION_KEY] = {
+  stateManager: undefined,
+  withStateManager: [],
+  onMessage: []
+});

@@ -1,7 +1,4 @@
-import Message from './message';
-
-const RUNNING = Symbol.for('@process/running');
-const STOPPED = Symbol.for('@process/stopped');
+import { Command } from './message';
 
 // tslint:disable-next-line:variable-name
 export const EffectType = Symbol.for('@effect/type');
@@ -14,24 +11,21 @@ export type ProcessStateData = {
   set: (state: any) => any;
 };
 
-export abstract class Process {
+export abstract class Process<T> {
 
-  constructor(public data: any = {}) {
-  }
+  constructor(public data: any = {}) {}
 
-  public start(config: Message): void {}
-
-  public update(config: Message): void {}
-
-  public stop(): void {}
+  public abstract start(config: Command<T>): void;
+  public abstract update(config: Command<T>): void;
+  public abstract stop(): void;
 }
 
 export class ProcessState {
 
-  public static RUNNING = RUNNING;
-  public static STOPPED = STOPPED;
+  public static RUNNING = Symbol.for('@process/running');
+  public static STOPPED = Symbol.for('@process/stopped');
 
-  public state: symbol = ProcessState.RUNNING;
+  public state: typeof ProcessState['RUNNING'] | typeof ProcessState['STOPPED'] = ProcessState.RUNNING;
   public context: any;
   public data: any;
   public current: any;
@@ -40,9 +34,4 @@ export class ProcessState {
   constructor(data: ProcessStateData) {
     Object.assign(this, data);
   }
-}
-
-export default class Subscription {
-
-  public processes: Map<any, Process[]>;
 }

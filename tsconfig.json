@@ -1,36 +1,39 @@
 {
-  "include": [
-    "./src/**/*"
-  ],
   "exclude": [
+    "dist",
     "node_modules",
     "**/*_test.ts",
     "**/*_test.tsx"
   ],
   "compilerOptions": {
     "declaration": true,
-    "declarationDir": "./dist/",
+    "declarationDir": "dist",
     "noResolve": false,
     "jsx": "react",
     "module": "commonjs",
     "target": "es5",
     "allowJs": false,
+    "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": false,
     "sourceMap": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "./dist/",
     "pretty": true,
     "lib": [
-      "es7",
-      "es2015",
+      "esnext",
       "dom"
     ],
     "types": [
       "node"
-    ]
+    ],
+    "paths": {
+      "~/*": ["packages/*"]
+    },
+    "rootDir": ".",
+    "baseUrl": "."
   }
 }

@@ -1,16 +1,8 @@
 import { expect } from 'chai';
 import 'mocha';
-import { is } from 'ramda';
-import { getValidationFailures, mergeDeep, withProps } from './util';
+import { mergeDeep, withProps } from './util';
 
 describe('util', () => {
-
-  describe('validateTypes', () => {
-    it('should work', () => {
-      expect(getValidationFailures({ foo: is(String) })({ foo: 'hello' })).to.be.empty;
-      expect(getValidationFailures({ foo: is(String) })({ foo: 1138 })).to.have.lengthOf(1);
-    });
-  });
 
   describe('merge', () => {
     it('should merge deeply nested objects', () => {
@@ -48,24 +40,7 @@ describe('util', () => {
     });
   });
 
-  describe('getValidationFailures', () => {
-    it('it specifies nothing because it is all good!', () => {
-      const nothing = getValidationFailures({ foo: is(String), bar: is(Function) })({
-        bar: () => {}, foo: 'Hello'
-      });
-      expect(nothing.length).to.equal(0);
-    });
-
-    it('it specifies field `bar` because it should be a function, but it is a string', () => {
-      const justBar = getValidationFailures({ foo: is(String), bar: is(Function) })({
-        bar: 'not Func', foo: 'Hello'
-      });
-      expect(justBar.length).to.equal(1);
-      expect(justBar[0]).to.equal('bar');
-    });
-  });
-
-  describe('#withProps', () => {
+  describe('withProps()', () => {
     const defaultFnMap = { fun1: () => {} };
     const defaultComponent = props => props;
     const defaultProps = {};
