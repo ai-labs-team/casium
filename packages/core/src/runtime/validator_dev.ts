@@ -5,6 +5,14 @@ import ExecContext from './exec_context';
 
 type Check = 'emit' | 'cmd' | 'dispatch' | 'msg';
 
+type CheckData = {
+  exec?: ExecContext<any>,
+  updater?: (...args: any[]) => any,
+  cmd?: Command<any>,
+  msgCtor?: Constructor<any, Message<any>>,
+  msg?: Message<any>
+};
+
 /**
  * Walk up a container hierarchy looking for a value.
  *
@@ -13,12 +21,16 @@ type Check = 'emit' | 'cmd' | 'dispatch' | 'msg';
  * @param  {*} args Arguments to pass to `cb`
  * @return {*}
  */
-const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, exec.parent, val));
+const walk = curry((
+  cb: (...args: any[]) => any,
+  exec: ExecContext<any>,
+  val: Constructor<any, Message<any>>
+) => cb(exec, val) || exec.parent && walk(cb, exec.parent, val));
 
 /**
  * Checks that a value is a `Message` constructor.
  */
-const isMessage = val => val && val.prototype && val.prototype instanceof Message;
+const isMessage = (val: any) => val && val.prototype && val.prototype instanceof Message;
 
 /**
  * Checks that a value is emittable as a message constructor or equivalent
@@ -32,8 +44,10 @@ const isEmittable = or(isMessage, both(is(Array), pipe(nth(0), isMessage)));
  * @return Returns true if the container (or an ancestor) has an update handler matching
  *         the given constructor, otherwise false.
  */
-const handles = <T>(exec: ExecContext<any>) => (
-  walk((exec, type) => exec.container.accepts(type), exec) as (msgType: Constructor<T, Message<T>>) => boolean
+const handles = (exec: ExecContext<any>) => (
+  walk(
+    (exec: ExecContext<any>, type) => exec.container.accepts(type), exec
+  )
 );
 
 const validators: { [key in Check]: any } = {
@@ -41,7 +55,7 @@ const validators: { [key in Check]: any } = {
   /**
    * Maps a state & a message to a new model and optional command (or list of commands).
    */
-  msg: <T>({ updater, msg }: { updater: any, msg: Message<T> }) => {
+  msg: <T>({ updater, msg }: CheckData) => {
     if (!is(Message, msg)) {
       const ctor = msg && msg.constructor && msg.constructor.name || '{Unknown}';
       throw new TypeError(`Message of type '${ctor}' is not an instance of Message`);
@@ -51,7 +65,7 @@ const validators: { [key in Check]: any } = {
     }
   },
 
-  dispatch: <T>({ msg, exec }) => {
+  dispatch: <T>({ msg, exec }: CheckData) => {
     const msgType = msg.constructor as Constructor<T, Message<T>>;
 
     if ((msgType as any) === Function) {
@@ -63,7 +77,7 @@ const validators: { [key in Check]: any } = {
     }
   },
 
-  emit: ({ msgCtor, exec }) => {
+  emit: ({ msgCtor, exec }: CheckData) => {
     if (!handles(exec)(msgCtor)) {
       throw new Error(
         `Messages of type '${msgCtor && msgCtor.name || '??'}' ` +
@@ -75,7 +89,7 @@ const validators: { [key in Check]: any } = {
   /**
    * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
    */
-  cmd: <M, T>({ exec, cmd }: { exec: ExecContext<M>, cmd: Message<T> }) => {
+  cmd: <M, T>({ exec, cmd }: CheckData) => {
     const unhandled = pipe(prop('data'), values, filter(isEmittable), filter(not(handles(exec))));
     const msgs = unhandled(cmd);
 
@@ -96,10 +110,4 @@ const validators: { [key in Check]: any } = {
  *
  * @return void
  */
-export default (type: Check, data: {
-  exec?: ExecContext<any>,
-  updater?: (...args: any[]) => any,
-  cmd?: Command<any>,
-  msgCtor?: Constructor<any, Message<any>>,
-  msg?: Message<any>
-}) => validators[type] && validators[type](data);
+export default (type: Check, data: CheckData) => validators[type] && validators[type](data);

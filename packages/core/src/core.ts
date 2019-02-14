@@ -1,6 +1,6 @@
 import {
   always, constructN, curry, defaultTo, evolve, flatten, identity as id,
-  is, map, merge, nthArg, omit, pick, pipe, splitEvery, when
+  is, map, merge, nthArg, omit, pick, pipe, splitEvery, when, identity
 } from 'ramda';
 
 import { create, Environment } from './environment'; 
@@ -19,8 +19,8 @@ export type Empty = false | null | undefined;
 export type CommandOrEmpty = Command<any> | Empty;
 export type GenericObject = { [key: string]: any };
 
-export type BaseResult<Model> = Model | [Model, ...CommandOrEmpty[]] | [Model, CommandOrEmpty[]];
-export type BaseUpdater<Model, MsgData> = (model: Model, msg?: MsgData, relay?: GenericObject) => BaseResult<Model>;
+export type Result<Model> = Model | [Model, ...CommandOrEmpty[]] | [Model, CommandOrEmpty[]];
+export type BaseUpdater<Model, MsgData> = (model: Model, msg?: MsgData, relay?: GenericObject) => Result<Model>;
 export type Updater<Model, MsgData> = (
   (BaseUpdater<Model, MsgData>) |
   ((model: Model, msg?: MsgData, relay?: GenericObject) => Updater<Model, MsgData>)
@@ -35,7 +35,7 @@ export type ContainerDefPartial<Model> = { update?: UpdaterPair<Model, any>[], n
 export type ContainerDefMapped<Model> = { update: UpdateMap<Model, any>, name: string };
 export type ContainerPartial<Model> = {
   delegate?: Delegate;
-  init?: (model: Model, relay: GenericObject) => BaseResult<Model>;
+  init?: (model: Model, relay: GenericObject) => Result<Model>;
   relay?: { [key: string]: <RelayValue>(model: Model, relay: GenericObject) => RelayValue };
   view?: ContainerView<Model>;
   attach?: { store: GenericObject, key?: string };
@@ -88,7 +88,7 @@ type ViewProps<Model> = Partial<Model> & { delegate?: Delegate };
  * @return {Function} Returns the wrapped container view
  */
 const wrapView = <Model>({ env, container }: ViewWrapDef<Model>): React.SFC<ViewProps<Model>> => (
-  env.renderer({
+  (props: ViewProps<Model>) => env.renderer({
     childProps: omit(['delegate'], props || {}),
     container,
     delegate: props.delegate || container.delegate,
@@ -102,7 +102,7 @@ const wrapView = <Model>({ env, container }: ViewWrapDef<Model>): React.SFC<View
 const mapDef: <Model>(def: ContainerDefPartial<Model>) => ContainerDefMapped<Model> = pipe(
   merge({ name: null, update: [] }),
   evolve({ update: toMap, name: defaultTo('UnknownContainer') })
-);
+) as any;
 
 export interface WithEnvironment {
   (env: Environment): <Model>(def: ContainerDef<Model>) => Container<Model>;
@@ -116,12 +116,15 @@ export interface WithEnvironment {
  * @param  {Object} container The container definition
  * @return {Component} Returns a renderable React component
  */
-export const withEnvironment: WithEnvironment = curry(<Model, MsgData>(
+export const withEnvironment: WithEnvironment = curry(<Model>(
   env: Environment,
   def: ContainerDef<Model>
 ): Container<Model> => {
-  let ctr;
-  const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
+  let ctr: any;
+  const fns = {
+    identity: () => merge({}, def),
+    accepts: (msgType: Constructor<any, Message<any>>) => ctr.update.has(msgType)
+  };
   ctr = assign(mapDef(def), fns);
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 });
@@ -196,7 +199,13 @@ export const isolate = <Model>(
   opts: IsolateOptions = {}
 ): IsolatedContainer<Model> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
-  const env = create({ dispatcher: nthArg(2), effects: new Map(), log: opts.log || (() => {}), stateManager });
+  const env = create({
+    dispatcher: nthArg(2),
+    effects: new Map(),
+    log: opts.log || (() => {}),
+    stateManager,
+    renderer: identity
+  });
   const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
 
   const container = assign(mapDef(ctr.identity()), overrides) as Container<Model>;
@@ -251,9 +260,9 @@ export const union = <Model, MsgData>(
 ) => (model: Model, msg = {}, relay = {}) => (fn || id)({ model, msg, relay });
 
 const mapData = (model, msg, relay) => when(is(Function), fn => fn(model, msg, relay));
-const consCommands = (model, msg, relay) => pipe(
+const consCommands = <Model>(model: Model, msg: GenericObject, relay: GenericObject) => pipe(
   splitEvery(2),
-  map(([cmd, data]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null)
+  map(([cmd, data]: any) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null)
 );
 
 export type CommandParam<Model, MsgData, CmdData> = (

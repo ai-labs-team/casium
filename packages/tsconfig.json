@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "cookies" },
+    { "path": "core" },
+    { "path": "framework" },
+    { "path": "history" },
+    { "path": "http" },
+    { "path": "local_storage" },
+    { "path": "react" },
+    { "path": "timer" }
+  ]
+}

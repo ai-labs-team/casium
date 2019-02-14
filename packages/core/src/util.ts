@@ -1,8 +1,9 @@
-import * as deepFreeze from 'deep-freeze-strict';
+import deepFreeze from 'deep-freeze-strict';
 import {
   __, all, always, both, cond, curry, equals, flip, identity, ifElse, is, merge, mergeDeepWith,
   pathOr, propEq, reduce, union, when, zipWith
 } from 'ramda';
+import { GenericObject, Result } from './core';
 import { Constructor } from './message';
 
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
@@ -19,7 +20,7 @@ export const moduleName = (prefix: string) => <T extends Constructor<any, any>>(
  * @return {Object}
  * @deprecated
  */
-export const mergeDeep = mergeDeepWith((left, right) => (
+export const mergeDeep = mergeDeepWith((left: object | any[], right: object | any[]) => (
   all(is(Array), [left, right]) ? union(left, right) : right
 ));
 
@@ -43,9 +44,9 @@ export const replace = flip(merge);
  * @param  {Array} b Array to compare against
  * @return {Boolean} Returns true if `a` is the prefix of `b`.
  */
-export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, a, b)));
+export const compareOffsets = curry((a: any[], b: any[]) => all(equals(true), zipWith(equals, a, b)));
 
-export const suppressEvent = (e) => {
+export const suppressEvent = (e: { preventDefault: () => void }) => {
   e.preventDefault();
   return e;
 };
@@ -55,7 +56,7 @@ export const suppressEvent = (e) => {
  * function pipelines.
  */
 /* istanbul ignore next */
-export const log = curry((msg, val, ...extra) => {
+export const log = curry((msg: any, val: any, ...extra: any[]) => {
   // tslint:disable-next-line:no-console
   console.log(msg, val, ...extra);
   return val;
@@ -73,7 +74,10 @@ export const log = curry((msg, val, ...extra) => {
  */
 export type Trap = <T, U>(handler: (...args: any[]) => T, fn: (...args: any[]) => U) => (...args: any[]) => T | U;
 
-export const trap: Trap = curry((handler, fn) => ((...args) => {
+export const trap: Trap = curry(<T, U>(
+  handler: (...args: any[]) => T,
+  fn: (...args: any[]) => U
+) => ((...args: any[]) => {
   try {
     return fn(...args);
   } catch (e) {
@@ -125,16 +129,18 @@ const freezeObj = when(is(Object), deepFreeze);
  */
 export const mapResult = cond([
   [both(is(Array), propEq('length', 0)), () => { throw new TypeError('An empty array is an invalid value'); }],
-  [both(is(Array), propEq('length', 1)), ([state]) => [freezeObj(state), []]],
-  [is(Array), ([state, ...commands]) => [freezeObj(state), commands]],
-  [is(Object), state => [freezeObj(state), []]],
-  [always(true), (val) => { throw new TypeError(`Unrecognized structure ${safeStringify(val)}`); }],
+  [both(is(Array), propEq('length', 1)), ([model]: [object]) => [freezeObj(model), []]],
+  [is(Array), ([model, ...commands]: any) => [freezeObj(model), commands]],
+  [is(Object), (model: any) => [freezeObj(model), []]],
+  [always(true), (val: any) => { throw new TypeError(`Unrecognized update structure ${safeStringify(val)}`); }],
 ]);
 
-export const reduceUpdater = (value, state, msg, relay) =>
-  is(Function, value)
-    ? reduceUpdater(value(state, msg, relay), state, msg, relay)
-    : value;
+export const reduceUpdater = <Model>(
+  value: any,
+  model: Model,
+  msg: GenericObject,
+  relay: GenericObject
+): Result<Model> => is(Function, value) ? reduceUpdater(value(model, msg, relay), model, msg, relay) : value;
 
 /**
  * Generic helper function for resolving the `name` of an Instance's Constructor

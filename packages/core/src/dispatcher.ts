@@ -12,7 +12,7 @@ const unbox = cond([
   [T, always(null)]
 ]);
 
-export const handler = curry(<T>(effects: EffectMap, msg: Command<T>) => {
+export const handler = curry(<T>(effects: EffectMap, msg: Command<T> | ProcessState) => {
   const key = msg && msg[EffectType] || msg.constructor;
   return effects.get(key) && key || Array.from(effects.keys()).find(flip(is)(msg));
 });

@@ -8,7 +8,7 @@
  * internal to the application) or outside (for example, to implement external
  * tools such as the Casium Developer Tools).
  */
-import { Container, DelegateDef, GenericObject } from './core';
+import { Container, Delegate, GenericObject } from './core';
 import ExecContext from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 
@@ -23,20 +23,22 @@ export type Message = {
   msg: GenericObject | null;
   prev: GenericObject | null;
   next: GenericObject;
-  path: DelegateDef;
+  path: Delegate;
   cmds: any[];
   subs: any[];
 };
 
 export const INSTRUMENTATION_KEY = '__CASIUM_INSTRUMENTATION__';
 
+type InstrumentsInterface = {
+  stateManager?: StateManager;
+  withStateManager: StateManagerCallback[];
+  onMessage: OnMessageCallback[];
+};
+
 declare global {
   interface Window {
-    [INSTRUMENTATION_KEY]: {
-      stateManager?: StateManager;
-      withStateManager: StateManagerCallback[];
-      onMessage: OnMessageCallback[];
-    };
+    [INSTRUMENTATION_KEY]: InstrumentsInterface;
   }
 }
 
@@ -116,4 +118,4 @@ const init = () => hasWindow() && !hasInstrumentation() && (window[INSTRUMENTATI
   stateManager: undefined,
   withStateManager: [],
   onMessage: []
-});
+} as InstrumentsInterface);

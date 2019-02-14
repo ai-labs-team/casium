@@ -1,4 +1,4 @@
-import * as deepFreeze from 'deep-freeze-strict';
+import deepFreeze from 'deep-freeze-strict';
 import { always, complement as not, curry, is, merge, pickBy, when } from 'ramda';
 import { suppressEvent } from './util';
 

@@ -71,7 +71,9 @@ export const create = ({
 /**
  * Helper function for `create()`, to merge effects maps
  */
-const mergeWithEffects = mergeDeepWithKey((key, left, right) => key === 'effects' ? mergeMap(left, right) : right);
+const mergeWithEffects = mergeDeepWithKey(
+  (key: string, left: any, right: any) => key === 'effects' ? mergeMap(left, right) : right
+);
 
 /**
  * Helper function for `create()`. Validates state of environments.
@@ -87,9 +89,9 @@ const checkEnvChain = <M>(parent?: ExecContext<M> | ExecContextPartial, env?: En
 export const merge: <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Environment) => Environment = pipe(
   checkEnvChain,
   cond([
-    [prop('canMerge'), ({ parent, env }) => create(mergeWithEffects(parent.env.identity(), env.identity()))],
+    [prop('canMerge'), ({ parent, env }: any) => create(mergeWithEffects(parent.env.identity(), env.identity()))],
     [prop('hasOnlyParent'), path(['parent', 'env'])],
     [prop('isOnlyChild'), prop('env')],
     [always(true), () => { throw new Error('@TODO: Something bad happened'); }]
   ])
-);
+) as any;

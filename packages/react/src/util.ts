@@ -1,4 +1,4 @@
-import { mergeDeep } from '@casium/core';
+import { mergeDeep, GenericObject } from '@casium/core';
 import { map, merge, is, identity, nth } from 'ramda';
 import * as React from 'react';
 
@@ -32,12 +32,19 @@ export function withProps<Input, Generated>(
   fnMap: PropMap<Input, Generated>,
   component: React.StatelessComponent<Input & Generated>
 ) {
-  return (props: Input) => component(merge(props, map(fn => fn(props), fnMap)) as Input & Generated);
+  return (props: Input) => component(
+    merge(props, map((fn: (props: Input) => any) => fn(props), fnMap)) as Input & Generated
+  );
 }
 
-export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
-  const mapProps = (child) => {
-    const props = is(Function, newProps) ? newProps(child) : newProps;
+type ChildMapper = (child: React.ReactChild) => GenericObject;
+
+export const cloneRecursive = (
+  children: React.ReactElement<any> | React.ReactElement<any>[],
+  newProps: GenericObject | ChildMapper
+): React.ReactNode[] => React.Children.map(children, (child: React.ReactElement<any>) => {
+  const mapProps = (child: React.ReactElement<any>): GenericObject => {
+    const props = is(Function, newProps) ? (newProps as ChildMapper)(child) : newProps;
     const hasChildren = child.props && child.props.children;
     const mapper = hasChildren && is(Array, child.props.children) ? identity : nth(0);
     const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
@@ -46,7 +53,10 @@ export const cloneRecursive = (children, newProps) => React.Children.map(childre
   return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
 });
 
-export const clone = (children, newProps) => React.Children.map(children, (child: React.ReactElement<any>) => (
+export const clone = (
+  children: React.ReactElement<any>,
+  newProps: GenericObject | ChildMapper
+) => React.Children.map(children, (child: React.ReactElement<any>) => (
   React.cloneElement(child, mergeDeep(React.isValidElement(child) ? newProps : {}, {
     children: child.props.children,
   }))
