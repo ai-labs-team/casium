@@ -161,17 +161,29 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
  */
 export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(root);
 
+export type IsolateOptions = {
+  stateManager?: StateManager;
+  catchAll?: boolean;
+  relay?: GenericObject;
+  log?: (...args: any[]) => any;
+};
+
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
  * Calling `dispatch()` on the container will simply return any commands issued.
+ *
+ * Useful for unit-testing containers.
  */
-export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer<M> => {
+export const isolate = <Model>(
+  ctr: Container<Model>,
+  opts: IsolateOptions = {}
+): IsolatedContainer<Model> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
-  const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => { }, stateManager });
+  const env = create({ dispatcher: nthArg(2), effects: new Map(), log: opts.log || (() => {}), stateManager });
   const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
 
-  const container = assign(mapDef(ctr.identity()), overrides) as Container<M>;
-  const parent: any = opts.relay ? { relay: always(opts.relay) } : null;
+  const container = assign(mapDef(ctr.identity()), overrides) as Container<Model>;
+  const parent = opts.relay ? { relay: always(opts.relay) } : null;
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
   return assign(wrapView({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
