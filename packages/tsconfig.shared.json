@@ -5,10 +5,10 @@
     "**/*_test.ts",
     "**/*_test.tsx"
   ],
+  "include": ["**/*.{ts,tsx}"],
   "compilerOptions": {
     "composite": true,
     "declaration": true,
-    "declarationDir": "dist",
     "declarationMap": true,
     "noResolve": false,
     "jsx": "react",
@@ -24,19 +24,10 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "outDir": "./dist/",
     "pretty": true,
     "lib": [
       "esnext",
       "dom"
-    ],
-    "types": [
-      "node"
-    ],
-    "paths": {
-      "~/*": ["packages/*"]
-    },
-    "rootDir": ".",
-    "baseUrl": "."
+    ]
   }
 }

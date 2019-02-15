@@ -1,10 +1,18 @@
 {
   "extends": "../tsconfig.shared.json",
   "compilerOptions": {
-    "rootDir": "src",
     "outDir": "dist"
   },
   "references": [
-    { "path": "../core" }
+    { "path": "../cookies" },
+    { "path": "../core" },
+    { "path": "../history" },
+    { "path": "../http" },
+    { "path": "../storage" },
+    { "path": "../react" },
+    { "path": "../timer" }
+  ],
+  "include": [
+    "src/**/*.{ts,tsx}"
   ]
 }

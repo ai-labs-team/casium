@@ -1,6 +1,6 @@
-import * as Cookies from 'js-cookie';
-import Message, { Constructor, Emittable } from '@casium/core/src/message';
+import Message, { Constructor, Emittable } from '@casium/core/message';
 import { moduleName } from '@casium/core/util';
+import * as Cookies from 'js-cookie';
 
 @moduleName('Cookies')
 export class Read extends Message<{ key: string, result: Emittable<any> }> {}

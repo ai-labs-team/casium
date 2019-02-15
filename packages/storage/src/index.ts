@@ -1,17 +1,17 @@
-import { always, merge, objOf, pipe } from 'ramda';
 import Message, { Constructor, Emittable } from '@casium/core/message';
 import { moduleName, safeParse, safeStringify } from '@casium/core/util';
+import { always, merge, objOf, pipe } from 'ramda';
 
-@moduleName('LocalStorage')
+@moduleName('Storage')
 export class Read extends Message<{ key: string, result: Emittable<any> }> {}
 
-@moduleName('LocalStorage')
+@moduleName('Storage')
 export class Write extends Message<{ key: string; value: any }> {}
 
-@moduleName('LocalStorage')
+@moduleName('Storage')
 export class Delete extends Message<{ key: string }> {}
 
-@moduleName('LocalStorage')
+@moduleName('Storage')
 export class Clear extends Message<{}> {}
 
 const get = (() => {

@@ -1,23 +1,26 @@
 import {
-  complement as not, concat, curry, defaultTo, equals, filter, flatten,
-  identity, is, isEmpty, keys, map, merge, pick, pipe, prop, tap
+  complement as not, concat, curry, defaultTo, equals, filter, flatten, is, isEmpty, keys, map, merge, pick, pipe, tap
 } from 'ramda';
 
-import { Container, Delegate, DelegatePath, PARENT } from '../core';
 import * as Environment from '../environment';
 import { intercept, notify } from '../instrumentation';
+import {
+  cmdName, Delegate, ExternalInterface,
+  GenericObject, InternalContainerDef, mapResult, msgName, PARENT, reduceUpdater
+} from '../internal/container';
 import Message, { Command, Constructor, Emittable } from '../message';
-import { cmdName, mapResult, msgName, reduceUpdater, replace, toArray, trap } from '../util';
-import StateManager, { Callback, Config } from './state_manager';
+import { toArray, trap } from '../util';
+import StateManager, { Callback, Config, Path } from './state_manager';
 
+import * as Redux from './redux';
 import * as Validator from './validator';
 
 export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) => object, path?: string[] };
 
-export type ExecContextDef<M> = {
+export type ExecContextDef<Model> = {
   env?: Environment.Environment,
-  container: Container<M>,
-  parent?: ExecContext<M> | ExecContextPartial,
+  container: InternalContainerDef<Model>,
+  parent?: ExecContext<Model> | ExecContextPartial,
   delegate?: Delegate
 };
 
@@ -30,7 +33,7 @@ const { assign, freeze } = Object;
  * @param err The Error that was thrown
  * @param msg The Message that resulted in the Error being thrown
  */
-const logMsgError = curry((logger, err, msg) => {
+const logMsgError = curry((logger: typeof console.log, err: Error, msg: Message<any>) => {
   logger(`An error was thrown as the result of message '${msgName(msg)}' -- `, err);
   logger('Message: ', msg);
 
@@ -46,7 +49,7 @@ const logMsgError = curry((logger, err, msg) => {
  * @param err The Error that was thrown
  * @param msg The Command that resulted in the Error being thrown
  */
-const logCmdError = curry((logger, msg, err, cmd) => {
+const logCmdError = curry((logger: typeof console.log, msg: Message<any>, err: Error, cmd: Command<any>) => {
   logger(
     `An error was thrown as the result of command '${cmdName(cmd)}', ` +
     `which was initiated by message '${msgName(msg)}' -- `,
@@ -59,49 +62,11 @@ const logCmdError = curry((logger, msg, err, cmd) => {
 });
 
 /**
- * Attaches a container's state manager to a Redux store to receive updates.
- *
- * @param  {Object} config The attachment configuration
- * @param  {Object} container The container
- * @return {Object} Returns the store's current state to use as the container's initial state
- */
-const attachStore = (config, ctx) => {
-  const getState = () => (config.key && prop(config.key) || identity)(config.store.getState());
-  config.store.subscribe(pipe(getState, replace(ctx.state()), ctx.push.bind(ctx)));
-  return getState();
-};
-
-type ReduxAction<T> = T & {
-  type: string;
-};
-
-type ReduxMessageMap<T> = {
-  [key: string]: Constructor<T, Message<T>>;
-};
-
-/**
- * Receives a Redux action and, if that action has been mapped to a container message constructor,
- * dispatches a message of the matching type to the container.
- *
- * @param  exec An executor bound to a container
- * @param  messageTypes An object that pairs one or more Redux action types to message
- *                  constructors
- * @param  action A Redux action
- */
-const dispatchAction = <Model, T, Action extends ReduxAction<T>>(
-  exec: ExecContext<Model>,
-  msgTypes: ReduxMessageMap<T>,
-  action: Action
-) => {
-  action && action.type && msgTypes[action.type] && exec.dispatch(new msgTypes[action.type](action));
-};
-
-/**
  * Groups subscriptions by the effect handler constructor.
  */
-const groupEffects = keyFn => (prev, current) => {
+const groupEffects = <T, U>(keyFn: (val: T) => U) => (prev: Map<U, T[]>, current: T) => {
   const key = keyFn(current);
-  prev.set(key, concat(prev.get(key) || [], [current]));
+  prev.set(key, (prev.get(key) || []).concat([current]));
   return prev;
 };
 
@@ -129,12 +94,11 @@ export default class ExecContext<Model> {
 
   public parent?: ExecContext<Model> = null;
   public delegate?: Delegate = null;
-  public path: (string | symbol)[] = [];
+  public path: Path = [];
   public env?: Environment.Environment = null;
-  public container?: Container<any> = null;
+  public container?: InternalContainerDef<Model> & ExternalInterface<Model> = null;
 
-  protected errLog;
-  protected getState: (params?: { path: DelegatePath }) => object = null;
+  protected getState: (cfg?: Config) => object = null;
   protected stateMgr?: StateManager = null;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<Model>) {
@@ -142,7 +106,7 @@ export default class ExecContext<Model> {
     const path = concat(parent && parent.path || [], (delegate && delegate !== PARENT) ? toArray(delegate) : []);
     let hasInitialized = false;
 
-    const run = (msg, [next, cmds]) => {
+    const run = <T>(msg: Message<T>, [next, cmds]: [Model, Command<any>[]]) => {
       const stateMgr = this.stateManager(), subs = this.subscriptions(next);
       notify({ context: this, container, msg, path: this.path, prev: this.getState({ path: [] }), next, cmds, subs });
       this.push(next);
@@ -150,20 +114,20 @@ export default class ExecContext<Model> {
       return this.commands(msg, cmds);
     };
 
-    const initialize = fn => (...args) => {
+    const initialize = (fn: Callback) => (...args: any[]) => {
       if (!hasInitialized) {
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
-        const initial = hasStore ? attachStore(container.attach, this) : (this.getState() || {});
-        run(null, mapResult((container.init || identity)(initial, parent && parent.relay() || {}) || {}));
+        const initial: Model = (hasStore ? Redux.attachStore(container.attach, this) : (this.getState() || {}));
+        run(null, mapResult(container.init(initial, parent && parent.relay() || {}) || {}));
       }
       return fn.call(this, ...args);
     };
 
-    const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
+    const wrapInit = (props: string[]) => pipe(pick(props), map(pipe((fn: Callback) => fn.bind(this), initialize)));
     const isRoot: boolean = !parent || ExecContext.isPartial(parent);
     const stateMgr: StateManager = isRoot ? intercept(ctrEnv.stateManager(container)) : null;
-    const getState = stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path });
+    const getState = stateMgr ? stateMgr.get.bind(stateMgr) : (config: Config) => parent.state(config || { path });
 
     freeze(assign(this, {
       env: ctrEnv, path, parent, delegate, stateMgr, container, getState,
@@ -180,7 +144,7 @@ export default class ExecContext<Model> {
   /**
    * Checks that a Message object is valid and is handled by the bound container, then dispatches it.
    */
-  public dispatch<T>(msg: Message<T>) {
+  public dispatch<T>(msg: Message<T>): Error | Command<any>[] {
     Validator.check('dispatch', { msg, exec: this });
 
     return trap(
@@ -198,7 +162,7 @@ export default class ExecContext<Model> {
     )(msg);
   }
 
-  public commands(msg, cmds) {
+  public commands<T>(msg: Message<T>, cmds: Command<any>[]) {
     return pipe(flatten, filter(is(Object)), map(
       trap(
         logCmdError(this.env.log, msg),
@@ -214,37 +178,35 @@ export default class ExecContext<Model> {
     return this.env.dispatcher(this);
   }
 
-  public push(val, config?: object & { path: any[] }) {
-    if (!this.stateMgr && !this.delegate && this.getState() !== val) {
+  public push(val: Model, config?: object & { path: any[] }): object {
+    if (!this.stateMgr && !this.delegate && this.getState() as any as Model !== val) {
       throw new Error(`'${this.container.name}' is trying to modify the state, `
         + 'but has no \'delegate\' specified. Either opt into parent modification by '
         + `giving '${this.container.name}' the delegate of the PARENT Symbol, or `
         + `not have '${this.container.name}' modify the state.`);
     }
-    return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
+    return this.stateMgr ? this.stateMgr.set(val as any, config) : this.parent.push(val, config || { path: this.path });
   }
 
-  public state(cfg?: { path: DelegatePath }): object {
-    return this.getState(cfg);
+  public state(cfg?: Config): Model {
+    return this.getState(cfg) as any as Model;
   }
 
   /**
    * Returns the container's relay value, based on the state of the current model.
    */
-  public relay() {
+  public relay(): GenericObject {
     const { parent, container } = this, inherited = parent && parent.relay() || {};
-    return merge(inherited, map(fn => fn(this.state(), inherited), container.relay || {}));
+    return merge(inherited, map(fn => fn(this.state() as any as Model, inherited), container.relay || {}));
   }
 
   /**
    * Returns a Redux-compatible reducer, which optionally accepts a map of action types to message constructors
    * which the container should handle.
-   *
-   * @param  {Object} msgTypes
    */
-  public reducer(msgTypes = {}) {
-    return ({}, action) => {
-      dispatchAction((this.dispatch as any).run, msgTypes, action);
+  public reducer<Data, Name extends string>(msgTypes: Redux.MessageMap<Redux.Action<Data, Name>> = {}) {
+    return ({}, action: Redux.Action<Data, Name>) => {
+      Redux.dispatchAction((this.dispatch as any).run, msgTypes, action);
       return this.getState();
     };
   }
@@ -254,7 +216,7 @@ export default class ExecContext<Model> {
    */
   public emit<T>(msgType: Emittable<T>) {
     const em = Message.toEmittable(msgType),
-      [msgCtor, extra] = em;
+          [msgCtor, extra] = em;
 
     Validator.check('emit', { msgCtor, exec: this });
     return pipe(defaultTo({}), Message.mapEvent(extra), Message.construct(msgCtor), this.dispatch);

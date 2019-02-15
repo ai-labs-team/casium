@@ -5,8 +5,7 @@
   "module": "./index.js",
   "browser": "dist/casium-http.umd.js",
   "types": "./index.d.ts",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ai-labs-team/casium.git"
@@ -18,7 +17,8 @@
   },
   "homepage": "https://github.com/ai-labs-team/casium#readme",
   "dependencies": {
+    "@casium/core": "file:../core/src",
     "axios": "^0.16.0 || ^0.17.0 || ^0.18.0 || ^0.19.0",
-    "@casium/core": "file:../core/src"
+    "typescript": "3.3.3"
   }
 }

@@ -6,8 +6,9 @@ import ExecContext from './exec_context';
 
 const inList = flip(contains);
 
+export type Path = (string | number)[];
 export type Callback = (...args: any[]) => any;
-export type Config = object & { path: (string | symbol)[] };
+export type Config = object & { path: Path };
 export type Context = ExecContext<any>;
 
 export default class StateManager {
@@ -74,7 +75,7 @@ export default class StateManager {
     return this.unsubscribeFn(config);
   }
 
-  protected broadcast = ([path, listener]) => listener(defaultTo({}, this.get({ path })));
+  protected broadcast = ([path, listener]: [Path, Callback]) => listener(defaultTo({}, this.get({ path })));
 
   /**
    * Returns an unsubscribe function for a listener.

@@ -5,8 +5,7 @@
   "module": "./index.js",
   "browser": "dist/casium-framework.umd.js",
   "types": "./index.d.ts",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ai-labs-team/casium.git"
@@ -19,10 +18,12 @@
   "homepage": "https://github.com/ai-labs-team/casium#readme",
   "dependencies": {
     "@casium/cookies": "file:../cookies/src",
+    "@casium/core": "file:../core/src",
     "@casium/history": "file:../history/src",
     "@casium/http": "file:../http/src",
-    "@casium/local_storage": "file:../local_storage/src",
+    "@casium/storage": "file:../storage/src",
     "@casium/react": "file:../react/src",
-    "@casium/timer": "file:../timer/src"
+    "@casium/timer": "file:../timer/src",
+    "typescript": "3.3.3"
   }
 }

@@ -1,7 +1,10 @@
 {
   "extends": "../tsconfig.shared.json",
+  "typeRoots": [
+    "node_modules/@types"
+  ],
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist"
-  }
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*.ts"]
 }

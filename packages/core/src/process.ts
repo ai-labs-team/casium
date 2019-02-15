@@ -1,4 +1,4 @@
-import Message, { MessageConstructor } from './message';
+import Message, { Constructor } from './message';
 import ExecContext from './runtime/exec_context';
 
 export type State = '@process/running' | '@process/stopped';
@@ -9,27 +9,27 @@ export const STOPPED: State = '@process/stopped';
 // tslint:disable-next-line:variable-name
 export const EffectType = Symbol.for('@effect/type');
 
-export type Config = {
-  [EffectType]: MessageConstructor;
+export type Config<T> = {
+  [EffectType]: Constructor<T, Message<T>>;
   state: State;
   context: ExecContext<any>;
-  data: Message[];
+  data: Message<T>[];
   current: any;
   set: (state: any) => any;
 };
 
-export abstract class Thread {
+export abstract class Process<T> {
 
   constructor(public data: any = {}) { }
 
-  public start(config: Message): void { }
+  public start(config: Message<T>): void { }
 
-  public update(config: Message): void { }
+  public update(config: Message<T>): void { }
 
   public stop(): void { }
 }
 
-export class Snapshot {
+export class Snapshot<T> {
 
   public static RUNNING = RUNNING;
   public static STOPPED = STOPPED;
@@ -40,7 +40,7 @@ export class Snapshot {
   public current: any;
   public set: (state: any) => any;
 
-  constructor(data: Config) {
+  constructor(data: Config<T>) {
     Object.assign(this, data);
   }
 }

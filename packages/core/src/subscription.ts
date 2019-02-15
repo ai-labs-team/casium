@@ -1,4 +1,4 @@
-import { Command } from './message';
+import Message, { Command, Constructor } from './message';
 
 // tslint:disable-next-line:variable-name
 export const EffectType = Symbol.for('@effect/type');
@@ -24,6 +24,8 @@ export class ProcessState {
 
   public static RUNNING = Symbol.for('@process/running');
   public static STOPPED = Symbol.for('@process/stopped');
+
+  public [EffectType]: Constructor<any, Message<any>>;
 
   public state: typeof ProcessState['RUNNING'] | typeof ProcessState['STOPPED'] = ProcessState.RUNNING;
   public context: any;

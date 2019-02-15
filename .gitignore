@@ -1,8 +1,8 @@
 node_modules
-packages/core/node_modules
-packages/core/dist
-packages/core/coverage
-packages/core/.nyc_output
+packages/**/node_modules
+packages/**/dist
+packages/**/coverage
+packages/**/.nyc_output
 .tmp
 .vscode
 .idea

@@ -1,9 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import { Post, Request } from './commands/http';
-import { Read } from './commands/local_storage';
 import dispatcher, { handler } from './dispatcher';
-import effects from './effects';
 import Message from './message';
 
 describe('dispatcher', () => {

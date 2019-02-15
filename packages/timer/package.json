@@ -5,8 +5,7 @@
   "module": "./index.js",
   "browser": "dist/casium-timer.umd.js",
   "types": "./index.d.ts",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ai-labs-team/casium.git"
@@ -18,6 +17,7 @@
   },
   "homepage": "https://github.com/ai-labs-team/casium#readme",
   "dependencies": {
-    "@casium/core": "file:../core/src"
+    "@casium/core": "file:../core/src",
+    "typescript": "3.3.3"
   }
 }

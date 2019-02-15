@@ -1,8 +1,13 @@
-import { mergeMaps } from '../util';
+import { mergeMaps } from '@casium/core/util';
 
-import browser from './browser';
-import cookies from './cookies';
-import http from './http';
-import localStorage from './local_storage';
+import Cookies from '@casium/cookies';
+import History from '@casium/history';
+import Http from '@casium/http';
+import Storage from '@casium/storage';
 
-export default mergeMaps([http, browser, cookies, localStorage]);
+export default mergeMaps([
+  Cookies,
+  History,
+  Http,
+  Storage
+]);

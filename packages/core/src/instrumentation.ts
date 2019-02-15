@@ -8,7 +8,8 @@
  * internal to the application) or outside (for example, to implement external
  * tools such as the Casium Developer Tools).
  */
-import { Container, Delegate, GenericObject } from './core';
+import { Delegate, GenericObject } from './core';
+import { InternalContainerDef } from './internal/container';
 import ExecContext from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 
@@ -19,13 +20,13 @@ export type OnMessageCallback = (msg: Message) => void;
 
 export type Message = {
   context: ExecContext<any>;
-  container: Container<any>;
+  container: InternalContainerDef<any>;
   msg: GenericObject | null;
   prev: GenericObject | null;
   next: GenericObject;
   path: Delegate;
   cmds: any[];
-  subs: any[];
+  subs: Map<any, any>;
 };
 
 export const INSTRUMENTATION_KEY = '__CASIUM_INSTRUMENTATION__';
@@ -38,7 +39,7 @@ type InstrumentsInterface = {
 
 declare global {
   interface Window {
-    [INSTRUMENTATION_KEY]: InstrumentsInterface;
+    __CASIUM_INSTRUMENTATION__: InstrumentsInterface;
   }
 }
 

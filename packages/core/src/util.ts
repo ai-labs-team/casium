@@ -1,9 +1,6 @@
-import deepFreeze from 'deep-freeze-strict';
 import {
-  __, all, always, both, cond, curry, equals, flip, identity, ifElse, is, merge, mergeDeepWith,
-  pathOr, propEq, reduce, union, when, zipWith
+  __, all, complement as not, curry, equals, flip, is, merge, mergeDeepWith, reduce, union, when, zipWith
 } from 'ramda';
-import { GenericObject, Result } from './core';
 import { Constructor } from './message';
 
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
@@ -21,7 +18,7 @@ export const moduleName = (prefix: string) => <T extends Constructor<any, any>>(
  * @deprecated
  */
 export const mergeDeep = mergeDeepWith((left: object | any[], right: object | any[]) => (
-  all(is(Array), [left, right]) ? union(left, right) : right
+  all(is(Array), [left, right]) ? union(left as any[], right as any[]) : right
 ));
 
 /**
@@ -44,7 +41,10 @@ export const replace = flip(merge);
  * @param  {Array} b Array to compare against
  * @return {Boolean} Returns true if `a` is the prefix of `b`.
  */
-export const compareOffsets = curry((a: any[], b: any[]) => all(equals(true), zipWith(equals, a, b)));
+export const compareOffsets = curry((a: any[], b: any[]) => all(
+  equals(true),
+  zipWith<any, any, any>(equals, a, b)
+));
 
 export const suppressEvent = (e: { preventDefault: () => void }) => {
   e.preventDefault();
@@ -88,13 +88,14 @@ export const trap: Trap = curry(<T, U>(
 /**
  * Converts a value to an array... unless it's already an array, then it just returns it.
  */
-export const toArray = ifElse(is(Array), identity, Array.of);
+export const toArray: <T>(val: T | T[]) => T[] = when(not(is(Array)), Array.of);
 
 /**
  * Helper functions for reducing effect Maps into a single Map.
  */
-export const mergeMap = <T, U>(first: Map<T, U>, second: Map<T, U>): Map<T, U> =>
-  new Map(Array.from(first).concat(Array.from(second) as [T, U][]));
+export const mergeMap = <T, U>(first: Map<T, U>, second: Map<T, U>): Map<T, U> => (
+  new Map(Array.from(first).concat(Array.from(second) as [T, U][]))
+);
 export const mergeMaps = reduce(mergeMap, new Map([]));
 
 /**
@@ -118,50 +119,3 @@ export const safeParse = (val: string): any | undefined => {
     return undefined;
   }
 };
-
-/**
- * Freezes a value if that value is an object, otherwise return.
- */
-const freezeObj = when(is(Object), deepFreeze);
-
-/**
- * Maps an `init()` or `update()` return value to the proper format.
- */
-export const mapResult = cond([
-  [both(is(Array), propEq('length', 0)), () => { throw new TypeError('An empty array is an invalid value'); }],
-  [both(is(Array), propEq('length', 1)), ([model]: [object]) => [freezeObj(model), []]],
-  [is(Array), ([model, ...commands]: any) => [freezeObj(model), commands]],
-  [is(Object), (model: any) => [freezeObj(model), []]],
-  [always(true), (val: any) => { throw new TypeError(`Unrecognized update structure ${safeStringify(val)}`); }],
-]);
-
-export const reduceUpdater = <Model>(
-  value: any,
-  model: Model,
-  msg: GenericObject,
-  relay: GenericObject
-): Result<Model> => is(Function, value) ? reduceUpdater(value(model, msg, relay), model, msg, relay) : value;
-
-/**
- * Generic helper function for resolving the `name` of an Instance's Constructor
- * function
- */
-const ctorName = pathOr(__, ['constructor', 'name']);
-
-/**
- * Gets the `name` of a Message instance, or defaults to `{INIT}` for nameless
- * Messages (ie, those called during container initialization)
- */
-export const msgName = ctorName('{INIT}');
-
-/**
- * Gets the `name` of a Command Message instance. A nameless Command Message
- * typically indicates an error.
- */
-export const cmdName = ctorName('??');
-
-/**
- * Gets the `name` of a Container if it exists, or defaults to `{Anonymous
- * Container}` in cases where an explicit name has not been given.
- */
-export const contextContainerName = pathOr('{Anonymous Container}', ['container', 'name']);

@@ -1,12 +1,11 @@
 {
-  "name": "@casium/local_storage",
+  "name": "@casium/storage",
   "version": "1.0.1",
-  "description": "Commands for using local storage with Casium",
+  "description": "Commands for using browser storage with Casium",
   "module": "./index.js",
-  "browser": "dist/casium-local_storage.umd.js",
+  "browser": "dist/casium-storage.umd.js",
   "types": "./index.d.ts",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ai-labs-team/casium.git"
@@ -18,6 +17,7 @@
   },
   "homepage": "https://github.com/ai-labs-team/casium#readme",
   "dependencies": {
-    "@casium/core": "file:../core/src"
+    "@casium/core": "file:../core/src",
+    "typescript": "3.3.3"
   }
 }

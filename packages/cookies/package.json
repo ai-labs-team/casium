@@ -5,8 +5,7 @@
   "module": "./index.js",
   "browser": "dist/casium-cookies.umd.js",
   "types": "./index.d.ts",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ai-labs-team/casium.git"
@@ -18,7 +17,9 @@
   },
   "homepage": "https://github.com/ai-labs-team/casium#readme",
   "devDependencies": {
-    "js-cookie": "^2.0.0 || ^3.0.0"
+    "@types/js-cookie": "^2.2.1",
+    "js-cookie": "^2.0.0 || ^3.0.0",
+    "typescript": "3.3.3"
   },
   "peerDependencies": {
     "js-cookie": "^2.0.0 || ^3.0.0"

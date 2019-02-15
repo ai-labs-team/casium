@@ -1,6 +1,7 @@
 import { always, cond, identity, mergeDeepWithKey, path, pipe, prop } from 'ramda';
-import { Container, Delegate, Emitter } from './core';
+import { Delegate, Emitter } from './core';
 import { default as coreDispatcher, handler } from './dispatcher';
+import { InternalContainerDef } from './internal/container';
 import { Command, Constructor } from './message';
 import ExecContext, { ExecContextPartial } from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
@@ -14,7 +15,7 @@ export type SubscriptionDispatcher = (processState: ProcessState, dispatch: Disp
 export type EnvDefPartial = {
   dispatcher: Dispatcher;
   log?: (...args: any[]) => any | void;
-  stateManager?: (container?: Container<any>) => StateManager;
+  stateManager?: (container?: InternalContainerDef<any>) => StateManager;
   renderer: Renderer;
 };
 
@@ -24,7 +25,7 @@ export type EnvDef = EnvDefPartial & {
 
 export type RenderProps = {
   childProps: { [key: string]: any } & { emit: Emitter };
-  container: Container<any>;
+  container: InternalContainerDef<any>;
   delegate: Delegate;
   env: Environment;
 };
@@ -71,8 +72,8 @@ export const create = ({
 /**
  * Helper function for `create()`, to merge effects maps
  */
-const mergeWithEffects = mergeDeepWithKey(
-  (key: string, left: any, right: any) => key === 'effects' ? mergeMap(left, right) : right
+const mergeWithEffects = mergeDeepWithKey<EnvDef, EnvDef>(
+  (key, left, right) => key === 'effects' ? mergeMap(left, right) : right
 );
 
 /**

@@ -5,7 +5,17 @@
 "@casium/core@file:../core/src":
   version "0.0.0"
 
+"@types/js-cookie@^2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@types/js-cookie/-/js-cookie-2.2.1.tgz#aa6f6d5e5aaf7d97959e9fa938ac2501cf1a76f4"
+  integrity sha512-VIVurImEhQ95jxtjs8baVU5qCzVfwYfuMrpXwdRykJ5MCI5iY7/jB4cDSgwBVeYqeXrhT7GfJUwoDOmN0OMVCA==
+
 "js-cookie@^2.0.0 || ^3.0.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/js-cookie/-/js-cookie-2.2.0.tgz#1b2c279a6eece380a12168b92485265b35b1effb"
   integrity sha1-Gywnmm7s44ChIWi5JIUmWzWx7/s=
+
+typescript@3.3.3:
+  version "3.3.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.3.3.tgz#f1657fc7daa27e1a8930758ace9ae8da31403221"
+  integrity sha512-Y21Xqe54TBVp+VDSNbuDYdGw0BpoR/Q6wo/+35M8PAU0vipahnyduJWirxxdxjsAkS7hue53x2zp8gz7F05u0A==

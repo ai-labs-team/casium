@@ -1,5 +1,9 @@
 {
-  "files": [],
+  "include": ["**/*.{ts,tsx}"],
+  "compilerOptions": {
+    "composite": true,
+    "experimentalDecorators": true
+  },
   "references": [
     { "path": "cookies" },
     { "path": "core" },
