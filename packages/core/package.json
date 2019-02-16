@@ -11,7 +11,7 @@
   "scripts": {
     "build": "rm -r ./dist; tsc; cp package.json ./dist; cp README.md ./dist; rollup -c; yarn docs",
     "docs": "typedoc --json dist/api.json --mode modules --tsconfig tdconfig.json",
-    "lint": "NODE_ENV=test tslint -c tslint.json --format stylish \"src/**/*.{js,ts,jsx,tsx}\"",
+    "lint": "NODE_ENV=test tslint -c ../../tslint.json --format stylish \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "../../run.sh 'npm run lint' 'npm run unit-test'",
     "dev": "nodemon -e ts,tsx --exec yarn unit-test",
     "unit-test": "nyc mocha -r test/setup.js --opts test/mocha.opts",
