@@ -6,6 +6,8 @@ import { renderer } from '@casium/react';
 import effects from './effects';
 
 export * from '@casium/core';
+export { default as Message } from '@casium/core/message';
+export { isolate } from '@casium/react';
 
 export const root: Environment = create({
   effects,

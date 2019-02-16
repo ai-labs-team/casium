@@ -1,6 +1,6 @@
-# Casium: An application architecture for React
+# Casium — An architecture for single-page applications
 
-The Casium Front-End Architecture is a _data_ and _effects_ management system that helps you manage the complexity of large React applications reliabily and predictably.
+The Casium front-end architecture that you can use with virtual DOM libraries like React or Vue. It is a _data_ and _effects_ management system that helps you manage the complexity of large single-page applications reliabily and predictably.
 
 It does this by modeling the state of your application (yes, all of it) as a single, immutable value, and handling side-effects in application logic with _messages_. If this reminds you of [Redux](http://redux.js.org/), that might be because both are derived from [The Elm Architecture](https://guide.elm-lang.org/architecture/). However, this library attempts to hew more closely to Elm's design in order to gain [more of Elm's advantages](https://www.youtube.com/watch?v=XsNk5aOpqUc&t=16m24s), and to provide a better, more cohesive developer experience.
 
@@ -37,7 +37,7 @@ It does this by modeling the state of your application (yes, all of it) as a sin
 
 ## How to structure applications
 
-Applications implemented on Casium are organized into two different types of React components:
+Applications implemented on Casium are organized into two different types of React components (this example uses React, but we support others, too):
 
  - **Containers** (or container components), which are implemented using a function exported by Casium: containers manage your application's data model, how it changes, and other application logic
  - **Views** (or view components), which are normal [React stateless functional components](https://www.reactenlightenment.com/react-state/8.4.html): they receive the data model managed by the container, as well as a special function to communicate events back to the container
@@ -55,9 +55,7 @@ The basic implementation of a container looks like this:
 
 ```javascript
 import React from 'react';
-
-import Message from 'casium/message';
-import { container } from 'casium/app';
+import { container, Message } from '@casium/react-starter';
 
 class Increment extends Message {}
 class Decrement extends Message {}
@@ -120,7 +118,7 @@ export default container({
 
   init: () => ({ count: 0 }),
 
-  update: new [
+  update: [
     [Increment, ({ count }) => ({ count: count + 1 })],
     [Decrement, ({ count }) => ({ count: count - 1 })],
     [SetCounter, (model, { value }) => ({ count: parseInt(value, 10) })]
@@ -231,7 +229,7 @@ Further, they don't actually _do_ things: the simply return values that _represe
 We can import and use these commands to tell Casium what effects we want, and Casium will handle them for us:
 
 ```javascript
-import { LocalStorage } from 'casium/commands';
+import { Storage } from '@casium/react-starter/commands';
 ```
 
 This imports a module object with a few different classes for our consumption.
@@ -268,7 +266,7 @@ export default container({
 
   update: [
     // ...
-    [SaveCounter, (model) => [model, new LocalStorage.Write({
+    [SaveCounter, (model) => [model, new Storage.Write({
       key: 'counter',
       value: model.count
     })]]
@@ -278,7 +276,7 @@ export default container({
 })
 ```
 
-Here, we're returning a new instance of the `LocalStorage.Write` command message, and giving it a `key` and a `value`, which tells local storage what to write.
+Here, we're returning a new instance of the `Storage.Write` command message, and giving it a `key` and a `value`, which tells local storage what to write.
 
 This is all well and good for fire-and-forget operations like writing to local storage, but what about _reading_? What about commands that do things where we care about the result?
 
@@ -304,7 +302,7 @@ class LoadCounter extends Message {}
 
 export default container({
 
-  init: () => [{ count: 0 }, new LocalStorage.Read({
+  init: () => [{ count: 0 }, new Storage.Read({
     key: 'counter',
     result: LoadCounter
   })],
@@ -339,10 +337,8 @@ Altogether, our app should look something like this:
 
 ```javascript
 import React from 'react';
-
-import Message from 'casium/message';
-import { container } from 'casium/app';
-import { LocalStorage } from 'casium/commands';
+import { container, Message } from '@casium/react-starter';
+import { Storage } from '@casium/react-starter/commands';
 
 class Increment extends Message { static defaults = { step: 1 } }
 class Decrement extends Message { static defaults = { step: 1 } }
@@ -350,7 +346,7 @@ class SetCounter extends Message {}
 
 export default container({
 
-  init: () => [{ count: 0 }, new LocalStorage.Read({
+  init: () => [{ count: 0 }, new Storage.Read({
     key: 'counter',
     result: SetCounter
   })],
@@ -359,7 +355,7 @@ export default container({
     [Increment, ({ count }, { step }) => ({ count: count + step })],
     [Decrement, ({ count }, { step }) => ( count: count - step })],
     [SetCounter, (model, { value }) => ({ count: parseInt(value, 10) })],
-    [SaveCounter, (model) => [model, new LocalStorage.Write({
+    [SaveCounter, (model) => [model, new Storage.Write({
       key: 'counter',
       value: model.count
     })]]
@@ -392,7 +388,7 @@ In order to avoid unwieldy `if` blocks to return different forms when you only w
 ```javascript
 [SaveCounter, (model) => [
   model,
-  model.count > 9000 && new LocalStorage.Write({
+  model.count > 9000 && new Storage.Write({
     key: 'counter',
     value: model.count
   })
@@ -405,46 +401,119 @@ Unless `count > 9000`, the overall expression of the second array element evalut
 
 **@TODO**: Container composition, delegation, relay, etc.
 
-
-## Extending messages
-
-**@TODO**:
-
- - Subclassing messages
- - Constructor logic
- - etc.
-
 ## Extending commands
 
-**@TODO**: Explanation on extending commands...
+Suppose you wanted to implement a sign-in form. It might look something like this:
 
 ```javascript
-import { Post, formData } from 'casium/commands/http';
+import React from 'react';
 
-export default class SignIn extends Post {
+import { container, Message, replace } from '@casium/react-starter';
+import { Http } from '@casium/react-starter/commands';
+
+class Change extends Message {}
+class Submit extends Message {}
+class Success extends Message {}
+class Failed extends Message {}
+
+export default container({
+
+  init: () => ({ email: '', password: '', message: '' }),
+
+  update: [
+    [Submit, model => [model, new Http.Post({
+      url: '/api/sign-in',
+      data: { email: model.email, password: model.password },
+      result: Success,
+      error: Failed
+    })]],
+
+    [Success, replace({ message: 'Login succeeded' })],
+
+    [Failed, replace({
+      message: 'Login failed. Check your input & try again'
+    })],
+
+    [Change, (model, { key, value }) => ({ [key]: value, ...model })]
+  ],
+
+  view: ({ emit, email, password }) => (
+    <form onSubmit={emit(Submit)}>
+      {message && <div>Message: {message}</div>}
+
+      <input
+        type="email"
+        value={email}
+        onChange={emit([Change, { key: 'email' }])}
+      />
+
+      <input
+        type="password"
+        value={password}
+        onChange={emit([Change, { key: 'password' }])}
+      />
+
+      <input type="submit" value="Sign In" />
+    </form>
+  )
+});
+```
+
+This looks okay, but let's say our API switches to OAuth for authentication. The login form will have to be updated to submit credentials in an OAuth-compliant way. The `Submit` updater code is about to get really noisy.
+
+One way we can deal with this extra complexity is to extract the logic to build the OAuth token request into a command that _extends_ the built-in `Http.Post` command. Since commands are just regular JavaScript classes, this is pretty trivial:
+
+```javascript
+import { Http } from '@casium/react-starter/commands';
+import { stringify } from 'querystring';
+
+export default class SignIn extends Http.Post {
 
   constructor({ email, password, ...values }) {
-    const clientId = 'my-app';
-    const clientSecret = 'woo-sekrit';
-
     super({
       url: '/oauth/token',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': 'Basic ' + btoa(`${clientId}:${clientSecret}`)
       },
-      data: formData({
+      data: stringify({
+        client_id: 'my-app',
         username: email,
         password,
         grant_type: 'password',
-        scope: 'read write',
-        client_secret: clientSecret,
-        client_id: clientId
       }),
       ...values
     });
   }
 }
+```
+
+It consumes the application's existing model (i.e. the `email` and `password` fields) and maps them to the values that OAuth expects. This lets us to neatly encapsulate the details of performing OAuth token requests, and allows the rest of the application can remain blissfully ignorant of those details. The constructor also accepts `...values`, which allows us to customize how the request is handled, i.e. with `result` and `error`. Finally, the whole structure is passed up to `Http.Post`'s constructor using `super()`.
+
+Consuming the new command is as simple as swapping `Http.Post` out for the new command (and dropping the `url` field, since it's encapsulated already):
+
+```javascript
+import React from 'react';
+import { container, Message, replace } from '@casium/react-starter';
+
+// Import the new command
+import SignIn from './sign-in';
+
+// ...
+
+export default container({
+
+  update: [
+    [Submit, model => [model, new SignIn({
+      data: { email: model.email, password: model.password },
+      result: Success,
+      error: Failed
+    })]],
+
+    // ...
+  ],
+
+  // ...
+});
 ```
 
 ## Why immutability and managed effects?
@@ -458,7 +527,7 @@ As we talked about, all changes in the application are handled by _messages_. Me
 Here's what an example unit test for the first draft of our counter container might look like. Note that we're not making any assertions about the view, just the updates and the container's model.
 
 ```javascript
-import { isolate } from 'casium/app';
+import { isolate } from '@casium/react-starter';
 import CounterContainer, { Increment, Decrement } from './';
 
 describe('CounterContainer', () => {
