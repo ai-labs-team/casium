@@ -1,6 +1,4 @@
-import {
-  complement as not, concat, curry, defaultTo, equals, filter, flatten, is, isEmpty, keys, map, merge, pick, pipe, tap
-} from 'ramda';
+import { curry, defaultTo, equals, filter, flatten, identity, is, keys, map, merge, pick, pipe, tap } from 'ramda';
 
 import * as Environment from '../environment';
 import { intercept, notify } from '../instrumentation';
@@ -19,7 +17,7 @@ export type ExecContextPartial = { relay: () => object, state?: (cfg?: object) =
 
 export type ExecContextDef<Model> = {
   env?: Environment.Environment,
-  container: InternalContainerDef<Model>,
+  container: InternalContainerDef<Model> & ExternalInterface<Model>,
   parent?: ExecContext<Model> | ExecContextPartial,
   delegate?: Delegate
 };
@@ -103,7 +101,7 @@ export default class ExecContext<Model> {
 
   constructor({ env, container, parent, delegate }: ExecContextDef<Model>) {
     const ctrEnv = Environment.merge(parent, env);
-    const path = concat(parent && parent.path || [], (delegate && delegate !== PARENT) ? toArray(delegate) : []);
+    const path = (parent && parent.path || []).concat((delegate && delegate !== PARENT) ? toArray(delegate) : []);
     let hasInitialized = false;
 
     const run = <T>(msg: Message<T>, [next, cmds]: [Model, Command<any>[]]) => {
@@ -243,6 +241,6 @@ export default class ExecContext<Model> {
     return (
       !container.subscriptions && [] ||
       toArray(container.subscriptions(model, this.relay()))
-    ).filter(not(isEmpty)).reduce(groupEffects(env.handler), new Map());
+    ).filter(identity).reduce(groupEffects(env.handler), new Map());
   }
 }

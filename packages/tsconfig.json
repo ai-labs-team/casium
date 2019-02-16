@@ -7,7 +7,7 @@
   "references": [
     { "path": "cookies" },
     { "path": "core" },
-    { "path": "framework" },
+    { "path": "react-starter" },
     { "path": "history" },
     { "path": "http" },
     { "path": "local_storage" },

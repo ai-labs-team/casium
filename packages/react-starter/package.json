@@ -1,9 +1,9 @@
 {
-  "name": "@casium/framework",
+  "name": "@casium/react-starter",
   "version": "1.0.1",
   "description": "Batteries-included framework for using Casium with React",
   "module": "./index.js",
-  "browser": "dist/casium-framework.umd.js",
+  "browser": "dist/casium-react-starter.umd.js",
   "types": "./index.d.ts",
   "scripts": {},
   "repository": {

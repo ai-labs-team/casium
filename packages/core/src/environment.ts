@@ -1,7 +1,7 @@
 import { always, cond, identity, mergeDeepWithKey, path, pipe, prop } from 'ramda';
 import { Delegate, Emitter } from './core';
 import { default as coreDispatcher, handler } from './dispatcher';
-import { InternalContainerDef } from './internal/container';
+import { ExternalInterface, GenericObject, InternalContainerDef } from './internal/container';
 import { Command, Constructor } from './message';
 import ExecContext, { ExecContextPartial } from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
@@ -23,14 +23,15 @@ export type EnvDef = EnvDefPartial & {
   effects: Map<Constructor<any, Command<any>>, CommandDispatcher | SubscriptionDispatcher>;
 };
 
-export type RenderProps = {
-  childProps: { [key: string]: any } & { emit: Emitter };
-  container: InternalContainerDef<any>;
+export type RenderProps<Model> = {
+  childProps: Model & { emit: Emitter, relay: GenericObject };
+  container: InternalContainerDef<Model> & ExternalInterface<Model>
   delegate: Delegate;
+  execContext?: ExecContext<Model>;
   env: Environment;
 };
 
-export type Renderer = (props: RenderProps) => any;
+export type Renderer = <Model>(props: RenderProps<Model>) => any;
 
 export type Environment = EnvDefPartial & {
   handler: (msg: Command<any>) => Constructor<any, Command<any>>;
@@ -95,4 +96,4 @@ export const merge: <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Envi
     [prop('isOnlyChild'), prop('env')],
     [always(true), () => { throw new Error('@TODO: Something bad happened'); }]
   ])
-) as any;
+);

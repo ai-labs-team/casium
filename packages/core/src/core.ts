@@ -1,4 +1,4 @@
-import { always, constructN, curry, evolve, identity, is, merge, nthArg, omit, pick, pipe, when } from 'ramda';
+import { always, constructN, curry, evolve, identity, is, merge, nthArg, pick, pipe, when } from 'ramda';
 
 import { create, Environment } from './environment';
 import Message, { Command, Constructor } from './message';
@@ -19,8 +19,13 @@ export type IsolatedContainer<Model> = ContainerView<Model> & {
   push: (model: Model) => void;
 };
 
-type ViewWrapDef<Model> = { env: Environment, container: InternalContainerDef<Model> };
-type ViewProps<Model> = Model & { delegate?: Delegate, emit: Emitter };
+type ViewWrapDef<Model> = {
+  env: Environment;
+  container: InternalContainerDef<Model> & ExternalInterface<Model>;
+  execContext?: ExecContext<Model>;
+};
+type ChildViewProps<Model> = Model & { emit: Emitter, relay: GenericObject };
+type ViewProps<Model> = ChildViewProps<Model> & { delegate?: Delegate };
 
 const { freeze, assign, defineProperty } = Object;
 
@@ -33,11 +38,12 @@ const toMap: <K, V>(list: [K, V][] | Map<K, V>) => Map<K, V> = when(is(Array), c
  * Wraps a container's view to extract container-specific props and inject `emit()` helper
  * function into the view's props.
  */
-const wrapView = <Model>({ env, container }: ViewWrapDef<Model>): React.SFC<ViewProps<Model>> => (
-  (props: ViewProps<Model>) => env.renderer({
-    childProps: omit<ViewProps<Model>, 'delegate'>(['delegate'], props || {} as ViewProps<Model>),
+const wrapView = <Model>({ env, container, execContext }: ViewWrapDef<Model>): React.SFC<ViewProps<Model>> => (
+  ({ delegate, ...props }: ViewProps<Model>) => env.renderer({
+    childProps: (props || {}) as ChildViewProps<Model>,
     container,
-    delegate: props.delegate || container.delegate,
+    delegate: delegate || container.delegate,
+    execContext,
     env
   })
 );
@@ -66,14 +72,14 @@ export const withEnvironment: WithEnvironment = curry(<Model>(
   env: Environment,
   def: ContainerDef<Model>
 ): Container<Model> => {
-  let container: InternalContainerDef<Model>;
+  let container: InternalContainerDef<Model> & ExternalInterface<Model>;
 
   const fns = {
     identity: () => merge({}, def),
     accepts: (msgType: Constructor<any, Message<any>>) => container.update.has(msgType)
   };
 
-  container = mapDef(assign(def, fns));
+  container = mapDef(assign(def, fns)) as InternalContainerDef<Model> & ExternalInterface<Model>;
   return freeze(defineProperty(assign(wrapView({ env, container }), fns), 'name', { value: container.name }));
 }) as WithEnvironment;
 
@@ -159,12 +165,12 @@ export const isolate = <Model>(ctr: Container<Model>, opts: IsolateOptions = {})
       : always(true)
   };
 
-  const container = freeze(assign(ctrDef, overrides));
+  const container = freeze(assign(ctrDef, overrides)) as typeof ctrDef & ExternalInterface<Model>;
   const parent = opts.relay ? { relay: always(opts.relay) } : null;
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
   return freeze(assign(
-    wrapView({ env, container }),
+    wrapView({ env, container, execContext }),
     pick(['dispatch', 'push', 'state'], execContext)
   ));
 };

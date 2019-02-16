@@ -1,6 +1,6 @@
-import { mergeDeep, GenericObject } from '@casium/core';
-import { map, merge, is, identity, nth } from 'ramda';
-import * as React from 'react';
+import { GenericObject, mergeDeep } from '@casium/core';
+import { identity, is, map, merge, nth } from 'ramda';
+import { Children, cloneElement, isValidElement, ReactChild, ReactElement, ReactNode, StatelessComponent } from 'react';
 
 /**
  * Accepts an object of key/function pairs and a pure component function, and returns
@@ -30,34 +30,34 @@ export type PropMap<Input, Generated> = {
 };
 export function withProps<Input, Generated>(
   fnMap: PropMap<Input, Generated>,
-  component: React.StatelessComponent<Input & Generated>
+  component: StatelessComponent<Input & Generated>
 ) {
   return (props: Input) => component(
     merge(props, map((fn: (props: Input) => any) => fn(props), fnMap)) as Input & Generated
   );
 }
 
-type ChildMapper = (child: React.ReactChild) => GenericObject;
+type ChildMapper = (child: ReactChild) => GenericObject;
 
 export const cloneRecursive = (
-  children: React.ReactElement<any> | React.ReactElement<any>[],
+  children: ReactElement<any> | ReactElement<any>[],
   newProps: GenericObject | ChildMapper
-): React.ReactNode[] => React.Children.map(children, (child: React.ReactElement<any>) => {
-  const mapProps = (child: React.ReactElement<any>): GenericObject => {
+): ReactNode[] => Children.map(children, (child: ReactElement<any>) => {
+  const mapProps = (child: ReactElement<any>): GenericObject => {
     const props = is(Function, newProps) ? (newProps as ChildMapper)(child) : newProps;
     const hasChildren = child.props && child.props.children;
     const mapper = hasChildren && is(Array, child.props.children) ? identity : nth(0);
     const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
     return mergeDeep(props || {}, { children });
   };
-  return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
+  return isValidElement(child) ? cloneElement(child, mapProps(child)) : child;
 });
 
 export const clone = (
-  children: React.ReactElement<any>,
+  children: ReactElement<any>,
   newProps: GenericObject | ChildMapper
-) => React.Children.map(children, (child: React.ReactElement<any>) => (
-  React.cloneElement(child, mergeDeep(React.isValidElement(child) ? newProps : {}, {
+) => Children.map(children, (child: ReactElement<any>) => (
+  cloneElement(child, mergeDeep(isValidElement(child) ? newProps : {}, {
     children: child.props.children,
   }))
 ));

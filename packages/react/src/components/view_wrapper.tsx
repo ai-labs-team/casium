@@ -1,16 +1,18 @@
 import * as PropTypes from 'prop-types';
 import { equals, keys, merge, mergeAll, omit, pick, pipe } from 'ramda';
 import * as React from 'react';
-import ErrorComponent from './components/error';
-import { Container, DelegateDef } from '../../../core/src/core';
-import { Environment } from '../../../core/src/environment';
-import Message, { Activate, Constructor, Deactivate, Refresh } from '../../../core/src/message';
-import ExecContext from '../../../core/src/runtime/exec_context';
+import ErrorComponent from './error';
+
+import { Delegate, Emitter, GenericObject } from '@casium/core';
+import { Environment } from '@casium/core/environment';
+import { ExternalInterface, InternalContainerDef } from '@casium/core/internal/container';
+import Message, { Activate, Constructor, Deactivate, Refresh } from '@casium/core/message';
+import ExecContext from '@casium/core/runtime/exec_context';
 
 export type ViewWrapperProps<Model> = {
-  childProps: Model;
-  container: Container<Model>;
-  delegate: DelegateDef;
+  childProps: Model & { emit: Emitter, relay: GenericObject };
+  container: InternalContainerDef<Model> & ExternalInterface<Model>;
+  delegate: Delegate;
   env?: Environment;
 };
 
@@ -22,7 +24,7 @@ export type ViewWrapperProps<Model> = {
  * itself with `execContext` in its children's contexts.
  */
 
-export default class ViewWrapper<M, T> extends React.Component<ViewWrapperProps<M>, any> {
+export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>, any> {
 
   public static contextTypes = { execContext: PropTypes.object };
 
@@ -67,7 +69,11 @@ export default class ViewWrapper<M, T> extends React.Component<ViewWrapperProps<
       console.warn(msg); // tslint:disable-line:no-console
     }
     this.execContext = new ExecContext({ env, parent, container, delegate });
-    this.unsubscribe = this.execContext.subscribe(pipe(this.mergeWithRelay.bind(this), this.setState.bind(this)));
+
+    this.unsubscribe = this.execContext.subscribe(pipe(
+      this.mergeWithRelay.bind(this),
+      this.setState.bind(this)
+    ));
 
     if (this.dispatchLifecycleMessage(Activate, this.props)) {
       return;
