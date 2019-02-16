@@ -46,10 +46,8 @@ const isEmittable = or(isMessage, both(is(Array), pipe(nth(0), isMessage)));
  * @return Returns true if the container (or an ancestor) has an update handler matching
  *         the given constructor, otherwise false.
  */
-const handles = (exec: ExecContext<any>): (val: any) => boolean => (
-  walk(
-    (exec: ExecContext<any>, type: MsgCtor) => exec.container.accepts(type), exec
-  )
+const handles = (exec: ExecContext<any>): (val: any) => boolean => walk(
+  (exec: ExecContext<any>, type: MsgCtor) => exec.container.accepts(type), exec
 );
 
 const validators: { [key in Check]: any } = {
@@ -67,8 +65,8 @@ const validators: { [key in Check]: any } = {
     }
   },
 
-  dispatch: <T>({ msg, exec }: CheckData) => {
-    const msgType = msg.constructor as Constructor<T, Message<T>>;
+  dispatch: ({ msg, exec }: CheckData) => {
+    const msgType = msg.constructor as Constructor<any, Message<any>>;
 
     if ((msgType as any) === Function) {
       throw new TypeError(`Attempted to dispatch message constructor '${(msg as any).name}' — should be an instance`);
@@ -91,7 +89,7 @@ const validators: { [key in Check]: any } = {
   /**
    * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
    */
-  cmd: <M, T>({ exec, cmd }: CheckData) => {
+  cmd: ({ exec, cmd }: CheckData) => {
     const unhandled = pipe(prop('data'), values, filter(isEmittable), filter(not(handles(exec))));
     const msgs = unhandled(cmd);
 
