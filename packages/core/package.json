@@ -56,7 +56,7 @@
       "src/**/*.{ts,tsx}"
     ],
     "exclude": [
-      "**/*_test.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
       "src/effects/*.{ts,tsx}",
       "src/components/error.tsx"
     ],

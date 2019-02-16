@@ -4,6 +4,9 @@
     "tslint:recommended",
     "tslint-config-airbnb"
   ],
+  "linterOptions": {
+    "exclude": ["node_modules/**/*"]
+  },
   "rules": {
     "no-this-assignment": false,
     "forin": false,

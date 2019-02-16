@@ -2,8 +2,8 @@
   "exclude": [
     "dist",
     "node_modules",
-    "**/*_test.ts",
-    "**/*_test.tsx"
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ],
   "include": ["**/*.{ts,tsx}"],
   "compilerOptions": {
