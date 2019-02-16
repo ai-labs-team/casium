@@ -35,7 +35,7 @@
     "jsdom-global": "3.0.2",
     "jss": "9.8.7",
     "mocha": "5.2.0",
-    "nodemon": "1.18.4",
+    "nodemon": "^1.18.10",
     "nyc": "13.0.1",
     "react-addons-test-utils": "15.6.2",
     "react-dom": "16.5.2",
