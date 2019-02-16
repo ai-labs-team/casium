@@ -1,21 +1,24 @@
-import { always, cond, curry, flip, is, pipe, prop, T } from 'ramda';
+import { always, cond, curry, flip, identity, is, prop } from 'ramda';
 import { Command, Constructor } from './message';
 import ExecContext from './runtime/exec_context';
 import { EffectType, ProcessState } from './subscription';
 import { safeStringify } from './util';
 
-export type EffectMap = Map<Constructor<any, Command<any>>, (...args: any[]) => any>;
+type Callback = (...args: any[]) => any;
+export type EffectMap = Map<Constructor<any, Command<any>>, Callback>;
 
 const unbox = cond([
-  [is(Command), pipe(prop('data'), Array.of)],
-  [is(ProcessState), Array.of],
-  [T, always(null)]
+  [is(Command), prop('data')],
+  [is(ProcessState), identity],
+  [always(true), always(null)]
 ]);
 
-export const handler = curry(<T>(effects: EffectMap, msg: Command<T> | ProcessState) => {
-  const key = msg && (msg as any)[EffectType] || msg.constructor;
-  return effects.get(key) && key || Array.from(effects.keys()).find(flip(is)(msg));
-});
+export const handler = curry<EffectMap, Command<any> | ProcessState, any>(
+  (effects: EffectMap, cmd: Command<any> | ProcessState) => {
+    const key: Constructor<any, Command<any>> = cmd && (cmd as any)[EffectType] || cmd.constructor;
+    return effects.get(key) && key || Array.from(effects.keys()).find(flip(is)(cmd));
+  }
+);
 
 /**
  * Dispatches command messages.
@@ -36,5 +39,5 @@ export default curry((effects: EffectMap, execContext: ExecContext<any>, msg: Co
     throw new TypeError(`Unhandled command or subscription message type '${ctor && ctor.name}'`);
   }
 
-  return callback(...unbox(msg), execContext.dispatch, execContext);
+  return callback(...Array.of(unbox(msg)), execContext.dispatch, execContext);
 });

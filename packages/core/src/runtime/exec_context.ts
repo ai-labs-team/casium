@@ -216,7 +216,7 @@ export default class ExecContext<Model> {
    */
   public emit<T>(msgType: Emittable<T>) {
     const em = Message.toEmittable(msgType),
-          [msgCtor, extra] = em;
+      [msgCtor, extra] = em;
 
     Validator.check('emit', { msgCtor, exec: this });
     return pipe(defaultTo({}), Message.mapEvent(extra), Message.construct(msgCtor), this.dispatch);
