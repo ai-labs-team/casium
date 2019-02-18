@@ -6,20 +6,17 @@ import { Command, Constructor } from './message';
 import ExecContext, { ExecContextPartial } from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 import { ProcessState } from './subscription';
-import { mergeMap } from './util';
+import { mergeMap, Omit } from './util';
 
 export type Dispatcher = (...args: any[]) => any | void;
 export type CommandDispatcher = (data: object, dispatch: Dispatcher) => any | void;
 export type SubscriptionDispatcher = (processState: ProcessState, dispatch: Dispatcher) => any | void;
 
-export type EnvDefPartial = {
+export type EnvDef = {
   dispatcher: Dispatcher;
-  log?: (...args: any[]) => any | void;
-  stateManager?: (container?: InternalContainerDef<any>) => StateManager;
+  log: (...args: any[]) => any | void;
+  stateManager: (container?: InternalContainerDef<any>) => StateManager;
   renderer: Renderer;
-};
-
-export type EnvDef = EnvDefPartial & {
   effects: Map<Constructor<any, Command<any>>, CommandDispatcher | SubscriptionDispatcher>;
 };
 
@@ -33,9 +30,9 @@ export type RenderProps<Model> = {
 
 export type Renderer = <Model>(props: RenderProps<Model>) => any;
 
-export type Environment = EnvDefPartial & {
+export type Environment = Omit<EnvDef, 'effects'> & {
   handler: (msg: Command<any>) => Constructor<any, Command<any>>;
-  identity: () => EnvDef;
+  identity: () => Partial<EnvDef>;
 };
 
 /**
@@ -60,7 +57,7 @@ export const create = ({
   log = null,
   stateManager = null,
   renderer = identity
-}: EnvDef): Environment => ({
+}: Partial<EnvDef>): Environment => ({
   // tslint:disable:no-console
   dispatcher: (dispatcher || coreDispatcher)(effects),
   handler: handler(effects),

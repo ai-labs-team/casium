@@ -1,6 +1,8 @@
 # Casium — An architecture for single-page applications
 
-The Casium front-end architecture that you can use with virtual DOM libraries like React or Vue. It is a _data_ and _effects_ management system that helps you manage the complexity of large single-page applications reliabily and predictably.
+Casium is a front-end architecture that you can use with virtual DOM libraries like React or Vue.
+
+It is a _data_ and _effects_ management system that helps you manage the complexity of large single-page applications in a reliable and predictable way.
 
 It does this by modeling the state of your application (yes, all of it) as a single, immutable value, and handling side-effects in application logic with _messages_. If this reminds you of [Redux](http://redux.js.org/), that might be because both are derived from [The Elm Architecture](https://guide.elm-lang.org/architecture/). However, this library attempts to hew more closely to Elm's design in order to gain [more of Elm's advantages](https://www.youtube.com/watch?v=XsNk5aOpqUc&t=16m24s), and to provide a better, more cohesive developer experience.
 
@@ -24,9 +26,10 @@ It does this by modeling the state of your application (yes, all of it) as a sin
 			</a></li>
 			<li><a href="#writing-tests">Writing tests</a></li>
 			<li><a href="#testing-commands">Testing commands</a></li>
+			<li><a href="#refactoring-with-helper-functions">Refactoring with helper functions</a></li>
 			<li><a href="#subscriptions">Subscriptions</a></li>
-			<li><a href="#adding-custom-effects">Adding custom effects</a></li>
 			<li><a href="#customizing-the-environment">Customizing the environment</a></li>
+			<li><a href="#adding-custom-effects">Adding custom effects</a></li>
 			<li><a href="#adding-types-with-typescript">Adding types with TypeScript</a></li>
 		</ul>
   	</td>
@@ -81,9 +84,9 @@ export default container({
 
 Containers are composed primarily of 3 things:
 
- - **`init`**: A function that returns the container's initial model state. This is called when the container is first instantiated, and should set up the default values for all model values to be used in the container. This should be a plain JavaScript `Object`. (This function will sometimes take a parameter if part of the model is being delegated to it from higher up&mdash;we'll get to that later). In general, containers shouldn't have to check whether values exist. If they do, you should probably update your `init` function.
- - **`update`**: A list of pairs that combine a _message_ with an _update handler_ (or _updater_). This is where the action happens. All changes to the application, whether model changes or side-effects (like HTTP calls) happen via _messages_. This allows the entire model and lifecycle of the application to decompose to simple data structures. Containers intercept messages, and call the updater for that message with the current model as a parameter. The updater returns the new model. Finally, the container re-renders the view with the new model.
- - **`view`**: The view is a stateless React component that receives the container's current model as its props (as well as any other props passed to the container by React). In addition to the model, it also receives one special value, **`emit`**, which is a function that accepts a message and gets assigned to an event handler. This is what allows the container to be notified about events that we care about and respond with the appropriate updater.
+ - **`init`**: A function that returns the container's initial model state. This is called when the container is first instantiated, and should set up the default values for all model values to be used in the container. This should be a plain JavaScript `Object`. (This function will sometimes take a parameter if part of the model is being delegated to it from higher up&mdash;we'll get to that later). In general, other functions you write shouldn't have to check whether values exist. If they do, you should probably update your `init` function.
+ - **`update`**: A list of pairs that combine a _message_ with an _update handler_ (or _updater_). This is where the action happens. All changes to the application, whether model changes or side-effects (like HTTP calls, reading and writing cookies, local storage, etc.) happen via _messages_. This allows the entire model and lifecycle of the application to decompose to simple data structures. Containers intercept messages, and call the updater for that message with the current model as a parameter. The updater returns the new model. Finally, the container re-renders the view with the new model.
+ - **`view`**: The view is a stateless component that receives the container's current model as its arguments (as well as any other arguments passed to the container by a rendering layer, such as React). In addition to the model, it also receives one special value, **`emit`**, which is a function that accepts a message and gets assigned to an event handler. This is what allows the container to be notified about events that we care about, and respond with the appropriate updater.
 
 ## Messages
 
@@ -140,12 +143,11 @@ export default container({
 });
 ```
 
-We've created a new message, `SetCounter`, to handle our new event.  You'll also notice that the updater for `SetCounter` looks a bit different from the ones before. In addition to being typed objects, messages hold _data_, either from the view, or from _commands_ (we'll get to that later). In the previous examples, none of the messages used data&mdash;we just took in the existing model, destructured it to the value(s) we cared about, and returned a new model.
+We've created a new message, `SetCounter`, to handle our new event.  You'll also notice that the updater for `SetCounter` looks a bit different from the ones before. In addition to being typed objects, messages can hold _data_, either from the view, or from _commands_ (we'll get to that later). In the previous examples, none of the messages used data&mdash;we just took in the existing model, destructured it to the value(s) we cared about, and returned a new model.
 
 Updaters receive message data as their second parameter, and we can likewise [destructure](http://2ality.com/2015/01/es6-destructuring.html) the part we care about, use it to calculate a new model, and return said model.
 
-By default, messages emitted from DOM events will have `value` and `checked` properties, which will match the properties of the element emitting the event, for convenience purposes.
-
+By default, messages emitted from DOM events will have `value` and/or `checked` properties, which will match the properties of the element emitting the event, for convenience purposes.
 
 ### Parameterizing messages
 
@@ -218,7 +220,7 @@ These interactions are called _side-effects_, and side effects trip us up becaus
 
 Think of it like a bank ledger: the current balance is just a sum of all the transactions. However, when we introduce side-effects, our bank balance starts changing out from under us. We no longer have an audit log of what it should be or why. We have no way to predict it, and we've lost the ability to reproduce it or examine it in an isolated context.
 
-So, how do we make our state predictable again? With more messages, of course!
+So, how do we make the state predictable again? With more messages, of course!
 
 Up until now, we've been both producing (in the view) and consuming (in the update) our own messages. _Command messages_ (or just _commands_) are a new type of message: we produce them, but they're consumed by Casium, in the background, away from our application code. Casium _manages_ our effects for us. We use these commands any time we want to read, write, or execute something outside of our model, like HTTP calls, cookies, etc.
 
@@ -245,7 +247,7 @@ export default container({
 
   update: [
     // ...
-    [SaveCounter, (model) => model]
+    [SaveCounter, (model) => [model]]
   ],
 
   view: ({ emit, count }) => (
@@ -280,7 +282,7 @@ Here, we're returning a new instance of the `Storage.Write` command message, and
 
 This is all well and good for fire-and-forget operations like writing to local storage, but what about _reading_? What about commands that do things where we care about the result?
 
-We handle this by giving the command a _result message_. These are normal messages that we implement and handle ourselves, just like the ones emitted from the view. We pass one of these messages to the command in a `result` key, and Casium will send that message back to our view when the command has executed.
+We handle this by giving the command a _result message_. These are normal messages that we implement and handle ourselves, just like the ones emitted from the view. We pass one of these messages to the command in a `result` key, and Casium will send that message back to the container when the command has executed.
 
 This extends the cycle of our data flow like so:
 
@@ -292,7 +294,7 @@ This style might feel weird if you're used to using promises or callbacks. Promi
 
 This approach lets us flatten out those chains, letting us handle one logical update at a time, in isolation from others.
 
-Let's try loading the counter back from local storage when the container initializes. Because we don't want to break our isolation boundary by touching local storage directly, we'll have `init()` kick off a command that will be immediately handled and returned to the container in the form a `result` message (which we'll define below as `LoadCounter`).
+Let's try loading the counter back from local storage when the container initializes. Because we don't want to break the isolation boundary by touching local storage directly, we'll have `init()` kick off a command that will be immediately handled and returned to the container in the form a `result` message, which we'll define below as `LoadCounter`.
 
 The expected return value format for the `init()` function is actually the same as for update handlers, so we can implement this just by changing what it returns:
 
@@ -323,17 +325,17 @@ export default container({
 >  - **A model and a command**: As in `init` above, a 2-element array (or _tuple_) is used to update the model _and_ run a command
 >  - **A model and multiple commands**: The above pattern can be extended to run multiple commands, just keep appending commands to the array
 >  - **A model and multiple commands, part deux**: Sometimes it's easier to put commands together in their own array&mdash;return a tuple where the first element is the model and the second is an array of any number of commands
->  - **Update-ception**: Finally, in addition to the forms above, an updater function can return _another_ updater function... which can return another updater function (and so on)&mdash;the functions will continue to be called until one of the above formats is returned; this is useful for advanced function composition techniques
+>  - **Update-ception**: Finally, in addition to the forms above, an updater function can return _another_ updater function... which can return another updater function (and so on)&mdash;the functions will continue to be called until one of the above formats is returned; this is useful for advanced function composition techniques, and pairs nicely with Casium's built-in helper functions which you'll learn about in a later section
 
-Again, we're changing the return value of `init()` to the array format we saw before, so that we have a way to return both our initial model _and_ the command. We construct a `Read` message with the `key` we want to read, and `result`, which is the message that will be sent back to the container with, you guessed it: the result. This is symmetrical to the `Write` command, except that the `key` and the `value` are spread across the command and result message, respectively.
+Again, we're changing the return value of `init()` to the array format we saw before, so that we have a way to return both the initial model _and_ the command. We construct a `Read` message with the `key` we want to read, and `result`, which is the message that will be sent back to the container with, you guessed it: the result. This is symmetrical to the `Write` command, except that the `key` and the `value` are spread across the command and result message, respectively.
 
 We handle our `LoadCounter` message, destructuring the `value` property and assigning it to the `count` property of the new model. Great, right?
 
 Well, almost. Don't look now, but we've just introduced an error into our app: `count` is supposed to be a number, but local storage returns strings. We need to pass `value` through `parseInt()` and... this is starting to look a lot like work we've already done.
 
-Instead, we can reuse our existing `SetCounter` message — both messages expect to have a `value` which gets number-ified and written to the `count` property of the model.
+Instead, we can reuse the existing `SetCounter` message — both messages expect to have a `value` which gets number-ified and written to the `count` property of the model.
 
-Altogether, our app should look something like this:
+Altogether, the app should look something like this:
 
 ```javascript
 import React from 'react';
@@ -399,7 +401,79 @@ Unless `count > 9000`, the overall expression of the second array element evalut
 
 ## Growing applications
 
-**@TODO**: Container composition, delegation, relay, etc.
+Let's say you have an application that's structured similar to this diagram. It has top-level navigation with user session management, a list of items, and below each item is an expandable item detail view.
+
+![Diagram of an example application](docs/example_application.png "Diagram of an example application")
+
+There's quite a bit going on here: navigation, an avatar showing user session state&mdash;there's also the list of items, each with a toggle button for showing or hiding the detail view, as well as some management controls. Finally, there's the item detail view itself, and whatever additional information or UI controls that are required there.
+
+While it's possible to manage the whole application with a single container, it would start to become pretty unwieldy. Instead, we want to be able to split our application into multiple containers, but allow them all to share a single model tree. We do this by using _delegation_.
+
+Delegation allows a container to take a piece of _its_ model and _delegate_ it to a child container. The sub-object of the parent model then becomes the model of the child container, and the child container is able to manage it.
+
+We'll start with a stub application and an initial data model to demonstrate how to break this down:
+
+```javascript
+import React from 'react';
+import { render } from 'react-dom';
+import { container, Message } from '@casium/react-starter';
+
+const initialModel = {
+  user: {
+    id: 12345,
+    name: 'Test User',
+    email: 'test@user.com'
+  },
+  items: [
+    {
+      id: 1,
+      title: 'Item 1',
+      details: {
+        body: 'This is the first item',
+        lastUpdated: new Date(1547322948000)
+      }
+    },
+    {
+      id: 2,
+      title: 'Item 2',
+      details: {
+        body: 'This is the middle item',
+        lastUpdated: new Date(1547927795000)
+      }
+    },
+    {
+      id: 3,
+      title: 'Item 3',
+      details: {
+        body: 'This is the last item',
+        lastUpdated: new Date(1548532598000)
+      }
+    }
+  ]
+};
+
+const AppContainer = container({
+  init: () => initialModel,
+  view: () => (<div>Hello world</div>)
+});
+
+render(<AppContainer />, document.getElementById('app'));
+```
+
+We'll start breaking things out by making a separate module for `AppContainer`'s view component (you can see the full view code in the example app [**@TODO: add link**]), then importing it and assigning it to the container:
+
+```javascript
+// ...
+import View from './app-view';
+
+// ...
+
+const AppContainer = container({
+  init: () => initialData,
+  view: View
+});
+```
+
 
 ## Extending commands
 
@@ -430,9 +504,7 @@ export default container({
 
     [Success, replace({ message: 'Login succeeded' })],
 
-    [Failed, replace({
-      message: 'Login failed. Check your input & try again'
-    })],
+    [Failed, replace({ message: 'Login failed. Check your input & try again' })],
 
     [Change, (model, { key, value }) => ({ [key]: value, ...model })]
   ],
@@ -565,21 +637,53 @@ describe('CounterContainer', () => {
       const cmds = container.dispatch(new SaveCounter());
 
       expect(cmds).to.deep.equal([
-        new LocalStorage.Write({ key: "counter", value: 1138 })
+        new Storage.Write({ key: 'counter', value: 1138 })
       ]);
     });
   });
 });
 ```
+## Refactoring with helper functions
+
+**@TODO**
+
 ## Subscriptions
 
 **@TODO**
 
-## Adding custom effects
-
-**@TODO**
-
 ## Customizing the environment
+
+Up to this point, we've been using the `container()` function provided by `@casium/react-starter`, which includes everything you need to get started building an application with Casium. However, it may include things you _don't_ need, which means having to ship a larger JavaScript bundle than necessary when going to production.
+
+The functionality provided by the default `container()` function comes from the _environment_. An environment is bound to a container and provides the implementation details for all the side effects that Casium handles for you, including running commands, changing the model, and logging errors to the console. It also manages how Casium integrates with host rendering tools, like React.
+
+In fact, the `container()` function we've been using so far is actually just a partially-applied version of the `withEnvironment()` function from `@casium/core`, which accepts an environment as its first parameter and a container definition as its second. You can use this function to create your own `container()` function that's tailored to your application.
+
+For example, if we wanted to create a new React application that talked to the browser's local storage and an HTTP API, we'd start by installing the following packages (in addition to `react` and `react-dom`):
+
+```bash
+# ...or `npm install`, if that's more your thing
+yarn add @casium/core @casium/react @casium/http @casium/storage
+```
+
+Next, we wire our chosen packages together into a custom `container()` function:
+
+```javascript
+import { environment, mergeMaps, withEnvironment } from '@casium/core';
+import { renderer } from '@casium/react';
+
+import Http from '@casium/http';
+import Storage from '@casium/storage';
+
+export const container = withEnvironment(environment({
+  effects: mergeMaps([Http, Storage]),
+  renderer
+}));
+```
+
+With those few short lines of code, we've fully migrated away from our dependence on `react-starter` and into a tight, form-fitting bundle based on just what our application needs.
+
+## Adding custom effects
 
 **@TODO**
 
@@ -592,6 +696,6 @@ describe('CounterContainer', () => {
 ## Getting Started
 
 ```
-yarn peers
+yarn
 yarn test
 ```
