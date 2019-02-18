@@ -3,16 +3,22 @@ import { expect } from 'chai';
 import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { always, merge, pipe } from 'ramda';
+
 import * as React from 'react';
 
-import { PARENT, withEnvironment } from '@casium/core';
+import { environment, PARENT, withEnvironment } from '@casium/core';
 import dispatcher from '@casium/core/dispatcher';
-import { create as environment } from '@casium/core/environment';
 import Message, { Activate, Command, Deactivate, Emittable, Refresh } from '@casium/core/message';
-import { container } from '../index';
+import { renderer } from '../index';
 import ViewWrapper from './view_wrapper';
 
 describe('ViewWrapper', () => {
+
+  let container;
+
+  before(() => {
+    container = withEnvironment({ renderer, effects: new Map() });
+  });
 
   describe('componentWillMount', () => {
 

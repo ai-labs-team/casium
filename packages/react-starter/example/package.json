@@ -1,0 +1,28 @@
+{
+  "name": "@casium/react-example",
+  "version": "1.0.0",
+  "description": "An example application using @casium/react-starter to demonstrate how to organize application code with Casium",
+  "repository": "https://github.com/ai-labs-team/casium.git",
+  "author": "Nate Abele <natea@advisorinnovationlabs.com>",
+  "license": "Apache-2.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack-dev-server --mode development --open --watch",
+    "build": "webpack --mode production"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.3.3",
+    "@babel/preset-env": "^7.3.1",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.5",
+    "html-loader": "^0.5.5",
+    "html-webpack-plugin": "^3.2.0",
+    "webpack": "^4.29.4",
+    "webpack-cli": "^3.2.3",
+    "webpack-dev-server": "^3.1.14"
+  },
+  "dependencies": {
+    "react": "^16.8.2",
+    "react-dom": "^16.8.2"
+  }
+}
