@@ -4,16 +4,16 @@ import 'mocha';
 import { add, always, evolve, identity, inc, map, mergeAll, not, pick, pipe, prop, unapply } from 'ramda';
 import * as React from 'react';
 import { commands, container, isolate, mapModel, message, seq } from './core';
-import Message from './message';
+import Message, { Command } from './message';
 import StateManager from './runtime/state_manager';
 
 describe('core', () => {
 
-  class Cmd extends Message<any> { }
-  class Cmd2 extends Message<any> { }
+  class Cmd extends Command<any> { }
+  class Cmd2 extends Command<any> { }
 
-  class Msg extends Message<any> { }
-  class Msg2 extends Message<any> { }
+  class Msg extends Command<any> { }
+  class Msg2 extends Command<any> { }
 
   describe('environment()', () => {
 

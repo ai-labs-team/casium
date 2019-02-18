@@ -1,18 +1,18 @@
-import Message, { Constructor, Emittable } from '@casium/core/message';
+import Message, { Command, Constructor, Emittable } from '@casium/core/message';
 import { moduleName, safeParse, safeStringify } from '@casium/core/util';
 import { always, merge, objOf, pipe } from 'ramda';
 
 @moduleName('Storage')
-export class Read extends Message<{ key: string, result: Emittable<any> }> {}
+export class Read extends Command<{ key: string, result: Emittable<any> }> {}
 
 @moduleName('Storage')
-export class Write extends Message<{ key: string; value: any }> {}
+export class Write extends Command<{ key: string; value: any }> {}
 
 @moduleName('Storage')
-export class Delete extends Message<{ key: string }> {}
+export class Delete extends Command<{ key: string }> {}
 
 @moduleName('Storage')
-export class Clear extends Message<{}> {}
+export class Clear extends Command<{}> {}
 
 const get = (() => {
   try {
@@ -24,7 +24,7 @@ const get = (() => {
   }
 })();
 
-export default new Map<Constructor<any, Message<any>>, (data: any, dispatch: any) => any>([
+export default new Map<Constructor<any, Command<any>>, (data: any, dispatch: any) => any>([
   [Read, ({ key, result }, dispatch) => pipe(
     get, safeParse, objOf('value'), merge({ key }), Message.construct(result), dispatch
   )(key)],

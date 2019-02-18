@@ -686,7 +686,63 @@ With those few short lines of code, we've fully migrated away from our dependenc
 
 ## Adding custom effects
 
-**@TODO**
+As explained in the preceding sections, Casium allows you to deal with side effects as data, which is what commands are for. In order to make things actually work, however, at some point the data that commands carry around has to be translated into making the computer do real things. This is where _effects_ come in.
+
+Effects, or _effect handlers_, work basically like update handlers: the command constructor is used to pair commands to the code that runs them. For example, this is (a simplified version of) the local storage effect code in `@casium/storage`:
+
+```javascript
+export default new Map([
+  [Read, ({ key, result }, dispatch) => dispatch(
+    Message.construct(result, { key, value: localStorage.get(key) })
+  )}],
+  [Write, ({ key, value }) => localStorage.setItem(key, safeStringify(value))],
+  [Delete, ({ key }) => localStorage.removeItem(key)],
+  [Clear, () => localStorage.clear()],
+]);
+```
+
+Here, the command constructor classes that we import and use in application code are paired up with callbacks. These callbacks are just like any other normal, browser-based JavaScript code that we would write. This is where we perform stateful, mutable operations such as reaching out to things on `window` (the `localStorage` object, in this case).
+
+A few things worth noting in this example:
+
+1. Instead of being a plain array, like `update` in a container, the constructor/handler pairs are wrapped in a [`Map`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) object (incidentally, this is also how update handlers are represented internally anyway).
+2. Effect handlers don't take a model&mdash;the first parameter is the message data that comes from the command.
+3. The second parameter that effect handlers can take is a `dispatch()` function: this allows them to talk back to the application and report results. We can see an example of this in the `Read` handler: the `result` key is a container message that will get sent back to our application code with the results of reading from local storage. (Note that the `key` we're reading from is also tacked on for convenience).
+
+Here's an example of implementing a custom effect handler for [the `prompt()` function](https://developer.mozilla.org/en-US/docs/Web/API/Window/prompt):
+
+```javascript
+import Message, { Command } from '@casium/core/message';
+
+export class Prompt extends Command {}
+
+export default new Map([
+  [Prompt, ({ message, response, result, cancel }, dispatch) => {
+    const value = window.prompt(message, response);
+
+    if (value === null) {
+      dispatch(Message.construct(cancel, {}));
+    } else {
+      dispatch(Message.construct(result, { value }));
+    }
+  }]
+]);
+```
+
+Here, we implement the `Prompt` command by extending the `Command` base class, just like we do for `Message` classes. Also similar: the class is empty. We don't need any logic, since it's just a carrier for some data.
+
+Within the body of the handler function, we define an API:
+
+ - `message` is the message we'll show the user in the dialog box, and `response` is the default response value that will appear in the text box
+ - `result` and `cancel` are message constructors that can be passed in from a container, and sent back to the container as messages
+
+Within the body of the handler, we reach out and call `window.prompt()`, then collect the result. Next, we check to see if the value is `null`, since that indicates that the user canceled out of the dialog. This allows us to inform the application in a semantically useful way, by dispatching a distinct message.
+
+Note that the application code could always choose to assign the same constructor to both `result` and `cancel`, if it didn't care about handling them differently. Note also the use of `Message.construct()`, which is a helper function that abstracts away the details of the different variations of message passing. If we always knew that `cancel`, for example, was going to be a message constructor, we could simply write `dispatch(new cancel, {})`, but that doesn't account for other message-passing styles&mdash;just use `Message.construct()` and you won't need to worry about it.
+
+Finally, in each branch, we call the `dispatch()` function with the constructed message, which passes the message back into the container, thus completing the cycle.
+
+When implementing effect handlers, keep in mind that they should be fully abstracted from your application, and shouldn't include any details or make any assumptions about the structure of your application's model, other application messages, other effect handlers, etc. This keeps code well-isolated and easy to change.
 
 ## Adding types with TypeScript
 

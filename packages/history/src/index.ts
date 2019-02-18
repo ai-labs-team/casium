@@ -1,4 +1,4 @@
-import Message, { Command, Constructor, Emittable } from '@casium/core/message';
+import Message, { Command, Constructor } from '@casium/core/message';
 import { moduleName } from '@casium/core/util';
 
 @moduleName('History')
