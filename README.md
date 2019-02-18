@@ -409,7 +409,7 @@ There's quite a bit going on here: navigation, an avatar showing user session st
 
 While it's possible to manage the whole application with a single container, it would start to become pretty unwieldy. Instead, we want to be able to split our application into multiple containers, but allow them all to share a single model tree. We do this by using _delegation_.
 
-Delegation allows a container to take a piece of _its_ model and _delegate_ it to a child container. The sub-object of the parent model then becomes the model of the child container, and the child container is able to manage it.
+Delegation allows a container to take a piece of _its_ model and _delegate_ it to a child container. The delegated sub-object of the parent model then becomes the model of the child container, and the child container is able to manage it.
 
 We'll start with a stub application and an initial data model to demonstrate how to break this down:
 
@@ -474,6 +474,7 @@ const AppContainer = container({
 });
 ```
 
+**@TODO: Child container**
 
 ## Extending commands
 
