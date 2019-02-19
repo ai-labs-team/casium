@@ -57,7 +57,7 @@ The basic implementation of a container looks like this:
 import React from 'react';
 
 import Message from 'casium/message';
-import { container } from 'casium/app';
+import { container } from 'casium';
 
 class Increment extends Message {}
 class Decrement extends Message {}
@@ -341,7 +341,7 @@ Altogether, our app should look something like this:
 import React from 'react';
 
 import Message from 'casium/message';
-import { container } from 'casium/app';
+import { container } from 'casium';
 import { LocalStorage } from 'casium/commands';
 
 class Increment extends Message { static defaults = { step: 1 } }
@@ -458,7 +458,7 @@ As we talked about, all changes in the application are handled by _messages_. Me
 Here's what an example unit test for the first draft of our counter container might look like. Note that we're not making any assertions about the view, just the updates and the container's model.
 
 ```javascript
-import { isolate } from 'casium/app';
+import { isolate } from 'casium';
 import CounterContainer, { Increment, Decrement } from './';
 
 describe('CounterContainer', () => {
