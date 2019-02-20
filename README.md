@@ -577,7 +577,8 @@ export default container({
 
   update: [
     [Submit, model => [model, new SignIn({
-      data: { email: model.email, password: model.password },
+      email: model.email,
+      password: model.password,
       result: Success,
       error: Failed
     })]],
@@ -591,20 +592,29 @@ export default container({
 
 ## Why immutability and managed effects?
 
-As we talked about, all changes in the application are handled by _messages_. Messages are either emitted from the view, or the result of a _command message_ (or just _command_).
+As explained, all changes in the application are handled by _messages_. Messages are either emitted from the view, or the result of a _command message_ (or just _command_). It may seems like a lot of extra work to jump through these hoops, rather than just directly writing code to do what we want. Why is it important?
 
-**@TODO**
+In short, because it radically simplifies the entire software development lifecycle. As projects demand ever-greater levels of complexity, we need better tools to keep that complexity at bay. Some examples:
+
+ - **Unit testing**: In an object-oriented paradigm, testing services that interact with each other require mocks and stubs that must be kept in sync with their underlying service implementations&mdash;creating and maintaining this boilerplate is error-prone and adds needless effort. Testing in the functional paradigm is just data: take some inputs, assert the output, and you're done. The application can instantly be put into any state, and any sequence of interactions can be tested, in any order (or random order)&mdash;just by providing the data that represents those interactions.
+
+ - **Debugging**: Trying to debug a complex UI interaction? Just [review the message log](https://github.com/ai-labs-team/casium-devtools/#readme): Casium's custom development tools show you exactly what messages were triggered, and in what order, as well as showing a visual diff of how the app's model changed for each message, or across a sequence of messages.
+
+ - **Reproducing production errors**: The browser is a notoriously difficult platform to deploy software for: it's a remote environment, outside of our control, that our whole application has to be shipped to every time someone uses it&mdash;it's also a highly stateful environment where many of the operations that we perform are nondeterministic. This makes generating reproduction steps from support requests a notoriously difficult problem. Casium turns this problem on its head: now every bug report can come with a complete, _replayable_ audit trail, demonstrating exactly how the error condition was reached.
 
 ## Writing tests
 
-Here's what an example unit test for the first draft of our counter container might look like. Note that we're not making any assertions about the view, just the updates and the container's model.
+Below, you can see what an example unit test for the counter container might look like. Note that we're not making any assertions about the view: because the view is a pure function of the model, we can be confident that a given model value will always produce the same view.
+
+This doesn't mean we never have to test our view code. We can and often should, but the data provides a clean boundary that allows us to test how our views render, in isolation from the container code that drives the view. Likewise, here we can test how the container changes the model, as well as any associated commands triggered, by using messages to simulate events that come from the view.
 
 ```javascript
 import { isolate } from '@casium/react-starter';
-import CounterContainer, { Increment, Decrement } from './';
+import CounterContainer, { Increment, Decrement, SetCounter } from './';
+
+const container = isolate(CounterContainer);
 
 describe('CounterContainer', () => {
-  const container = isolate(CounterContainer);
 
   beforeEach(() => container.push({ count: 0 }))
 
@@ -619,15 +629,31 @@ describe('CounterContainer', () => {
       container.dispatch(new Decrement());
       expect(container.state()).to.deep.equal({ count: -1 });
     });
+
+    it('should set the counter', () => {
+      container.dispatch(new SetCounter({ value: '10' }));
+      expect(container.state()).to.deep.equal({ count: 10 });
+    });
   });
 });
 ```
 
+This example uses the Mocha test framework, but any testing setup that supports your chosen rendering library should work just fine. First, we import the container and the message classes we're testing from the module where they're exported (note that both the container and any message classes _do_ need to be exported for this to work).
+
+Next, we initialize a copy of the container that we can test against by passing the actual container implementation into the `isolate()` function. This function creates a copy of the container that is 'unhooked' from the outside world, and exposes some helper methods that allow us to inspect and manipulate it within unit tests.
+
+Using the `beforeEach()` hook, the container is reset to a default initial state using the `push()` method. Taking this approach means we can avoid creating a new copy of the container for each test, since there's no other internal state to reset: the model is the only state the container carries around.
+
+Within each test, we simply instantiate the message we want to test for, send it to the container using the `dispatch()` method, then pull the new current state back out using the `state()` method. Note that in the `SetCounter` test, the message is instantiated with data, which is the same structure and format as the data consumed by the updater. If you're unsure of the correct values to use as message data, you can use the `log()` helper function, or simply trigger the message from the browser and [let the dev tools generate an example unit test for you](https://www.youtube.com/watch?v=oRZ3eijGTK4&t=20m50s).
+
 ## Testing commands
 
-**@TODO**
+Testing update handlers that trigger commands is similarly straightforward:
 
 ```javascript
+import { Storage } from '@casium/react-starter/commands';
+// ...
+
 describe('CounterContainer', () => {
   // ...
 
@@ -644,6 +670,49 @@ describe('CounterContainer', () => {
   });
 });
 ```
+
+We initilaize the model state as before, then instantiate and dispatch a message. This time, however, instead of asserting against the model (although we could do that as well), we instantate a list of the command messages we expect (just the one, in this case), and assert that the return value of `dispatch()` matches that list.
+
+Testing commands that emit response messages (i.e. `Storage.Read` or any `Http` command) is the same as the above: test the handler that emits the command, then test the message that the command is supposed to emit. Consider this hypothetical test for the fictitious login form above:
+
+```javascript
+describe('signing in', () => {
+
+  it('triggers an OAuth request', () => {
+    const user = { email: 'user@domain', password: 's3krit' };
+    container.push(user);
+
+    const cmds = container.dispatch(new Submit());
+
+    expect(cmds).to.deep.equal([
+      new SignIn({ ...user, result: result: Success, error: Failed })
+    ]);
+  });
+
+  it('stores the access token on successful login', () => {
+    const tokenData = {
+      access_token: 'THE-TOKEN',
+      token_type: 'bearer',
+      refresh_token: 'THE-REFRESH-TOKEN',
+      expires_in: 999999,
+      scope: 'write read'
+    };
+
+    container.dispatch(new Success({
+      data: tokenData,
+      status: 200,
+      headers: { /* ... */ }
+    });
+
+    // Assert that the token shows up in the model as expected
+  });
+});
+```
+
+As with any other unit test, the input doesn't have to match real data _exactly_: if `access_token` and `expires_in` are only being added to the model, and we're not using them for any special computations, we don't need a _real_ UUID or time offset&mdash;placeholder values work just fine. Likewise, we don't need to include _all_ the headers of a real HTTP response. We only need to fulfill the contract that the update handler for `Success` expects: if it pulls data from a header, include it. Otherwise, don't bother.
+
+Again, refer to the dev tools. It can help you generate example tests based on real app usage, and tries to be smart about only including message data that your updater actually uses.
+
 ## Refactoring with helper functions
 
 **@TODO**
@@ -751,7 +820,7 @@ import { renderer } from '@casium/react';
 import Http from '@casium/http';
 import Storage from '@casium/storage';
 
-// Import new command, and add it to the list below:
+// Import new effect, and add it to the list below:
 import Prompt from './commands/prompt';
 
 export const container = withEnvironment(environment({
@@ -779,7 +848,7 @@ export default container({
     response: 'Placeholder text',
     result: Respond,
     cancel: Cancel
-  })]
+  })],
 
   update: [
   	[Respond, message({ value }) => ({
@@ -799,7 +868,40 @@ When implementing effect handlers, keep in mind that they should be small, focus
 
 ## Adding types with TypeScript
 
-**@TODO**
+Casium was written in TypeScript, and was designed to give your application extra correctness guarantees when _it_ uses TypeScript.
+
+Both containers and messages accept type parameters, and use them to enforce correct types in containers and views. Here's a snippet of the counter example with types added to the container and the `SetCounter` message:
+
+```javascript
+// ...
+class SetCounter extends Message<{ value: string }> {}
+
+type CounterModel = {
+  count: number;
+};
+
+export default container<CounterModel>({
+
+  init: () => ({ count: '' }),
+  // ^-- Fails type checking because `count` is not a number
+
+  view: ({ emit, count }) => (
+    <div>
+      // ...
+
+      {/* Fails because `value` can't be null --v */}
+      <button onClick={emit([SetCounter, { value: null }])}>
+        Destroy!
+      </button>
+    </div>
+  )
+});
+```
+
+The `Message` class accepts a type parameter that becomes the type definition for `SetCounter`'s message data, and the `container()` function accepts a type parameter for the container's model.
+
+Note that the `strictNullChecks` setting must be enabled in your TypeScript configuration for the `SetCounter` validation to work as indicated, but that's the responsible configuration, anyway. You _do_ have it enabled, don't you?
+
 
 # Development
 
