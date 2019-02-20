@@ -851,7 +851,7 @@ export default container({
   })],
 
   update: [
-  	[Respond, message({ value }) => ({
+    [Respond, message({ value }) => ({
       status: `Your response was: ${value}`
     })],
 
