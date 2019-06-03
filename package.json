@@ -11,10 +11,12 @@
   "scripts": {
     "peers": "install-self-peers -- --ignore-scripts",
     "build": "yarn peers; rm -r ./dist; tsc; cp package.json ./dist; cp README.md ./dist; rollup -c; yarn docs",
+    "build/fast": "tsc; cp package.json ./dist; cp README.md ./dist; rollup -c;",
     "docs": "typedoc --json dist/api.json --mode modules --tsconfig tdconfig.json",
     "lint": "NODE_ENV=test tslint -c tslint.json --format stylish \"src/**/*.{js,ts,jsx,tsx}\"",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
-    "dev": "nodemon -e ts,tsx --exec yarn unit-test",
+    "dev": "nodemon -w src -e ts,tsx --exec yarn unit-test",
+    "dev/fast": "nodemon -w src -e ts,tsx --exec yarn build/fast;",
     "unit-test": "nyc mocha -r test/setup.js --opts test/mocha.opts",
     "debug-tests": "mocha -r test/setup.js --opts test/mocha.opts --inspect-brk"
   },
@@ -76,5 +78,10 @@
       "html",
       "lcov"
     ]
+  },
+  "dependencies": {
+    "axios": "^0.16.0 || ^0.17.0 || ^0.18.0",
+    "deep-freeze-strict": "^1.1.0",
+    "js-cookie": "^2.1.4"
   }
 }
