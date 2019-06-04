@@ -78,10 +78,5 @@
       "html",
       "lcov"
     ]
-  },
-  "dependencies": {
-    "axios": "^0.16.0 || ^0.17.0 || ^0.18.0",
-    "deep-freeze-strict": "^1.1.0",
-    "js-cookie": "^2.1.4"
   }
 }
