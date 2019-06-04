@@ -18,7 +18,8 @@ It does this by modeling the state of your application (yes, all of it) as a sin
 			<li><a href="#how-to-structure-applications">How to structure applications</a></li>
 			<li><a href="#messages">Messages</a></li>			<li><a href="#talking-to-the-outside-world">Talking to the outside world</a></li>
 			<li><a href="#growing-applications">Growing applications</a></li>
-			<li><a href="#extending-messages">Extending messages</a></li>			<li><a href="#extending-commands">Extending commands</a></li>
+			<li><a href="#extending-messages">Extending messages</a></li>
+			<li><a href="#extending-commands">Extending commands</a></li>
 			<li><a href="#why-immutability-and-managed-effects">
 				Why immutability and managed effects?
 			</a></li>
@@ -525,4 +526,26 @@ describe('CounterContainer', () => {
 ```
 yarn peers
 yarn test
+```
+
+## Using in a local app
+
+```bash
+yarn build
+cd dist
+yarn link
+```
+
+Now you can install your local build of Casium in a web application.
+
+```bash
+yarn add casium
+```
+
+And do development on the Casium codebase while seeing those changes in your web application.
+
+```bash
+yarn dev
+# Or if you don't want to run the unit tests every time,
+yarn dev/fast
 ```
