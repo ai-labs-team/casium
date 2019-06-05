@@ -276,6 +276,37 @@ describe('app', () => {
     });
   });
 
+  describe('strictSeq', () => {
+    it('maps model changes across multiple updaters', () => {
+      const updater = seq(evolve({ foo: not }), evolve({ bar: inc }));
+      expect(updater({ foo: false, bar: 41 })).to.deep.equal([{ foo: true, bar: 42 }, []]);
+    });
+
+    it('aggregates commands across multiple updaters', () => {
+      const updater = seq(commands(Cmd, { first: 1 }), commands(Cmd2, { second: 2 }));
+      expect(updater({ foo: true, bar: 42 })).to.deep.equal([
+        { foo: true, bar: 42 },
+        [new Cmd({ first: 1 }), new Cmd2({ second: 2 })]
+      ]);
+    });
+
+    it('passes through all updater params', () => {
+      const updater = seq((state, message, relay) => mergeAll([state, message, relay]));
+      expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
+        foo: true, bar: false, baz: true
+      }, []]);
+    });
+
+    it('keeps calling if a function is returned', () => {
+      const list = unapply(identity);
+      const updater = seq(pipe(list, mergeAll, always));
+
+      expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
+        foo: true, bar: false, baz: true
+      }, []]);
+    });
+  });
+
   describe('mapModel', () => {
     it('maps new model values by pairing keys to updaters', () => {
       const updater = mapModel({ foo: pipe(prop('bar'), not) });

@@ -22,13 +22,20 @@ export type Empty = false | null | undefined;
 export type MessageOrEmpty = Message | Empty;
 export type GenericObject = { [key: string]: any };
 
-export type UpdateResult<M> = M | ((model: M) => M) | [M, ...MessageOrEmpty[]] | [M, MessageOrEmpty[]];
+export type UpdateResult<M> =
+  M
+  | ModelMapper<M>
+  | [ModelMapper<M>, ...MessageOrEmpty[]]
+  | [ModelMapper<M>, MessageOrEmpty[]]
+  | [M, ...MessageOrEmpty[]]
+  | [M, MessageOrEmpty[]];
 
 type NullableMessage = Message | null;
-export type StrictLegacyUpdateResult<M> = [M, NullableMessage, ...Message[]];
-
-export type StrictUpdateResult<M> = { model: M, msg?: Message } | { model: M, msg: Message[] };
+export type StrictUpdateResult<M> = [M, NullableMessage] | [M, ...Message[]];
 export type StrictUpdater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => StrictUpdateResult<M>;
+
+export type StrictUpdateResultObj<M> = { model: M, msg?: Message } | { model: M, msg: Message[] };
+export type StrictUpdaterObj<M> = (model: M, message?: GenericObject, relay?: GenericObject) => StrictUpdateResultObj<M>;
 
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
 export type UpdaterDef<M> = (model: M, message: GenericObject, relay: GenericObject) => UpdateResult<M>;
@@ -199,15 +206,23 @@ export function seq<M>(...updaters: Updater<M>[]) {
   };
 }
 
-/**
- * Unlike seq, this requires the updaters to return { model, msg } instead of a tuple.
- * That's because TypeScript sometimes complains when it shouldn't
- * because JS doesn't have a first-class tuple type.
- * Does similar stuff to seq, but with a tighter type signature
- * to make call sites more uniform, and hopefully not require `as` casts.
- */
 export function strictSeq<M>(...updaters: StrictUpdater<M>[]) {
-  return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): StrictLegacyUpdateResult<M> {
+  return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): StrictUpdateResult<M> {
+    const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
+    const reduce = (prev, cur) =>
+      merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
+
+    return updaters.reduce(reduce, [model, []]) as StrictUpdateResult<M>;
+  };
+}
+
+/**
+ * Unlike seq, this requires the updaters to return { model, msg }
+ * Does similar stuff to seq, but with a tighter type signature
+ * to make call sites more uniform.
+ */
+export function strictSeqObj<M>(...updaters: StrictUpdaterObj<M>[]) {
+  return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): StrictUpdateResult<M> {
     const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
     const reduce = (prev, cur) => {
       const result = reduceUpdater(cur, prev[0], msg, relay);
@@ -216,11 +231,11 @@ export function strictSeq<M>(...updaters: StrictUpdater<M>[]) {
           ? result.msg
           : [result.msg]
         : [];
-      const normalize = (resultObj: StrictUpdateResult<M>): [M, MessageOrEmpty[]] =>
+      const normalize = (resultObj: StrictUpdateResultObj<M>): [M, MessageOrEmpty[]] =>
         ([resultObj.model, msgArray]);
 
       return merge(prev, mapResult(normalize(result)));
-    };
+    }
 
     return updaters.reduce(reduce, [model, []]);
   };
