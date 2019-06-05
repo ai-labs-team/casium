@@ -14,6 +14,7 @@
     "build/fast": "tsc; cp package.json ./dist; cp README.md ./dist; rollup -c;",
     "docs": "typedoc --json dist/api.json --mode modules --tsconfig tdconfig.json",
     "lint": "NODE_ENV=test tslint -c tslint.json --format stylish \"src/**/*.{js,ts,jsx,tsx}\"",
+    "lint/fix": "NODE_ENV=test tslint -c tslint.json --format stylish \"src/**/*.{js,ts,jsx,tsx}\" --fix",
     "test": "./run.sh 'npm run lint' 'npm run unit-test'",
     "dev": "nodemon -w src -e ts,tsx --exec yarn unit-test",
     "dev/fast": "nodemon -w src -e ts,tsx --exec yarn build/fast;",

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import 'mocha';
 import { is } from 'ramda';
-import { getValidationFailures, mergeDeep, withProps } from './util';
+import { getValidationFailures, mergeDeep, replace, strictReplace, withProps } from './util';
 
 describe('util', () => {
 
@@ -62,6 +62,32 @@ describe('util', () => {
       });
       expect(justBar.length).to.equal(1);
       expect(justBar[0]).to.equal('bar');
+    });
+  });
+
+  describe('replace', () => {
+    it('returns a function', () => {
+      expect(typeof replace({})).to.equal('function');
+    });
+
+    it('replaces stuff', () => {
+      // Note that bar could be a string or a boolean.
+      expect(replace({ foo: 1, bar: 'baz' })({ foo: 3, bar: true, guf: 'yerp' }))
+        .to.deep.equal({ foo: 1, bar: 'baz', guf: 'yerp' });
+    });
+  });
+
+  describe('strictReplace', () => {
+    type FooBarGuf = {
+      foo: number,
+      bar: string,
+      guf: string,
+    };
+    it('does the same thing as replace, but takes a parameterize type', () => {
+      // Note that bar has to be the same type in both the source and destination objects,
+      // otherwise this wouldn't compile!
+      expect(strictReplace<FooBarGuf>({ foo: 1, bar: 'baz' })({ foo: 3, bar: 'true', guf: 'yerp' }))
+        .to.deep.equal({ foo: 1, bar: 'baz', guf: 'yerp' });
     });
   });
 
