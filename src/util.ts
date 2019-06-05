@@ -1,7 +1,7 @@
 import * as deepFreeze from 'deep-freeze-strict';
 import {
   __, all, always, both, cond, curry, equals, evolve, filter, flip, identity,
-  ifElse, is, keys, map, merge, mergeDeepWith, not, nth, pathOr, pickAll, pipe,
+  ifElse, is, keys, map, merge, mergeDeepWith, mergeLeft, not, nth, pathOr, pickAll, pipe,
   propEq, reduce, union, when, zipWith
 } from 'ramda';
 import * as React from 'react';
@@ -28,6 +28,10 @@ export const mergeDeep = mergeDeepWith((left, right) => (
  * `[FooMessage, replace({ bar: true })]`
  */
 export const replace = flip(merge);
+
+export function strictReplace<M>(modelPartial: Partial<M>): ((model: M) => M) {
+  return mergeLeft(modelPartial);
+}
 
 /**
  * Returns the count of offsets that are equal between two arrays. Useful for determining

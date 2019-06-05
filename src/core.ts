@@ -24,6 +24,12 @@ export type GenericObject = { [key: string]: any };
 
 export type UpdateResult<M> = M | ((model: M) => M) | [M, ...MessageOrEmpty[]] | [M, MessageOrEmpty[]];
 
+type NullableMessage = Message | null;
+export type StrictLegacyUpdateResult<M> = [M, NullableMessage, ...Message[]];
+
+export type StrictUpdateResult<M> = { model: M, msg?: Message } | { model: M, msg: Message[] };
+export type StrictUpdater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => StrictUpdateResult<M>;
+
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
 export type UpdaterDef<M> = (model: M, message: GenericObject, relay: GenericObject) => UpdateResult<M>;
 
@@ -190,6 +196,33 @@ export function seq<M>(...updaters: Updater<M>[]) {
       merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
 
     return updaters.reduce(reduce, [model, []]) as UpdateResult<M>;
+  };
+}
+
+/**
+ * Unlike seq, this requires the updaters to return { model, msg } instead of a tuple.
+ * That's because TypeScript sometimes complains when it shouldn't
+ * because JS doesn't have a first-class tuple type.
+ * Does similar stuff to seq, but with a tighter type signature
+ * to make call sites more uniform, and hopefully not require `as` casts.
+ */
+export function strictSeq<M>(...updaters: StrictUpdater<M>[]) {
+  return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): StrictLegacyUpdateResult<M> {
+    const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
+    const reduce = (prev, cur) => {
+      const result = reduceUpdater(cur, prev[0], msg, relay);
+      const msgArray: Message[] = result.msg
+        ? is(Array, result.msg)
+          ? result.msg
+          : [result.msg]
+        : [];
+      const normalize = (resultObj: StrictUpdateResult<M>): [M, MessageOrEmpty[]] =>
+        ([resultObj.model, msgArray]);
+
+      return merge(prev, mapResult(normalize(result)));
+    };
+
+    return updaters.reduce(reduce, [model, []]);
   };
 }
 
