@@ -83,7 +83,7 @@ describe('util', () => {
       bar: string,
       guf: string,
     };
-    it('does the same thing as replace, but takes a parameterize type', () => {
+    it('does the same thing as replace, but takes a parameterized type', () => {
       // Note that bar has to be the same type in both the source and destination objects,
       // otherwise this wouldn't compile!
       expect(strictReplace<FooBarGuf>({ foo: 1, bar: 'baz' })({ foo: 3, bar: 'true', guf: 'yerp' }))

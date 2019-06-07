@@ -3,7 +3,7 @@ import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { add, always, evolve, identity, inc, map, mergeAll, not, pick, pipe, prop, unapply } from 'ramda';
 import * as React from 'react';
-import { commands, container, isolate, mapModel, message, seq } from './core';
+import { commands, container, isolate, mapModel, message, seq, strictSeq } from './core';
 import Message from './message';
 import StateManager from './runtime/state_manager';
 
@@ -278,20 +278,12 @@ describe('app', () => {
 
   describe('strictSeq', () => {
     it('maps model changes across multiple updaters', () => {
-      const updater = seq(evolve({ foo: not }), evolve({ bar: inc }));
+      const updater = strictSeq(evolve({ foo: not }), evolve({ bar: inc }));
       expect(updater({ foo: false, bar: 41 })).to.deep.equal([{ foo: true, bar: 42 }, []]);
     });
 
-    it('aggregates commands across multiple updaters', () => {
-      const updater = seq(commands(Cmd, { first: 1 }), commands(Cmd2, { second: 2 }));
-      expect(updater({ foo: true, bar: 42 })).to.deep.equal([
-        { foo: true, bar: 42 },
-        [new Cmd({ first: 1 }), new Cmd2({ second: 2 })]
-      ]);
-    });
-
     it('passes through all updater params', () => {
-      const updater = seq((state, message, relay) => mergeAll([state, message, relay]));
+      const updater = strictSeq((state, message, relay) => mergeAll([state, message, relay]));
       expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
         foo: true, bar: false, baz: true
       }, []]);
@@ -299,7 +291,7 @@ describe('app', () => {
 
     it('keeps calling if a function is returned', () => {
       const list = unapply(identity);
-      const updater = seq(pipe(list, mergeAll, always));
+      const updater = strictSeq(pipe(list, mergeAll, always));
 
       expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
         foo: true, bar: false, baz: true

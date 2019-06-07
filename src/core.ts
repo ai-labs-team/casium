@@ -22,20 +22,10 @@ export type Empty = false | null | undefined;
 export type MessageOrEmpty = Message | Empty;
 export type GenericObject = { [key: string]: any };
 
-export type UpdateResult<M> =
-  M
-  | ModelMapper<M>
-  | [ModelMapper<M>, ...MessageOrEmpty[]]
-  | [ModelMapper<M>, MessageOrEmpty[]]
-  | [M, ...MessageOrEmpty[]]
-  | [M, MessageOrEmpty[]];
+export type UpdateResult<M> = M | ((model: M) => M) | [M, ...MessageOrEmpty[]] | [M, MessageOrEmpty[]];
 
-type NullableMessage = Message | null;
-export type StrictUpdateResult<M> = [M, NullableMessage] | [M, ...Message[]];
+export type StrictUpdateResult<M> = M | [M, ...MessageOrEmpty[]];
 export type StrictUpdater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => StrictUpdateResult<M>;
-
-export type StrictUpdateResultObj<M> = { model: M, msg?: Message } | { model: M, msg: Message[] };
-export type StrictUpdaterObj<M> = (model: M, message?: GenericObject, relay?: GenericObject) => StrictUpdateResultObj<M>;
 
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
 export type UpdaterDef<M> = (model: M, message: GenericObject, relay: GenericObject) => UpdateResult<M>;
@@ -206,6 +196,10 @@ export function seq<M>(...updaters: Updater<M>[]) {
   };
 }
 
+/**
+ * Serves the same purpose as seq, but with a tighter type signature
+ * to make call sites more uniform.
+ */
 export function strictSeq<M>(...updaters: StrictUpdater<M>[]) {
   return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): StrictUpdateResult<M> {
     const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
@@ -213,31 +207,6 @@ export function strictSeq<M>(...updaters: StrictUpdater<M>[]) {
       merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
 
     return updaters.reduce(reduce, [model, []]) as StrictUpdateResult<M>;
-  };
-}
-
-/**
- * Unlike seq, this requires the updaters to return { model, msg }
- * Does similar stuff to seq, but with a tighter type signature
- * to make call sites more uniform.
- */
-export function strictSeqObj<M>(...updaters: StrictUpdaterObj<M>[]) {
-  return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): StrictUpdateResult<M> {
-    const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
-    const reduce = (prev, cur) => {
-      const result = reduceUpdater(cur, prev[0], msg, relay);
-      const msgArray: Message[] = result.msg
-        ? is(Array, result.msg)
-          ? result.msg
-          : [result.msg]
-        : [];
-      const normalize = (resultObj: StrictUpdateResultObj<M>): [M, MessageOrEmpty[]] =>
-        ([resultObj.model, msgArray]);
-
-      return merge(prev, mapResult(normalize(result)));
-    }
-
-    return updaters.reduce(reduce, [model, []]);
   };
 }
 
