@@ -1,23 +1,20 @@
-import { either as or, is, isNil } from 'ramda';
-import Message from '../message';
+import { GenericObject } from '../core';
+import { Command, Emittable } from '../message';
 import { moduleName } from '../util';
 
 @moduleName('Cookies')
-export class Read extends Message {
-  public static expects = { key: is(String), result: Message.isEmittable };
-}
+export class Read extends Command<{
+  key: string,
+  result: Emittable<{ key: string, value: string }>
+}> {}
 
 @moduleName('Cookies')
-export class Write extends Message {
-  public static expects = {
-    expires: or(is(Date), isNil),
-    key: is(String),
-    path: or(is(String), isNil),
-    value: or(is(Object), is(String))
-  };
-}
+export class Write extends Command<{
+  expires?: Date;
+  path?: string;
+  key: string;
+  value: string | GenericObject;
+}> {}
 
 @moduleName('Cookies')
-export class Delete extends Message {
-  public static expects = { key: is(String) };
-}
+export class Delete extends Command<{ key: string }> {}

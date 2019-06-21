@@ -1,23 +1,18 @@
-import { complement as not, is, isNil } from 'ramda';
-import Message from '../message';
+import { GenericObject } from '../core';
+import { Command, Emittable } from '../message';
 import { moduleName } from '../util';
 
 @moduleName('LocalStorage')
-export class Read extends Message {
-  public static expects = { key: is(String), result: Message.isEmittable };
-}
+export class Read extends Command<{
+  key: string;
+  result: Emittable<{ key: string, value: GenericObject | null }>;
+}> {}
 
 @moduleName('LocalStorage')
-export class Write extends Message {
-  public static expects = { key: is(String), value: not(isNil) };
-}
+export class Write extends Command<{ key: string, value: any }> {}
 
 @moduleName('LocalStorage')
-export class Delete extends Message {
-  public static expects = { key: is(String) };
-}
+export class Delete extends Command<{ key: string }> {}
 
 @moduleName('LocalStorage')
-export class Clear extends Message {
-  public static expects = {};
-}
+export class Clear extends Command<{}> {}

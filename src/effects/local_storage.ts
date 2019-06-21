@@ -13,10 +13,10 @@ const get = (() => {
   }
 })();
 
+const read = pipe(get, safeParse, objOf('value'));
+
 export default new Map([
-  [Read, ({ key, result }, dispatch) => pipe(
-    get, safeParse, objOf('value'), merge({ key }), Message.construct(result), dispatch
-  )(key)],
+  [Read, ({ key, result }, dispatch) => (pipe(read, merge({ key }), Message.construct(result), dispatch) as any)(key)],
   [Write, ({ key, value }) => window.localStorage.setItem(key, safeStringify(value))],
   [Delete, ({ key }) => window.localStorage.removeItem(key)],
   [Clear, () => window.localStorage.clear()],

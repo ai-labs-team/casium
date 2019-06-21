@@ -1,26 +1,17 @@
-import { is } from 'ramda';
-import Message from '../message';
+import { Command, Emittable } from '../message';
 import { moduleName } from '../util';
 
 @moduleName('Browser')
-export class ReplaceHistory extends Message {
-  public static expects = { path: is(String) };
-}
+export class ReplaceHistory extends Command<{ path: string }> {}
 
 @moduleName('Browser')
-export class PushHistory extends Message {
-  public static expects = { path: is(String) };
-}
+export class PushHistory extends Command<{ path: string }> {}
 
 @moduleName('Browser')
-export class Back extends Message {
-}
+export class Back extends Command<{}> {}
 
 @moduleName('Browser')
-export class Forward extends Message {
-}
+export class Forward extends Command<{}> {}
 
 @moduleName('Browser')
-export class Timeout extends Message {
-  public static expects = { result: Message.isEmittable, timeout: is(Number) };
-}
+export class Timeout extends Command<{ timeout: number, result: Emittable<{}> }> {}
