@@ -193,7 +193,6 @@ export default class ExecContext<M> {
     const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
     const isRoot: boolean = !parent;
     const stateMgr: StateManager = isRoot ? intercept(ctrEnv.stateManager(container)) : null;
-    console.log('stateMgr', stateMgr)
     const getState = stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path });
 
     freeze(assign(this, {
@@ -212,7 +211,6 @@ export default class ExecContext<M> {
    * Checks that a Message object is valid and is handled by the bound container, then dispatches it.
    */
   public dispatch(msg: Message) {
-    console.log('dispatch called with ', msg)
     const msgType = msg.constructor as MessageConstructor;
 
     if ((msgType as any) === Function) {
