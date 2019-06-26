@@ -46,20 +46,23 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
     return container.accepts(msg) && !!this.execContext.dispatch(new msg(propList(childProps), { shallow: true }));
   }
 
-  public mergeWithRelay(nextState: any) {
-    return merge(nextState, { relay: this.execContext.state() });
-  }
+  // public mergeWithRelay(nextState: any) {
+  //   return merge(nextState, { relay: this.execContext.state() });
+  // }
 
   public componentWillMount() {
     const parent = this.context.execContext;
     const { container, env, childProps } = this.props;
 
     if (!parent) {
+      // TODO figure out how bad this warning is, because we get it every time now.
       const msg = `Attempting to delegate state property with no parent container`;
       console.warn(msg); // tslint:disable-line:no-console
     }
     this.execContext = new ExecContext({ env, parent, container });
-    this.unsubscribe = this.execContext.subscribe(pipe(this.mergeWithRelay.bind(this), this.setState.bind(this)));
+    // TODO figure out if I need this mergeWithRelay and whatnot
+    // this.unsubscribe = this.execContext.subscribe(pipe(this.mergeWithRelay.bind(this), this.setState.bind(this)));
+    this.unsubscribe = this.execContext.subscribe(pipe(this.setState.bind(this)));
 
     if (this.dispatchLifecycleMessage(Activate, this.props)) {
       return;
@@ -67,13 +70,6 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
 
     const state = this.execContext.state();
     this.setState(this.execContext.push(merge(state, pick(keys(state), childProps))));
-  }
-
-  public shouldComponentUpdate(nextProps, nextState) {
-    return (
-        !equals(nextProps.childProps, this.props.childProps) ||
-        !equals(this.mergeWithRelay(nextState), this.state)
-    );
   }
 
   public componentDidUpdate(prev) {
@@ -110,8 +106,8 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
       return <ErrorComponent message={this.state.componentError.toString()} />;
     }
     // tslint:disable-next-line:variable-name
-    const Child = (this.props.container as any).view, ctx = this.execContext;
-    const props = mergeAll([this.props.childProps, ctx.state(), { emit: ctx.emit.bind(ctx) }]);
-    return <Child {...props} />;
+    const ctx = this.execContext
+    const props = mergeAll([this.props.childProps, ctx.state()]);
+    return (this.props.container as any).view(props, ctx.emit.bind(ctx))
   }
 }

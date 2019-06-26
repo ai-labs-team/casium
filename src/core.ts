@@ -21,7 +21,6 @@ export type UpdateResult<M> = M | [M, ...MessageOrEmpty[]];
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
 export type UpdaterDef<M> = (model: M, message: GenericObject) => UpdateResult<M>;
 
-export type DelegateDef = symbol | string;
 export type UpdateMapDef<M> = [MessageConstructor, UpdaterDef<M>][];
 export type UpdateMap<M> = Map<MessageConstructor, UpdaterDef<M>>;
 
@@ -29,7 +28,7 @@ export type ContainerDefPartial<M> = { update?: UpdateMapDef<M>, name?: string }
 export type ContainerDefMapped<M> = { update: UpdateMap<M>, name: string };
 export type ContainerPartial<M> = {
   init?: (model: M) => UpdateResult<M>;
-  view?: ContainerViewDef<M>;
+  view?: ContainerView<M>;
   attach?: { store: GenericObject, key?: string };
   subscriptions?: (model: M) => any | any[];
 };
@@ -37,11 +36,9 @@ export type ContainerPartial<M> = {
 export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
 
 export type Emitter = (msg: MessageConstructor | [MessageConstructor, GenericObject]) => any;
-export type ContainerViewProps<M> = M & { emit: Emitter, relay: GenericObject };
-export type ContainerViewDef<M> = (props: M, emit: Emitter) => any;
-export type ContainerView3<M> = (props?: M, emit?: Emitter) => any;
+export type ContainerView<M> = ((props: M, emit: Emitter) => any) | ((props: M) => any) | (() => any);
 
-export type Container<M> = ContainerView3<M> & ContainerPartial<M> & ContainerDefMapped<M> & {
+export type Container<M> = ContainerView<M> & ContainerPartial<M> & ContainerDefMapped<M> & {
   accepts: (m: MessageConstructor) => boolean;
   identity: () => ContainerDef<M>;
 };
@@ -158,7 +155,7 @@ export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironm
  * Calling `dispatch()` on the container will simply return any commands issued.
  */
 
-export const isolate3 = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer3<M> => {
+export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer3<M> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
   const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => { }, stateManager });
   const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
