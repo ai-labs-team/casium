@@ -308,6 +308,8 @@ export default class ExecContext<M> {
   private internalDispatch(msg: Message) {
     const { dispatch, parent } = this, msgType = msg.constructor as MessageConstructor;
     const updater = this.container.update.get(msgType);
-    return updater ? (dispatch as any).run(msg, mapMessage(updater, this.getState(), msg)) : parent.dispatch(msg);
+    return updater
+      ? (dispatch as any).run(msg, mapMessage(updater, this.getState(), msg))
+      : parent.dispatch(msg);
   }
 }

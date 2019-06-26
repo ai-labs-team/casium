@@ -1,5 +1,5 @@
 import {
-  always, constructN, curry, defaultTo, evolve, flatten, identity as id,
+  always, constructN, defaultTo, evolve, flatten, identity as id,
   ifElse, is, map, merge, nthArg, pick, pipe
 } from 'ramda';
 
@@ -18,11 +18,12 @@ export type GenericObject = { [key: string]: any };
 
 export type UpdateResult<M> = M | [M, ...MessageOrEmpty[]];
 
-export type Updater<M> = (model: M, message?: GenericObject) => UpdateResult<M>;
-export type UpdaterDef<M> = (model: M, message: GenericObject) => UpdateResult<M>;
+export type Updater<M>
+    = ((model: M, message: GenericObject) => UpdateResult<M>)
+    | ((model: M) => UpdateResult<M>);
 
-export type UpdateMapDef<M> = [MessageConstructor, UpdaterDef<M>][];
-export type UpdateMap<M> = Map<MessageConstructor, UpdaterDef<M>>;
+export type UpdateMapDef<M> = [MessageConstructor, Updater<M>][];
+export type UpdateMap<M> = Map<MessageConstructor, Updater<M>>;
 
 export type ContainerDefPartial<M> = { update?: UpdateMapDef<M>, name?: string };
 export type ContainerDefMapped<M> = { update: UpdateMap<M>, name: string };
@@ -36,7 +37,10 @@ export type ContainerPartial<M> = {
 export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
 
 export type Emitter = (msg: MessageConstructor | [MessageConstructor, GenericObject]) => any;
-export type ContainerView<M> = ((props: M, emit: Emitter) => any) | ((props: M) => any) | (() => any);
+export type ContainerView<M>
+  = ((props: M, emit: Emitter) => any)
+  | ((props: M) => any)
+  | (() => any);
 
 export type Container<M> = ContainerView<M> & ContainerPartial<M> & ContainerDefMapped<M> & {
   accepts: (m: MessageConstructor) => boolean;
@@ -93,12 +97,12 @@ const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
  * @param  {Object} container The container definition
  * @return {Component} Returns a renderable React component
  */
-export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>): Container<M> => {
+export const withEnvironment = <M>(env: Environment) => (def: ContainerDef<M>): Container<M> => {
   let ctr;
   const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
   ctr = assign(mapDef(def), fns);
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
-});
+};
 
 /**
  * Creates a new container.
@@ -224,6 +228,6 @@ export type CommandParam<M> = MessageConstructor | Empty | GenericObject | Updat
 export type UpdateCommandMapper<M> = (model: M, message: GenericObject) => GenericObject;
 
 export const command = <M>(ctor: MessageConstructor, data: GenericObject | UpdateCommandMapper<M>): Updater<M> => {
-  return (model, msg?) => [model, ctor && new ctor(mapData(model, msg)(data)) || null];
+  return (model, msg) => [model, ctor && new ctor(mapData(model, msg)(data)) || null];
 };
 
