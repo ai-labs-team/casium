@@ -11,6 +11,7 @@ import ExecContext from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 import { mapResult, reduceUpdater } from './util';
 import ViewWrapper from './view_wrapper';
+import ViewWrapper3 from './view_wrapper3';
 
 /**
  *  A global symbol that allows users to opt into what is currently the default delegate behavior
@@ -23,16 +24,22 @@ export type MessageOrEmpty = Message | Empty;
 export type GenericObject = { [key: string]: any };
 
 export type UpdateResult<M> = M | ((model: M) => M) | [M, ...MessageOrEmpty[]] | [M, MessageOrEmpty[]];
+export type UpdateResult3<M> = M | [M, ...MessageOrEmpty[]];
 
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
 export type UpdaterDef<M> = (model: M, message: GenericObject, relay: GenericObject) => UpdateResult<M>;
+export type UpdaterDef3<M> = (model: M, message: GenericObject) => UpdateResult3<M>;
 
 export type DelegateDef = symbol | string;
 export type UpdateMapDef<M> = [MessageConstructor, UpdaterDef<M>][];
+export type UpdateMapDef3<M> = [MessageConstructor, UpdaterDef3<M>][];
 export type UpdateMap<M> = Map<MessageConstructor, UpdaterDef<M>>;
+export type UpdateMap3<M> = Map<MessageConstructor, UpdaterDef3<M>>;
 
 export type ContainerDefPartial<M> = { update?: UpdateMapDef<M>, name?: string };
+export type ContainerDefPartial3<M> = { update?: UpdateMapDef3<M>, name?: string };
 export type ContainerDefMapped<M> = { update: UpdateMap<M>, name: string };
+export type ContainerDefMapped3<M> = { update: UpdateMap3<M>, name: string };
 export type ContainerPartial<M> = {
   delegate?: DelegateDef;
   init?: (model: M, relay: GenericObject) => UpdateResult<M>;
@@ -41,17 +48,36 @@ export type ContainerPartial<M> = {
   attach?: { store: GenericObject, key?: string };
   subscriptions?: (model: M, relay: GenericObject) => any | any[];
 };
+export type ContainerPartial3<M> = {
+  init?: (model: M) => UpdateResult3<M>;
+  view?: ContainerViewDef3<M>;
+  attach?: { store: GenericObject, key?: string };
+  subscriptions?: (model: M) => any | any[];
+};
 export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
+export type ContainerDef3<M> = ContainerDefPartial3<M> & ContainerPartial3<M>;
 
 export type Emitter = (msg: MessageConstructor | [MessageConstructor, GenericObject]) => any;
 export type ContainerViewProps<M> = M & { emit: Emitter, relay: GenericObject };
 export type ContainerViewDef<M> = (props: ContainerViewProps<M>) => any;
+export type ContainerViewDef3<M> = (props: M, emit: Emitter) => any;
 export type ContainerView<M> = (props?: ContainerViewProps<M>) => any;
+export type ContainerView3<M> = (props?: M, emit?: Emitter) => any;
 export type Container<M> = ContainerView<M> & ContainerPartial<M> & ContainerDefMapped<M> & {
   accepts: (m: MessageConstructor) => boolean;
   identity: () => ContainerDef<M>;
 };
+export type Container3<M> = ContainerView3<M> & ContainerPartial3<M> & ContainerDefMapped3<M> & {
+  accepts: (m: MessageConstructor) => boolean;
+  identity: () => ContainerDef3<M>;
+};
 export type IsolatedContainer<M> = Container<M> & {
+  dispatch: any;
+  state: () => M;
+  push: (state: M) => void;
+};
+
+export type IsolatedContainer3<M> = Container3<M> & {
   dispatch: any;
   state: () => M;
   push: (state: M) => void;
@@ -65,6 +91,7 @@ const { freeze, assign, defineProperty } = Object;
 const toMap = ifElse(is(Array), constructN(1, Map as any), id);
 
 type ViewWrapDef<M> = { env: Environment, container: Container<M> };
+type ViewWrapDef3<M> = { env: Environment, container: Container<M> };
 type Delegate = { delegate?: DelegateDef };
 type ViewProps<M> = Partial<M> & Delegate;
 
@@ -89,6 +116,14 @@ const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>
   })
 );
 
+const wrapView3 = <M>({ env, container }: ViewWrapDef3<M>): React.SFC<Partial<M>> => (
+  <M>(props: Partial<M> = {}) => React.createElement(ViewWrapper3, {
+    childProps: props || {},
+    container,
+    env
+  })
+);
+
 /**
  * Maps default values of a container definition.
  */
@@ -109,6 +144,13 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
   const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
   ctr = assign(mapDef(def), fns);
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
+});
+
+export const withEnvironment3 = curry(<M>(env: Environment, def: ContainerDef3<M>): Container3<M> => {
+  let ctr;
+  const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
+  ctr = assign(mapDef(def), fns);
+  return freeze(defineProperty(assign(wrapView3({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 });
 
 /**
@@ -175,6 +217,17 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
   return assign(wrapView({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
+};
+
+export const isolate3 = <M>(ctr: Container3<M>, opts: any = {}): IsolatedContainer3<M> => {
+  const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
+  const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => { }, stateManager });
+  const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
+
+  const container = assign(mapDef(ctr.identity()), overrides) as Container3<M>;
+  const execContext = new ExecContext({ env, null, container, delegate: null });
+
+  return assign(wrapView3({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
 };
 
 /**

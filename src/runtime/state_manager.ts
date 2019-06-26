@@ -8,7 +8,7 @@ const inList = flip(contains);
 
 export type Callback = (...args: any[]) => any;
 export type Config = object & { path: (string | symbol)[] };
-export type Context = ExecContext<any>;
+export type Context = any; //XXX: should be ExecContext<any>
 
 export default class StateManager {
 

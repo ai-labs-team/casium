@@ -202,6 +202,11 @@ export const reduceUpdater = (value, state, msg, relay) =>
     ? reduceUpdater(value(state, msg, relay), state, msg, relay)
     : value;
 
+export const reduceUpdater3 = (value, state, msg) =>
+    is(Function, value)
+        ? reduceUpdater3(value(state, msg), state, msg)
+        : value;
+
 /**
  * Generic helper function for resolving the `name` of an Instance's Constructor
  * function
