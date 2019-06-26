@@ -2,7 +2,7 @@ import * as PropTypes from 'prop-types';
 import { equals, keys, merge, mergeAll, omit, pick, pipe } from 'ramda';
 import * as React from 'react';
 import ErrorComponent from './components/error';
-import { Container, DelegateDef } from './core';
+import { Container } from './core';
 import { Environment } from './environment';
 import { Activate, Deactivate, MessageConstructor, Refresh } from './message';
 import ExecContext from './runtime/exec_context';
@@ -10,7 +10,6 @@ import ExecContext from './runtime/exec_context';
 export type ViewWrapperProps<M> = {
   childProps: M;
   container: Container<M>;
-  delegate: DelegateDef;
   env?: Environment;
 };
 
@@ -31,15 +30,8 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
   public static propTypes = {
     childProps: PropTypes.object.isRequired,
     container: PropTypes.object.isRequired,
-    delegate: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.symbol,
-      PropTypes.arrayOf(PropTypes.oneOfType([PropTypes.number, PropTypes.string]))
-    ]),
     env: PropTypes.object.isRequired,
   };
-
-  public static defaultProps = { delegate: null };
 
   public execContext?: ExecContext<M> = null;
 
@@ -55,18 +47,18 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
   }
 
   public mergeWithRelay(nextState: any) {
-    return merge(nextState, { relay: this.execContext.relay() });
+    return merge(nextState, { relay: this.execContext.state() });
   }
 
   public componentWillMount() {
     const parent = this.context.execContext;
-    const { container, delegate, env, childProps } = this.props;
+    const { container, env, childProps } = this.props;
 
-    if (delegate && !parent) {
-      const msg = `Attempting to delegate state property '${delegate.toString()}' with no parent container`;
+    if (!parent) {
+      const msg = `Attempting to delegate state property with no parent container`;
       console.warn(msg); // tslint:disable-line:no-console
     }
-    this.execContext = new ExecContext({ env, parent, container, delegate });
+    this.execContext = new ExecContext({ env, parent, container });
     this.unsubscribe = this.execContext.subscribe(pipe(this.mergeWithRelay.bind(this), this.setState.bind(this)));
 
     if (this.dispatchLifecycleMessage(Activate, this.props)) {
@@ -79,8 +71,8 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
 
   public shouldComponentUpdate(nextProps, nextState) {
     return (
-      !equals(nextProps.childProps, this.props.childProps) ||
-      !equals(this.mergeWithRelay(nextState), this.state)
+        !equals(nextProps.childProps, this.props.childProps) ||
+        !equals(this.mergeWithRelay(nextState), this.state)
     );
   }
 
@@ -119,7 +111,7 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
     }
     // tslint:disable-next-line:variable-name
     const Child = (this.props.container as any).view, ctx = this.execContext;
-    const props = mergeAll([this.props.childProps, ctx.state(), { emit: ctx.emit.bind(ctx), relay: ctx.relay() }]);
+    const props = mergeAll([this.props.childProps, ctx.state(), { emit: ctx.emit.bind(ctx) }]);
     return <Child {...props} />;
   }
 }

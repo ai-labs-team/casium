@@ -1,6 +1,6 @@
 import {
   always, constructN, curry, defaultTo, evolve, flatten, identity as id,
-  ifElse, is, map, merge, nthArg, omit, pick, pipe, splitEvery
+  ifElse, is, map, merge, nthArg, pick, pipe
 } from 'ramda';
 
 import * as React from 'react';
@@ -11,73 +11,42 @@ import ExecContext from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 import { mapResult, reduceUpdater } from './util';
 import ViewWrapper from './view_wrapper';
-import ViewWrapper3 from './view_wrapper3';
-
-/**
- *  A global symbol that allows users to opt into what is currently the default delegate behavior
- *  i.e when a delegate is unspecified, the container is hoisted into it's parent state
- */
-export const PARENT = Symbol.for('@delegate/parent');
 
 export type Empty = false | null | undefined;
 export type MessageOrEmpty = Message | Empty;
 export type GenericObject = { [key: string]: any };
 
-export type UpdateResult<M> = M | ((model: M) => M) | [M, ...MessageOrEmpty[]] | [M, MessageOrEmpty[]];
-export type UpdateResult3<M> = M | [M, ...MessageOrEmpty[]];
+export type UpdateResult<M> = M | [M, ...MessageOrEmpty[]];
 
 export type Updater<M> = (model: M, message?: GenericObject, relay?: GenericObject) => UpdateResult<M>;
-export type UpdaterDef<M> = (model: M, message: GenericObject, relay: GenericObject) => UpdateResult<M>;
-export type UpdaterDef3<M> = (model: M, message: GenericObject) => UpdateResult3<M>;
+export type UpdaterDef<M> = (model: M, message: GenericObject) => UpdateResult<M>;
 
 export type DelegateDef = symbol | string;
 export type UpdateMapDef<M> = [MessageConstructor, UpdaterDef<M>][];
-export type UpdateMapDef3<M> = [MessageConstructor, UpdaterDef3<M>][];
 export type UpdateMap<M> = Map<MessageConstructor, UpdaterDef<M>>;
-export type UpdateMap3<M> = Map<MessageConstructor, UpdaterDef3<M>>;
 
 export type ContainerDefPartial<M> = { update?: UpdateMapDef<M>, name?: string };
-export type ContainerDefPartial3<M> = { update?: UpdateMapDef3<M>, name?: string };
 export type ContainerDefMapped<M> = { update: UpdateMap<M>, name: string };
-export type ContainerDefMapped3<M> = { update: UpdateMap3<M>, name: string };
 export type ContainerPartial<M> = {
-  delegate?: DelegateDef;
-  init?: (model: M, relay: GenericObject) => UpdateResult<M>;
-  relay?: { [key: string]: (model: M, relay: GenericObject) => M & GenericObject };
+  init?: (model: M) => UpdateResult<M>;
   view?: ContainerViewDef<M>;
-  attach?: { store: GenericObject, key?: string };
-  subscriptions?: (model: M, relay: GenericObject) => any | any[];
-};
-export type ContainerPartial3<M> = {
-  init?: (model: M) => UpdateResult3<M>;
-  view?: ContainerViewDef3<M>;
   attach?: { store: GenericObject, key?: string };
   subscriptions?: (model: M) => any | any[];
 };
+
 export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
-export type ContainerDef3<M> = ContainerDefPartial3<M> & ContainerPartial3<M>;
 
 export type Emitter = (msg: MessageConstructor | [MessageConstructor, GenericObject]) => any;
 export type ContainerViewProps<M> = M & { emit: Emitter, relay: GenericObject };
-export type ContainerViewDef<M> = (props: ContainerViewProps<M>) => any;
-export type ContainerViewDef3<M> = (props: M, emit: Emitter) => any;
-export type ContainerView<M> = (props?: ContainerViewProps<M>) => any;
+export type ContainerViewDef<M> = (props: M, emit: Emitter) => any;
 export type ContainerView3<M> = (props?: M, emit?: Emitter) => any;
-export type Container<M> = ContainerView<M> & ContainerPartial<M> & ContainerDefMapped<M> & {
+
+export type Container<M> = ContainerView3<M> & ContainerPartial<M> & ContainerDefMapped<M> & {
   accepts: (m: MessageConstructor) => boolean;
   identity: () => ContainerDef<M>;
 };
-export type Container3<M> = ContainerView3<M> & ContainerPartial3<M> & ContainerDefMapped3<M> & {
-  accepts: (m: MessageConstructor) => boolean;
-  identity: () => ContainerDef3<M>;
-};
-export type IsolatedContainer<M> = Container<M> & {
-  dispatch: any;
-  state: () => M;
-  push: (state: M) => void;
-};
 
-export type IsolatedContainer3<M> = Container3<M> & {
+export type IsolatedContainer3<M> = Container<M> & {
   dispatch: any;
   state: () => M;
   push: (state: M) => void;
@@ -91,9 +60,7 @@ const { freeze, assign, defineProperty } = Object;
 const toMap = ifElse(is(Array), constructN(1, Map as any), id);
 
 type ViewWrapDef<M> = { env: Environment, container: Container<M> };
-type ViewWrapDef3<M> = { env: Environment, container: Container<M> };
-type Delegate = { delegate?: DelegateDef };
-type ViewProps<M> = Partial<M> & Delegate;
+
 
 /**
  * Wraps a container's view to extract container-specific props and inject `emit()` helper
@@ -101,23 +68,13 @@ type ViewProps<M> = Partial<M> & Delegate;
  *
  * @param  {Function} getContainer A function that returns the container
  * @param  {Function} emit An emit function bound to the container
- * @param  {String|Array} delegate The `delegate` value passed to the container
  * @param  {Function} register A registration function that allows the container to hook
  *                    itself into the component tree
  * @param  {Component} view The view passed to the container
  * @return {Function} Returns the wrapped container view
  */
-const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>> => (
-  <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
-    childProps: omit(['delegate'], props || {}),
-    container,
-    delegate: props.delegate || container.delegate,
-    env
-  })
-);
-
-const wrapView3 = <M>({ env, container }: ViewWrapDef3<M>): React.SFC<Partial<M>> => (
-  <M>(props: Partial<M> = {}) => React.createElement(ViewWrapper3, {
+const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<Partial<M>> => (
+  <M>(props: Partial<M> = {}) => React.createElement(ViewWrapper, {
     childProps: props || {},
     container,
     env
@@ -144,13 +101,6 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
   const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
   ctr = assign(mapDef(def), fns);
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
-});
-
-export const withEnvironment3 = curry(<M>(env: Environment, def: ContainerDef3<M>): Container3<M> => {
-  let ctr;
-  const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
-  ctr = assign(mapDef(def), fns);
-  return freeze(defineProperty(assign(wrapView3({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 });
 
 /**
@@ -207,27 +157,16 @@ export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironm
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
  * Calling `dispatch()` on the container will simply return any commands issued.
  */
-export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer<M> => {
+
+export const isolate3 = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer3<M> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
   const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => { }, stateManager });
   const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
 
   const container = assign(mapDef(ctr.identity()), overrides) as Container<M>;
-  const parent: any = opts.relay ? { relay: always(opts.relay) } : null;
-  const execContext = new ExecContext({ env, parent, container, delegate: null });
+  const execContext = new ExecContext({ env, container });
 
   return assign(wrapView({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
-};
-
-export const isolate3 = <M>(ctr: Container3<M>, opts: any = {}): IsolatedContainer3<M> => {
-  const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
-  const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => { }, stateManager });
-  const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
-
-  const container = assign(mapDef(ctr.identity()), overrides) as Container3<M>;
-  const execContext = new ExecContext({ env, null, container, delegate: null });
-
-  return assign(wrapView3({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
 };
 
 /**
@@ -236,11 +175,12 @@ export const isolate3 = <M>(ctr: Container3<M>, opts: any = {}): IsolatedContain
  * returned will be aggregated across all updaters. If any updater returns a function, that function
  * will be treated as an updater.
  */
-export function seq<M>(...updaters: Updater<M>[]) {
+export function seq<M>(...updaters: Updater<M>[]): Updater<M> {
+  //tslint:disable-next-line: no-function-expression
   return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): UpdateResult<M> {
     const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
     const reduce = (prev, cur) =>
-      merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
+        merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
 
     return updaters.reduce(reduce, [model, []]) as UpdateResult<M>;
   };
@@ -255,21 +195,18 @@ export type ModelMapper<M> = ModelMapperFn<M> | { [key: string]: ModelMapperFn<M
  * mapper's keys and merged into the model.
  */
 export const mapModel = <M>(mapper: ModelMapper<M>) =>
-  (model: M, message?: GenericObject, relay?: GenericObject): UpdateResult<M> => {
-    const update = fn => fn(model, message, relay);
+  (model: M, message?: GenericObject): UpdateResult<M> => {
+    const update = fn => fn(model, message);
     return merge(model, is(Function, mapper) ? update(mapper) : map(update, mapper));
   };
 
-export const relay = <M>(fn?: (r: any) => UpdateResult<M>) => pipe(nthArg(2), (fn || id));
+// export const relay = <M>(fn?: (r: any) => UpdateResult<M>) => pipe(nthArg(2), (fn || id));
 export const message = <M>(fn?: (m: any) => UpdateResult<M>) => pipe(nthArg(1), (fn || id));
-export const union = <M>(fn?: (u: { model: M, message?: GenericObject, relay?: GenericObject }) => UpdateResult<M>) =>
-  (model: M, message = {}, relay = {}) => (fn || id)({ model, message, relay });
+export const union = <M>(fn?: (u: { model: M, message?: GenericObject }) => UpdateResult<M>) =>
+  (model: M, message = {}) => (fn || id)({ model, message });
 
-const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), id);
-const consCommands = (model, msg, relay) => pipe(
-  splitEvery(2),
-  map(([cmd, data]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null)
-);
+const mapData = (model, msg) => ifElse(is(Function), fn => fn(model, msg), id);
+
 
 /**
  * Helper function for updaters that only issue commands. Pass in alternating command constructors and
@@ -287,10 +224,9 @@ const consCommands = (model, msg, relay) => pipe(
  * ```
  */
 export type CommandParam<M> = MessageConstructor | Empty | GenericObject | UpdateCommandMapper<M>;
-export type UpdateCommandMapper<M> = (model: M, message: GenericObject, relay: GenericObject) => GenericObject;
-export const commands = <M>(...args: CommandParam<M>[]): Updater<M> => {
-  if (args.length % 2 !== 0) {
-    throw new TypeError('commands() must be called with an equal number of command constructors & data parameters');
-  }
-  return (model, msg?, relay?) => [model, consCommands(model, msg, relay)(args)];
+export type UpdateCommandMapper<M> = (model: M, message: GenericObject) => GenericObject;
+
+export const command = <M>(ctor: MessageConstructor, data: GenericObject | UpdateCommandMapper<M>): Updater<M> => {
+  return (model, msg?) => [model, ctor && new ctor(mapData(model, msg)(data)) || null];
 };
+

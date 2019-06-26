@@ -1,7 +1,7 @@
 import { assoc, defaultTo, omit, path, pipe } from 'ramda';
 import * as React from 'react';
 
-import { container, Container, PARENT } from '../core';
+import { container, Container } from '../core';
 import Message from '../message';
 import { cloneRecursive, withProps } from '../util';
 
@@ -11,8 +11,6 @@ const name = pipe(path(['children', 'props', 'name']), defaultTo('unknownInput')
 
 export default container({
   name: 'InputContainer',
-
-  delegate: PARENT,
 
   update: [
     [Change, (state, { name, value }) => assoc(name, value, state)],

@@ -11,7 +11,7 @@ import Message from '../message';
 
 class Cmd extends Message {}
 
-describe('ExecutionContext', () => {
+describe('ExecContext', () => {
   let ctr: any;
   let execContext: any;
 
