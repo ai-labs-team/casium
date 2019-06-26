@@ -233,10 +233,9 @@ export default class ExecContext<M> {
   }
 
   public push(val, config?: object & { path: any[] }) {
-    if (!this.stateMgr && this.getState() !== val) {
-      throw new Error(`TODO better error msg`);
-    }
-    return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
+    return this.stateMgr
+      ? this.stateMgr.set(val, config)
+      : this.parent.push(val, config || { path: this.path });
   }
 
   public state(cfg?: object): object {
