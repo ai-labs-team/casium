@@ -180,10 +180,10 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
  */
 export function seq<M>(...updaters: Updater<M>[]): Updater<M> {
   //tslint:disable-next-line: no-function-expression
-  return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): UpdateResult<M> {
+  return function (model: M, msg: GenericObject = {}): UpdateResult<M> {
     const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
     const reduce = (prev, cur) =>
-        merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
+        merge(prev, mapResult(reduceUpdater(cur, prev[0], msg)));
 
     return updaters.reduce(reduce, [model, []]) as UpdateResult<M>;
   };
