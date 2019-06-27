@@ -152,7 +152,9 @@ export const withEnvironment = <M>(env: Environment) => (def: ContainerDef<M>): 
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
-export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(root);
+export const app: <A>(def: ContainerDef<A>) => Container<A> = withEnvironment(root);
+
+export const container: <A>(def: ContainerDef<A>) => Container<A> = withEnvironment(root);
 
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
