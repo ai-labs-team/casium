@@ -18,7 +18,8 @@
     "dev": "nodemon -w src -e ts,tsx --exec yarn unit-test",
     "dev/fast": "nodemon -w src -e ts,tsx --exec yarn build/fast;",
     "unit-test": "nyc mocha -r test/setup.js --opts test/mocha.opts",
-    "debug-tests": "mocha -r test/setup.js --opts test/mocha.opts --inspect-brk"
+    "debug-tests": "mocha -r test/setup.js --opts test/mocha.opts --inspect-brk",
+    "sample-app": "cd dist && yarn link && cd ../test/sample-app && yarn && yarn start"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",
