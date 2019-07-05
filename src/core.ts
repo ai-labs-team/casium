@@ -84,7 +84,7 @@ const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>
   <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
     childProps: omit(['delegate'], props || {}),
     container,
-    delegate: props.delegate || container.delegate,
+    delegate: 'ethan-child', //: props.delegate || container.delegate,
     env
   })
 );
