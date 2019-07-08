@@ -21,6 +21,16 @@ export type ExecContextDef<M> = {
 
 const { assign, freeze } = Object;
 
+class UseAppWrapper {
+  constructor(public fn) {}
+
+  static normalize(jawn: any, relay) {
+    return jawn instanceof UseAppWrapper
+      ? curry(jawn.fn)(relay)
+      : jawn
+  }
+}
+
 /**
  * Logs an Error that was thrown while handling a Message
  *
@@ -192,7 +202,7 @@ export default class ExecContext<M> {
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
         const initial = hasStore ? attachStore(container.attach, this) : (this.getState() || {});
-        run(null, mapResult((container.init || identity)(initial, parent && parent.relay() || {}) || {}));
+        run(null, mapResult((UseAppWrapper.normalize(container.init, this.relay()) || identity)(initial, parent && parent.relay() || {}) || {}));
       }
       return fn.call(this, ...args);
     };
@@ -327,6 +337,6 @@ export default class ExecContext<M> {
   private internalDispatch(msg: Message) {
     const { dispatch, parent, getState, relay } = this, msgType = msg.constructor as MessageConstructor;
     const updater = this.container.update.get(msgType);
-    return updater ? (dispatch as any).run(msg, mapMessage(updater, getState(), msg, relay())) : parent.dispatch(msg);
+    return updater ? (dispatch as any).run(msg, mapMessage(UseAppWrapper.normalize(updater, relay()), getState(), msg, relay())) : parent.dispatch(msg);
   }
 }
