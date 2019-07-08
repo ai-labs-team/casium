@@ -2,7 +2,9 @@ import React from 'react';
 
 import Message from 'casium/message'
 import { container, scope, useApp } from 'casium';
+import Button from './Button'
 
+class Close extends Message {}
 class Toggle extends Message {}
 
 type LocalModel = {
@@ -21,6 +23,12 @@ export default scope<LocalModel>({
 
   update: [
 
+    [Close, (model: LocalModel, msg) => {
+      return {
+        open: false
+      }
+    }],
+
     [Toggle, useApp((app, model: LocalModel, msg) => {
       console.log('app', app)
       return {
@@ -31,34 +39,17 @@ export default scope<LocalModel>({
   ],
 
   view: (props, emit) => (
-    <section className='modal'>
-      <p>Modal is open? {props.open ? 'yes' : 'no'}</p>
-      <button type='button' onClick={emit(Toggle)}>Toggle Modal</button>
-    </section>
+      <>
+      <Button type='button' onClick={emit(Toggle)}>Toggle Modal</Button>
+      {props.open &&
+          <>
+          <div className='modal-bg'></div>
+          <section className='modal'>
+            <p className='close' onClick={emit(Close)}>X</p>
+            <p>{props.children}</p>
+          </section>
+          </>
+      }
+      </>
   ),
 })
-
-// export brig<LocalModel>({
-//   init: () => ({
-//     open: false
-//   }),
-//
-//   update: [
-//       on(Toggle, (model, msg) => ({
-//         open: !model.open
-//       })),
-//
-//       on(Close, (model, msg) => ({
-//         open: false
-//       })),
-//
-//       on(Open, (model, msg) => ({
-//         open: true
-//       }),
-//
-//       on(LogAppCount, withApp<AppModel>((app, model, msg) => {
-//         console.log('app count: ', app.count)
-//         return model
-//       }))),
-//   ]
-// })

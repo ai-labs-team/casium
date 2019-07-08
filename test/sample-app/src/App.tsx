@@ -1,8 +1,9 @@
 import React from 'react';
+import * as R from 'ramda';
 import logo from './logo.svg';
 import './App.css';
 import Message from 'casium/message'
-import { container } from 'casium';
+import { container, useApp } from 'casium';
 import Modal from './Modal'
 
 class ChangeStep extends Message {}
@@ -33,9 +34,12 @@ export default container<Model>({
       counter: model.counter - model.step,
     })],
 
-    [Increment, (model) => ({
-      ...model,
-      counter: model.counter + model.step,
+    [Increment, useApp((app, model, msg) => {
+      console.log('app', app)
+      return {
+        ...model,
+        counter: model.counter + model.step,
+      }
     })],
   ],
 
@@ -52,7 +56,8 @@ export default container<Model>({
           Step:
           <input type='number' onChange={emit(ChangeStep)} value={model.step}></input>
         </label>
-        <Modal open={false}/>
+        <Modal open={false}>This is the stuff inside modal numero uno</Modal>
+        <Modal open={false}>Why on earth would you click that second button?</Modal>
       </header>
     </div>
   ),

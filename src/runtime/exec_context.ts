@@ -271,8 +271,17 @@ export default class ExecContext<M> {
    * Returns the container's relay value, based on the state of the current model.
    */
   public relay() {
-    const { parent, container } = this, inherited = parent && parent.relay() || {};
-    return merge(inherited, map(fn => fn(this.state(), inherited), container.relay || {}));
+    return this.topLevelContext().state()
+  }
+
+  private topLevelContext () {
+    let lastParent: ExecContext<any> = this
+
+    while(lastParent.parent) {
+      lastParent = lastParent.parent
+    }
+
+    return lastParent
   }
 
   /**

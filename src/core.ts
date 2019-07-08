@@ -96,12 +96,24 @@ const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>
   })
 );
 
+const containerNameCountMap = {}
+
+const delegateName = (name: string): string => {
+    if (typeof containerNameCountMap[name] !== 'undefined') {
+      containerNameCountMap[name]++
+    } else {
+      containerNameCountMap[name] = 0
+    }
+
+    return `${name}_${containerNameCountMap[name]}`
+}
+
 const wrapScopeView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>> => {
     return (
     <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
       childProps: props || {},
       container,
-      delegate: props.delegate || container.delegate || '__scope__' + container.name, // TODO have a unique delegate
+      delegate: props.delegate || container.delegate || '__scope__' + delegateName(container.name),
       env
     })
 )};

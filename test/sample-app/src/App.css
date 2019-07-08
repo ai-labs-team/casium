@@ -31,3 +31,33 @@
     transform: rotate(360deg);
   }
 }
+
+.modal {
+  background-color: #eeeeee;
+  color: black;
+  position: fixed;
+  top: 100px;
+  left: 100px;
+  height: calc(100vh - 200px);
+  width: calc(100vw - 200px);
+  z-index: 2;
+}
+
+.modal .close {
+  text-align: right;
+  color: red;
+  font-weight: bold;
+  cursor: pointer;
+  padding-right: 1em;
+}
+
+.modal-bg {
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  position: fixed;
+  z-index: 1;
+  background-color: black;
+  opacity: 0.5;
+}
