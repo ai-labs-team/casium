@@ -2,7 +2,8 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Message from 'casium/message'
-import { app } from 'casium';
+
+import { container } from 'casium';
 import Modal from './Modal'
 
 class ChangeStep extends Message {}
@@ -12,16 +13,14 @@ class Increment extends Message {}
 export type Model = {
   counter: number,
   step: number,
-  modal: any
 }
 
-export default app<Model>({
+export default container<Model>({
   name: 'TopLevelApp',
 
   init: model => ({
     counter: 0,
     step: 1,
-    modal: {}
   }),
 
   update: [

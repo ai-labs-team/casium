@@ -1,7 +1,7 @@
 import React from 'react';
 
 import Message from 'casium/message'
-import { container } from 'casium';
+import { container, useApp } from 'casium';
 
 class Toggle extends Message {}
 
@@ -10,28 +10,34 @@ type LocalModel = {
 }
 
 export default container<LocalModel>({
+
   init: (model) => {
     return {
       ...model,
-      modal: {
-        open: true
-      }
+      open: true
     }
   },
 
   update: [
     [Toggle, (model) => ({
       ...model,
-      modal: {
-        open: !model.modal.open
-      }
+      open: !model.open
     })]
+
+    // [Toggle, useApp((app, model: LocalModel, msg) => {
+    //   console.log('app', app)
+    //   return {
+    //     open: !model.open
+    //   }
+    // })],
+
   ],
 
   view: (props, emit) => (
     <section className='modal'>
-      <p>Modal is open? {(props as any).modal.open ? 'yes' : 'no'}</p>
+      <p>Modal is open? {(props as any).open ? 'yes' : 'no'}</p>
       <button type='button' onClick={emit(Toggle)}>Toggle Modal</button>
     </section>
   ),
 })
+

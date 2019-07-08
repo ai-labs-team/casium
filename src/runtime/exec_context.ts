@@ -20,6 +20,20 @@ export type ExecContextDef<M> = {
 
 const { assign, freeze } = Object;
 
+export class UseAppWrapper {
+  constructor(public fn) {}
+
+  static isHandler(jawn: any) {
+    return jawn instanceof UseAppWrapper || is(Function, jawn)
+  }
+
+  static normalize(jawn: any, relay) {
+    return jawn instanceof UseAppWrapper
+      ? curry(jawn.fn)(relay)
+      : jawn
+  }
+}
+
 /**
  * Logs an Error that was thrown while handling a Message
  *
@@ -86,11 +100,13 @@ const mapMessage = (handler, state, msg) => {
     const ctor = msg && msg.constructor && msg.constructor.name || '{Unknown}';
     throw new TypeError(`Message of type '${ctor}' is not an instance of Message`);
   }
-  if (!handler || !is(Function, handler)) {
+  if (!handler || !UseAppWrapper.isHandler(handler)) {
     throw new TypeError(`Invalid handler for message type '${msg.constructor.name}'`);
   }
 
   return mapResult(reduceUpdater(handler, state, msg.data));
+  // TODO figure out how we get the overall app state into everything!
+  // return mapResult(reduceUpdater(UseAppWrapper.normalize(handler, relay()), state, msg.data, relay()));
 };
 
 /**
@@ -186,6 +202,8 @@ export default class ExecContext<M> {
         const { attach } = container, hasStore = attach && attach.store;
         const initial = hasStore ? attachStore(container.attach, this) : (this.getState() || {});
         run(null, mapResult((container.init || identity)(initial, parent && parent.state || {}) || {}));
+        // TODO run the init with the app args that might be passed from a parent container???
+        // run(null, mapResult((UseAppWrapper.normalize(container.init, this.relay()) || identity)(initial, parent && parent.relay() || {}) || {}));
       }
       return fn.call(this, ...args);
     };

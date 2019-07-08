@@ -7,7 +7,7 @@ import * as React from 'react';
 
 import { create, Environment, root } from './environment';
 import Message, { MessageConstructor } from './message';
-import ExecContext from './runtime/exec_context';
+import ExecContext, {UseAppWrapper} from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 import { mapResult, reduceUpdater } from './util';
 import ViewWrapper from './view_wrapper';
@@ -35,6 +35,13 @@ export type ContainerPartial<M> = {
 };
 
 export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
+
+export type ScopeDef<M> = {
+  name: string;
+  init?: (model: M) => UpdateResult<M>;
+  update?: UpdateMapDef<M>;
+  view?: ContainerView<M>;
+}
 
 export type Emitter = (msg: MessageConstructor | [MessageConstructor, GenericObject]) => any;
 export type ContainerView<M>
@@ -104,6 +111,7 @@ export const withEnvironment = <M>(env: Environment) => (def: ContainerDef<M>): 
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 };
 
+
 /**
  * Creates a new container.
  *
@@ -152,7 +160,6 @@ export const withEnvironment = <M>(env: Environment) => (def: ContainerDef<M>): 
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
-export const app: <A>(def: ContainerDef<A>) => Container<A> = withEnvironment(root);
 
 export const container: <A>(def: ContainerDef<A>) => Container<A> = withEnvironment(root);
 
@@ -233,3 +240,4 @@ export const command = <M>(ctor: MessageConstructor, data: GenericObject | Updat
   return (model, msg) => [model, ctor && new ctor(mapData(model, msg)(data)) || null];
 };
 
+export const useApp = (fn) => new UseAppWrapper(fn)
