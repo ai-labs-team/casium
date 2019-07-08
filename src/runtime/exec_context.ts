@@ -21,8 +21,12 @@ export type ExecContextDef<M> = {
 
 const { assign, freeze } = Object;
 
-class UseAppWrapper {
+export class UseAppWrapper {
   constructor(public fn) {}
+
+  static isHandler(jawn: any) {
+    return jawn instanceof UseAppWrapper || is(Function, jawn)
+  }
 
   static normalize(jawn: any, relay) {
     return jawn instanceof UseAppWrapper
@@ -97,11 +101,11 @@ const mapMessage = (handler, state, msg, relay) => {
     const ctor = msg && msg.constructor && msg.constructor.name || '{Unknown}';
     throw new TypeError(`Message of type '${ctor}' is not an instance of Message`);
   }
-  if (!handler || !is(Function, handler)) {
+  if (!handler || !UseAppWrapper.isHandler(handler)) {
     throw new TypeError(`Invalid handler for message type '${msg.constructor.name}'`);
   }
 
-  return mapResult(reduceUpdater(handler, state, msg.data, relay));
+  return mapResult(reduceUpdater(UseAppWrapper.normalize(handler, relay()), state, msg.data, relay()));
 };
 
 /**
@@ -250,12 +254,12 @@ export default class ExecContext<M> {
   }
 
   public push(val, config?: object & { path: any[] }) {
-    // if (!this.stateMgr && !this.delegate && this.getState() !== val) {
-      // throw new Error(`'${this.container.name}' is trying to modify the state, `
-      //   + 'but has no \'delegate\' specified. Either opt into parent modification by '
-      //   + `giving '${this.container.name}' the delegate of the PARENT Symbol, or `
-      //   + `not have '${this.container.name}' modify the state.`);
-    // }
+    if (!this.stateMgr && !this.delegate && this.getState() !== val) {
+      throw new Error(`'${this.container.name}' is trying to modify the state, `
+        + 'but has no \'delegate\' specified. Either opt into parent modification by '
+        + `giving '${this.container.name}' the delegate of the PARENT Symbol, or `
+        + `not have '${this.container.name}' modify the state.`);
+    }
     return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
   }
 
@@ -337,6 +341,6 @@ export default class ExecContext<M> {
   private internalDispatch(msg: Message) {
     const { dispatch, parent, getState, relay } = this, msgType = msg.constructor as MessageConstructor;
     const updater = this.container.update.get(msgType);
-    return updater ? (dispatch as any).run(msg, mapMessage(UseAppWrapper.normalize(updater, relay()), getState(), msg, relay())) : parent.dispatch(msg);
+    return updater ? (dispatch as any).run(msg, mapMessage(updater, getState(), msg, relay)) : parent.dispatch(msg);
   }
 }

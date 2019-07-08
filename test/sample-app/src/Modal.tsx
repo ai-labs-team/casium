@@ -1,7 +1,7 @@
 import React from 'react';
 
 import Message from 'casium/message'
-import { scope } from 'casium';
+import { container, scope, useApp } from 'casium';
 
 class Toggle extends Message {}
 
@@ -15,25 +15,18 @@ export default scope<LocalModel>({
   init: (model) => {
     return {
       ...model,
-      modal: {
-        open: true
-      }
+      open: true
     }
   },
 
   update: [
-    // [Toggle, useApp((app, model: LocalModel, msg) => {
-    //   console.log('app', app)
-    //   return {
-    //     open: !model.open
-    //   }
-    // })],
 
-    [Toggle, (model: LocalModel, msg) => {
+    [Toggle, useApp((app, model: LocalModel, msg) => {
+      console.log('app', app)
       return {
         open: !model.open
       }
-    }],
+    })],
 
   ],
 

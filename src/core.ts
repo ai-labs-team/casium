@@ -7,7 +7,7 @@ import * as React from 'react';
 
 import { create, Environment, root } from './environment';
 import Message, { MessageConstructor } from './message';
-import ExecContext from './runtime/exec_context';
+import ExecContext, {UseAppWrapper} from './runtime/exec_context';
 import StateManager from './runtime/state_manager';
 import { mapResult, reduceUpdater } from './util';
 import ViewWrapper from './view_wrapper';
@@ -96,14 +96,15 @@ const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>
   })
 );
 
-const wrapScopeView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>> => (
+const wrapScopeView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>> => {
+    return (
     <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
       childProps: props || {},
       container,
-      delegate: '__scope__.' + container.name + Math.random(), // TODO have a deterministic delegate
+      delegate: props.delegate || container.delegate || '__scope__' + container.name, // TODO have a unique delegate
       env
     })
-);
+)};
 
 /**
  * Maps default values of a container definition.
@@ -189,6 +190,8 @@ export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironm
 
 export const scope: <M>(def: ScopeDef<M>) => Container<M> = withScopeEnvironment(root);
 
+// TODO add a mixin container that has delegate: PARENT?
+
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
  * Calling `dispatch()` on the container will simply return any commands issued.
@@ -269,3 +272,5 @@ export const commands = <M>(...args: CommandParam<M>[]): Updater<M> => {
   }
   return (model, msg?, relay?) => [model, consCommands(model, msg, relay)(args)];
 };
+
+export const useApp = (fn) => new UseAppWrapper(fn)
