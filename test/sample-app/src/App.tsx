@@ -21,6 +21,7 @@ export default container<Model>({
   init: model => ({
     counter: 0,
     step: 1,
+    open: 888,
   }),
 
   update: [

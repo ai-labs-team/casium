@@ -11,9 +11,9 @@ type LocalModel = {
 
 export default container<LocalModel>({
 
-  init: (model) => {
+  init: (app) => {
+    console.log('app', app)
     return {
-      ...model,
       open: true
     }
   },
