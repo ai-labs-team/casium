@@ -118,8 +118,8 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
       return <ErrorComponent message={this.state.componentError.toString()} />;
     }
     // tslint:disable-next-line:variable-name
-    const Child = (this.props.container as any).view, ctx = this.execContext;
-    const props = mergeAll([this.props.childProps, ctx.state(), { emit: ctx.emit.bind(ctx), relay: ctx.relay() }]);
-    return <Child {...props} />;
+    const ctx = this.execContext
+    const props = mergeAll([this.props.childProps, ctx.state()]);
+    return (this.props.container as any).view(props, ctx.emit.bind(ctx))
   }
 }

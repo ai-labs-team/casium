@@ -240,12 +240,12 @@ export default class ExecContext<M> {
   }
 
   public push(val, config?: object & { path: any[] }) {
-    if (!this.stateMgr && !this.delegate && this.getState() !== val) {
-      throw new Error(`'${this.container.name}' is trying to modify the state, `
-        + 'but has no \'delegate\' specified. Either opt into parent modification by '
-        + `giving '${this.container.name}' the delegate of the PARENT Symbol, or `
-        + `not have '${this.container.name}' modify the state.`);
-    }
+    // if (!this.stateMgr && !this.delegate && this.getState() !== val) {
+      // throw new Error(`'${this.container.name}' is trying to modify the state, `
+      //   + 'but has no \'delegate\' specified. Either opt into parent modification by '
+      //   + `giving '${this.container.name}' the delegate of the PARENT Symbol, or `
+      //   + `not have '${this.container.name}' modify the state.`);
+    // }
     return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
   }
 

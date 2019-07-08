@@ -43,6 +43,13 @@ export type ContainerPartial<M> = {
 };
 export type ContainerDef<M> = ContainerDefPartial<M> & ContainerPartial<M>;
 
+export type ScopeDef<M> = {
+  name: string;
+  init?: (model: M) => UpdateResult<M>;
+  update?: UpdateMapDef<M>;
+  view?: ContainerViewDef<M>;
+}
+
 export type Emitter = (msg: MessageConstructor | [MessageConstructor, GenericObject]) => any;
 export type ContainerViewProps<M> = M & { emit: Emitter, relay: GenericObject };
 export type ContainerViewDef<M> = (props: ContainerViewProps<M>) => any;
@@ -84,9 +91,18 @@ const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>
   <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
     childProps: omit(['delegate'], props || {}),
     container,
-    delegate: 'ethan-child', //: props.delegate || container.delegate,
+    delegate: props.delegate || container.delegate,
     env
   })
+);
+
+const wrapScopeView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>> => (
+    <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
+      childProps: props || {},
+      container,
+      delegate: '__scope__.' + container.name + Math.random(), // TODO have a deterministic delegate
+      env
+    })
 );
 
 /**
@@ -110,6 +126,14 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
   ctr = assign(mapDef(def), fns);
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 });
+
+export const withScopeEnvironment = curry(<M>(env: Environment, def: ScopeDef<M>): Container<M> => { // TODO delete this if it's not necessary
+  let ctr;
+  const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
+  ctr = assign(mapDef(def), fns);
+  return freeze(defineProperty(assign(wrapScopeView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
+});
+
 
 /**
  * Creates a new container.
@@ -159,7 +183,11 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
+export const app: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(root);
+
 export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(root);
+
+export const scope: <M>(def: ScopeDef<M>) => Container<M> = withScopeEnvironment(root);
 
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
