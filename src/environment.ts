@@ -52,7 +52,13 @@ export type Renderer = (props: RenderProps) => any;
  *         - stateManager: A StateManager factory function
  *         - identity: Returns the parameters that created this environment
  */
-export const create = ({ effects, dispatcher = null, log = null, stateManager = null, displayError }: EnvDef): Environment => ({
+export const create = ({
+  effects,
+  dispatcher = null,
+  log = null,
+  stateManager = null,
+  displayError
+}: EnvDef): Environment => ({
   // tslint:disable:no-console
   dispatcher: (dispatcher || coreDispatcher)(effects),
   handler: handler(effects),
@@ -83,8 +89,10 @@ const checkEnvChain = <M>(parent?: ExecContext<M> | ExecContextPartial, env?: En
 export const merge: <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Environment) => Environment = pipe(
   checkEnvChain,
   cond([
-    [prop('canMerge'), ({ parent, env }) => create({ ...mergeWithEffects(parent.env.identity(), env.identity()), 
-        displayError: env.displayError && env.displayError !== Error ? env.displayError : parent.env.displayError })],
+    [prop('canMerge'), ({ parent, env }) => create({
+      ...mergeWithEffects(parent.env.identity(), env.identity()),
+      displayError: env.displayError && env.displayError !== Error ? env.displayError : parent.env.displayError
+    })],
     [prop('hasOnlyParent'), path(['parent', 'env'])],
     [prop('isOnlyChild'), prop('env')],
     [T, always(root)]
