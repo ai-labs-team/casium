@@ -6,11 +6,11 @@ export default [
   {
     input: 'dist/index.js',
     external: ['axios', 'react', 'prop-types'],
-    globals: {
-      PropTypes: 'propTypes',
-      React: 'react',
-    },
     output: {
+      globals: {
+        PropTypes: 'propTypes',
+        React: 'react',
+      },
       name: 'casium',
       file: pkg.browser,
       format: 'umd',

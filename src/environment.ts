@@ -73,28 +73,40 @@ export const root: Environment = create({ effects, dispatcher: coreDispatcher, d
 /**
  * Helper function for `create()`, to merge effects maps
  */
-const mergeWithEffects = mergeDeepWithKey((key, left, right) => key === 'effects' ? mergeMap(left, right) : right);
+const mergeWithEffects = mergeDeepWithKey(
+  <K extends keyof EnvDef>(key: K, left: EnvDef[K], right: EnvDef[K]) => (
+    key === 'effects' ? mergeMap(left, right) : (right || left)
+  )
+) as (left: EnvDef, right: EnvDef) => EnvDef;
+
+type MergeSpec<M> = {
+  env: Environment | undefined;
+  parent: ExecContext<M> | ExecContextPartial | undefined;
+  canMerge: boolean;
+  hasOnlyParent: boolean;
+  isOnlyChild: boolean;
+};
 
 /**
  * Helper function for `create()`. Validates state of environments.
  */
-const checkEnvChain = <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Environment): any => ({
+const checkEnvChain = <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Environment): MergeSpec<M> => ({
   env,
   parent,
-  canMerge: env && parent instanceof ExecContext && parent.env,
-  hasOnlyParent: !env && parent instanceof ExecContext && parent.env,
+  canMerge: env && parent instanceof ExecContext && !!parent.env,
+  hasOnlyParent: !env && parent instanceof ExecContext && !!parent.env,
   isOnlyChild: env && (!parent || !(parent instanceof ExecContext) || !parent.env),
 });
 
 export const merge: <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Environment) => Environment = pipe(
   checkEnvChain,
-  cond([
-    [prop('canMerge'), ({ parent, env }) => create({
-      ...mergeWithEffects(parent.env.identity(), env.identity()),
-      displayError: env.displayError && env.displayError !== Error ? env.displayError : parent.env.displayError
-    })],
+  (cond as any)([
+    [prop('canMerge'), ({ parent, env }: MergeSpec<any> & { parent: ExecContext<any> }) => create(mergeWithEffects(
+      parent.env.identity(),
+      env.identity()
+    ))],
     [prop('hasOnlyParent'), path(['parent', 'env'])],
     [prop('isOnlyChild'), prop('env')],
     [T, always(root)]
-  ])
+  ]) as <M>(spec: MergeSpec<M>) => Environment
 );

@@ -21,7 +21,7 @@ export type ViewWrapperProps<M> = {
  * itself with `execContext` in its children's contexts.
  */
 
-export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>, any> {
+export default class ViewWrapper<M extends {}> extends React.Component<ViewWrapperProps<M>, any> {
 
   public static contextTypes = { execContext: PropTypes.object };
 
@@ -86,7 +86,7 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
   public componentDidUpdate(prev) {
     const { childProps } = this.props;
     const omitChildren = omit(['children']);
-    if (!equals(omitChildren(prev.childProps), omitChildren(childProps))) {
+    if (!equals(omitChildren(prev.childProps), omitChildren(childProps as any))) {
       this.dispatchLifecycleMessage(Refresh, this.props);
     }
   }

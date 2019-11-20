@@ -5,7 +5,7 @@ import { container, Container, PARENT } from '../core';
 import Message from '../message';
 import { cloneRecursive, withProps } from '../util';
 
-export class Change extends Message {}
+export class Change extends Message { }
 
 const name = pipe(path(['children', 'props', 'name']), defaultTo('unknownInput'));
 
@@ -15,7 +15,7 @@ export default container({
   delegate: PARENT,
 
   update: [
-    [Change, (state, { name, value }) => assoc(name, value, state)],
+    [Change, (state, { name, value }) => assoc(name, value, state as any) as typeof state],
   ],
 
   view: withProps({ name }, ({ emit, name, children, ...props }: any) => (

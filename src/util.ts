@@ -18,8 +18,8 @@ export const moduleName = (prefix: string) => (constructor: Function) => {
  * @param  {Object} right
  * @return {Object}
  */
-export const mergeDeep = mergeDeepWith((left, right) => (
-  all(is(Array), [left, right]) ? union(left, right) : right
+export const mergeDeep = mergeDeepWith(<A extends {} | {}[], B extends {} | {}[]>(left: A, right: B) => (
+  all(is(Array), [left, right]) ? union(left as {}[], right as {}[]) : right
 ));
 
 /**
@@ -42,7 +42,7 @@ export const replace = flip(merge);
  * @param  {Array} b Array to compare against
  * @return {Boolean} Returns true if `a` is the prefix of `b`.
  */
-export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, a, b)));
+export const compareOffsets = curry((a: any[], b: any[]) => all(equals(true), zipWith(equals, a, b)));
 
 /**
  * Accepts a validator object where the values are functions that return boolean, and
@@ -91,7 +91,7 @@ export function withProps<Input, Generated>(
   fnMap: PropMap<Input, Generated>,
   component: React.StatelessComponent<Input & Generated>
 ) {
-  return (props: Input) => component(merge(props, map(fn => fn(props), fnMap)) as Input & Generated);
+  return (props: Input) => component(merge(props, map(fn => fn(props), fnMap)) as any);
 }
 
 export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
@@ -155,9 +155,15 @@ export const toArray = ifElse(is(Array), identity, Array.of);
 /**
  * Helper functions for reducing effect Maps into a single Map.
  */
-export const mergeMap = <T, U>(first: Map<T, U>, second: Map<T, U>): Map<T, U> =>
-  new Map(Array.from(first).concat(Array.from(second) as [T, U][]));
-export const mergeMaps = reduce(mergeMap, new Map([]));
+export const mergeMap = <T, U>(first: Map<T, U>, second: Map<T, U>): Map<T, U> => new Map(
+  Array.from(first).concat(Array.from(second) as [T, U][])
+);
+
+/**
+ * Reduce a list of maps to a single map, where the right-most map overrides in the case of
+ * key collisions.
+ */
+export const mergeMaps: <T, U>(maps: Map<T, U>[]) => Map<T, U> = reduce(mergeMap, new Map([]));
 
 /**
  * Safely stringifies a JavaScript value to prevent error-ception.
@@ -191,7 +197,7 @@ const freezeObj = when(is(Object), deepFreeze);
  */
 export const mapResult = cond([
   [both(is(Array), propEq('length', 0)), () => { throw new TypeError('An empty array is an invalid value'); }],
-  [both(is(Array), propEq('length', 1)), ([state]) => [freezeObj(state), []]],
+  [both(is(Array), propEq('length', 1)), ([state]: any) => [freezeObj(state), []]],
   [is(Array), ([state, ...commands]) => [freezeObj(state), commands]],
   [is(Object), state => [freezeObj(state), []]],
   [always(true), (val) => { throw new TypeError(`Unrecognized structure ${safeStringify(val)}`); }],

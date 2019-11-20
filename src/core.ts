@@ -1,5 +1,5 @@
 import {
-  always, constructN, curry, defaultTo, evolve, flatten, identity as id,
+  always, constructN, curry, evolve, flatten, identity as id,
   ifElse, is, map, merge, nthArg, omit, pick, pipe, splitEvery
 } from 'ramda';
 
@@ -93,8 +93,8 @@ const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>
  * Maps default values of a container definition.
  */
 const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
-  merge({ name: null, update: [] }),
-  evolve({ update: toMap, name: defaultTo('UnknownContainer') })
+  merge({ name: 'UnknownContainer', update: [] }),
+  evolve({ update: toMap }) as any
 );
 
 /**
@@ -159,13 +159,15 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
-export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(root);
+export const container = withEnvironment(root) as <M>(def: ContainerDef<M>) => Container<M>;
+
+export type IsolatedView<M> = React.StatelessComponent<ViewProps<M>> & IsolatedContainer<M>;
 
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
  * Calling `dispatch()` on the container will simply return any commands issued.
  */
-export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer<M> => {
+export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedView<M> => {
   const stateManager = opts.stateManager && always(opts.stateManager) || (() => new StateManager());
   const env = create({ dispatcher: nthArg(2), effects: new Map(), log: () => { }, stateManager });
   const overrides = { accepts: opts.catchAll === false ? type => ctr.update && ctr.update.has(type) : always(true) };
@@ -174,7 +176,10 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
   const parent: any = opts.relay ? { relay: always(opts.relay) } : null;
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
-  return assign(wrapView({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
+  return assign(
+    wrapView({ env, container }),
+    pick(['dispatch', 'push', 'state'], execContext)
+  ) as any;
 };
 
 /**
@@ -187,7 +192,7 @@ export function seq<M>(...updaters: Updater<M>[]) {
   return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): UpdateResult<M> {
     const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
     const reduce = (prev, cur) =>
-      merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
+      merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)) as any);
 
     return updaters.reduce(reduce, [model, []]) as UpdateResult<M>;
   };
@@ -210,13 +215,13 @@ export const mapModel = <M>(mapper: ModelMapper<M>) =>
 export const relay = <M>(fn?: (r: any) => UpdateResult<M>) => pipe(nthArg(2), (fn || id));
 export const message = <M>(fn?: (m: any) => UpdateResult<M>) => pipe(nthArg(1), (fn || id));
 export const union = <M>(fn?: (u: { model: M, message?: GenericObject, relay?: GenericObject }) => UpdateResult<M>) =>
-  (model: M, message = {}, relay = {}) => (fn || id)({ model, message, relay });
+  (model: M, message = {}, relay = {}) => (fn || id as any)({ model, message, relay });
 
 const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), id);
 const consCommands = (model, msg, relay) => pipe(
   splitEvery(2),
-  map(([cmd, data]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null)
-);
+  map(([cmd, data]: any) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null)
+) as (...args: any[]) => any;
 
 /**
  * Helper function for updaters that only issue commands. Pass in alternating command constructors and
