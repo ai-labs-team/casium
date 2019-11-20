@@ -8,6 +8,8 @@ import StateManager from './runtime/state_manager';
 import { ProcessState } from './subscription';
 import { mergeMap } from './util';
 
+import Error from './components/error';
+
 export type Dispatcher = (...args: any[]) => any | void;
 export type CommandDispatcher = (data: object, dispatch: Dispatcher) => any | void;
 export type SubscriptionDispatcher = (processState: ProcessState, dispatch: Dispatcher) => any | void;
@@ -16,6 +18,7 @@ export type EnvDefPartial = {
   dispatcher: any;
   log?: (...args: any[]) => any | void;
   stateManager?: (container?: Container<any>) => StateManager;
+  displayError?: Renderer;
 };
 
 export type EnvDef = EnvDefPartial & {
@@ -26,6 +29,12 @@ export type Environment = EnvDefPartial & {
   handler: (msg: Message) => MessageConstructor;
   identity: () => EnvDef;
 };
+
+export type RenderProps = {
+  message: string;
+};
+
+export type Renderer = (props: RenderProps) => any;
 
 /**
  * Creates an execution environment for a container by providing it with a set of effects
@@ -43,16 +52,23 @@ export type Environment = EnvDefPartial & {
  *         - stateManager: A StateManager factory function
  *         - identity: Returns the parameters that created this environment
  */
-export const create = ({ effects, dispatcher = null, log = null, stateManager = null }: EnvDef): Environment => ({
+export const create = ({
+  effects,
+  dispatcher = null,
+  log = null,
+  stateManager = null,
+  displayError
+}: EnvDef): Environment => ({
   // tslint:disable:no-console
   dispatcher: (dispatcher || coreDispatcher)(effects),
   handler: handler(effects),
-  identity: () => ({ effects, dispatcher, log, stateManager }),
+  identity: () => ({ effects, dispatcher, log, stateManager, displayError }),
   log: log || console.error.bind(console),
-  stateManager: stateManager || (() => new StateManager())
+  stateManager: stateManager || (() => new StateManager()),
+  displayError,
 });
 
-export const root: Environment = create({ effects, dispatcher: coreDispatcher });
+export const root: Environment = create({ effects, dispatcher: coreDispatcher, displayError: Error });
 
 /**
  * Helper function for `create()`, to merge effects maps
@@ -73,7 +89,10 @@ const checkEnvChain = <M>(parent?: ExecContext<M> | ExecContextPartial, env?: En
 export const merge: <M>(parent?: ExecContext<M> | ExecContextPartial, env?: Environment) => Environment = pipe(
   checkEnvChain,
   cond([
-    [prop('canMerge'), ({ parent, env }) => create(mergeWithEffects(parent.env.identity(), env.identity()))],
+    [prop('canMerge'), ({ parent, env }) => create({
+      ...mergeWithEffects(parent.env.identity(), env.identity()),
+      displayError: env.displayError && env.displayError !== Error ? env.displayError : parent.env.displayError
+    })],
     [prop('hasOnlyParent'), path(['parent', 'env'])],
     [prop('isOnlyChild'), prop('env')],
     [T, always(root)]

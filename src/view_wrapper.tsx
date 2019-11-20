@@ -1,7 +1,6 @@
 import * as PropTypes from 'prop-types';
 import { equals, keys, merge, mergeAll, omit, pick, pipe } from 'ramda';
 import * as React from 'react';
-import ErrorComponent from './components/error';
 import { Container, DelegateDef } from './core';
 import { Environment } from './environment';
 import { Activate, Deactivate, MessageConstructor, Refresh } from './message';
@@ -115,7 +114,7 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
 
   public render() {
     if (this.state.componentError) {
-      return <ErrorComponent message={this.state.componentError.toString()} />;
+      return this.execContext.env.displayError({ message: this.state.componentError.toString() });
     }
     // tslint:disable-next-line:variable-name
     const Child = (this.props.container as any).view, ctx = this.execContext;
