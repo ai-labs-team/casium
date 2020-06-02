@@ -3,8 +3,8 @@ import { mount, shallow } from 'enzyme';
 import 'mocha';
 import { add, always, evolve, identity, inc, map, mergeAll, not, pick, pipe, prop, unapply } from 'ramda';
 import * as React from 'react';
-import { commands, container, isolate, mapModel, message, seq } from './core';
-import Message from './message';
+import { commands, container, isolate, mapModel, message, seq, Updater } from './core';
+import Message, { MessageConstructor } from './message';
 import StateManager from './runtime/state_manager';
 
 describe('app', () => {
@@ -97,7 +97,7 @@ describe('app', () => {
     });
 
     it('recursively calls functions returned by an updater', () => {
-      const ctr = isolate(container({
+      const ctr = isolate(container<{ count: number, flag: boolean }>({
         update: [
           [Msg, (model, msg) => evolve({ count: add(msg.step) })],
           [Msg2, seq(
@@ -141,11 +141,11 @@ describe('app', () => {
   });
 
   describe('emit()', () => {
-    const update = [Msg, always({})];
+    const update = [[Msg, always({})]] as [MessageConstructor, Updater<any>][];
 
     it('throws on unhandled messages', () => {
       const view = ({ emit }) => (<button onClick={emit(Msg2)}>Foo</button>);
-      const ctr = container({ name: 'FooContainer', update, view });
+      const ctr = container<any>({ name: 'FooContainer', update, view });
 
       expect(() => shallow(ctr()).html()).to.throw(
         "Messages of type 'Msg2' are not handled by container " +
@@ -285,7 +285,7 @@ describe('app', () => {
     it('works with parameter helpers', () => {
       const updater = mapModel({ form: message(pick(['email', 'password'])) });
       const result = updater(
-        { form: {}, misc: 'things' },
+        { form: {}, misc: 'things' } as any,
         { email: 'foo@bar.com', password: 'passw0rd', other: 'values' }
       );
       expect(result).to.deep.equal({ form: { email: 'foo@bar.com', password: 'passw0rd' }, misc: 'things' });
@@ -295,10 +295,10 @@ describe('app', () => {
       const updater = mapModel(message(
         ({ value }) => value ? { rememberMe: true, form: { email: value } } : { rememberMe: false }
       ));
-      expect(updater({ rememberMe: null, form: {} }, { value: 'foo@bar.com' })).to.deep.equal({
+      expect(updater({ rememberMe: null, form: {} } as any, { value: 'foo@bar.com' })).to.deep.equal({
         rememberMe: true, form: { email: 'foo@bar.com' }
       });
-      expect(updater({ rememberMe: null, form: {} }, { value: '' })).to.deep.equal({
+      expect(updater({ rememberMe: null, form: {} } as any, { value: '' })).to.deep.equal({
         rememberMe: false, form: {}
       });
     });

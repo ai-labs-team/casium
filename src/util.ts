@@ -18,8 +18,8 @@ export const moduleName = (prefix: string) => (constructor: Function) => {
  * @param  {Object} right
  * @return {Object}
  */
-export const mergeDeep = mergeDeepWith((left, right) => (
-  all(is(Array), [left, right]) ? union(left, right) : right
+export const mergeDeep = mergeDeepWith(<A>(left: A, right: A) => (
+  all(is(Array), [left, right]) ? union(left as any as A[], right as any as A[]) : right
 ));
 
 /**
@@ -42,7 +42,7 @@ export const replace = flip(merge);
  * @param  {Array} b Array to compare against
  * @return {Boolean} Returns true if `a` is the prefix of `b`.
  */
-export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, a, b)));
+export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, a, b) as any));
 
 /**
  * Accepts a validator object where the values are functions that return boolean, and
@@ -91,7 +91,10 @@ export function withProps<Input, Generated>(
   fnMap: PropMap<Input, Generated>,
   component: React.StatelessComponent<Input & Generated>
 ) {
-  return (props: Input) => component(merge(props, map(fn => fn(props), fnMap)) as Input & Generated);
+  return (props: Input) => component(merge(
+    props,
+    map(fn => fn(props), fnMap)
+  ) as unknown as Input & Generated);
 }
 
 export const cloneRecursive = (children, newProps) => React.Children.map(children, (child) => {
@@ -191,7 +194,7 @@ const freezeObj = when(is(Object), deepFreeze);
  */
 export const mapResult = cond([
   [both(is(Array), propEq('length', 0)), () => { throw new TypeError('An empty array is an invalid value'); }],
-  [both(is(Array), propEq('length', 1)), ([state]) => [freezeObj(state), []]],
+  [both(is(Array), propEq('length', 1)), ([state]: any) => [freezeObj(state), []]],
   [is(Array), ([state, ...commands]) => [freezeObj(state), commands]],
   [is(Object), state => [freezeObj(state), []]],
   [always(true), (val) => { throw new TypeError(`Unrecognized structure ${safeStringify(val)}`); }],

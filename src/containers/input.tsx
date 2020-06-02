@@ -15,7 +15,7 @@ export default container({
   delegate: PARENT,
 
   update: [
-    [Change, (state, { name, value }) => assoc(name, value, state)],
+    [Change, (state: any, { name, value }) => assoc(name, value, state)],
   ],
 
   view: withProps({ name }, ({ emit, name, children, ...props }: any) => (

@@ -1,5 +1,6 @@
+import * as equals from '@ailabs/fast-deep-equal/react';
 import * as PropTypes from 'prop-types';
-import { equals, keys, merge, mergeAll, omit, pick, pipe } from 'ramda';
+import { keys, merge, mergeAll, omit, pick, pipe } from 'ramda';
 import * as React from 'react';
 import { Container, DelegateDef } from './core';
 import { Environment } from './environment';
@@ -86,7 +87,7 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
   public componentDidUpdate(prev) {
     const { childProps } = this.props;
     const omitChildren = omit(['children']);
-    if (!equals(omitChildren(prev.childProps), omitChildren(childProps))) {
+    if (!equals(omitChildren(prev.childProps), omitChildren(childProps as any))) {
       this.dispatchLifecycleMessage(Refresh, this.props);
     }
   }
@@ -118,7 +119,11 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
     }
     // tslint:disable-next-line:variable-name
     const Child = (this.props.container as any).view, ctx = this.execContext;
-    const props = mergeAll([this.props.childProps, ctx.state(), { emit: ctx.emit.bind(ctx), relay: ctx.relay() }]);
+    const props = mergeAll([
+      this.props.childProps as any,
+      ctx.state(),
+      { emit: ctx.emit.bind(ctx), relay: ctx.relay() }
+    ]);
     return <Child {...props} />;
   }
 }

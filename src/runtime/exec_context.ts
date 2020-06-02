@@ -99,7 +99,7 @@ const mapMessage = (handler, state, msg, relay) => {
  */
 const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
   const unhandled = pipe(prop('data'), values, filter(Message.isEmittable), filter(not(exec.handles)));
-  const msgs = unhandled(cmd);
+  const msgs = unhandled(cmd) as MessageConstructor[];
 
   if (!msgs.length) {
     return cmd;
@@ -192,7 +192,7 @@ export default class ExecContext<M> {
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
         const initial = hasStore ? attachStore(container.attach, this) : (this.getState() || {});
-        run(null, mapResult((container.init || identity)(initial, parent && parent.relay() || {}) || {}));
+        run(null, mapResult((container.init || identity)(initial, parent && parent.relay() || {}) || {}) as [any, any]);
       }
       return fn.call(this, ...args);
     };

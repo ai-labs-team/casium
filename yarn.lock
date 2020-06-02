@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@ailabs/fast-deep-equal@3.2.1":
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/@ailabs/fast-deep-equal/-/fast-deep-equal-3.2.1.tgz#c88ea0b723f91ed9b4cd089a13e32d133bdf6618"
+  integrity sha512-xlPxqKMMgSY9odtp2hULdVjxm5iD6YQaV7jm3iFR3n3EJ5RYwxiGGoEqmYBw8dsEs+nexosWe4g13lcoJjNT/w==
+
 "@babel/code-frame@7.0.0-beta.51":
   version "7.0.0-beta.51"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.0.0-beta.51.tgz#bd71d9b192af978df915829d39d4094456439a0c"

@@ -10,7 +10,7 @@ describe('dispatcher', () => {
 
   describe('handler()', () => {
 
-    class Msg extends Message {}
+    class Msg extends Message { }
 
     it('returns the message constructor when a match is found', () => {
       expect(handler(effects, new Read({ key: 'foo', result: Msg }))).to.deep.equal(Read);
@@ -23,13 +23,16 @@ describe('dispatcher', () => {
 
   describe('dispatcher()', () => {
     it('throws when dispatching invalid input', () => {
-      expect(() => dispatcher(new Map([]), {}, {})).to.throw(TypeError, /type 'Object' is not acceptable/);
+      expect(() => dispatcher(new Map([]) as any, {} as any, {} as any)).to.throw(
+        TypeError,
+        /type 'Object' is not acceptable/
+      );
     });
 
     it('throws when dispatching an unhandled message', () => {
-      class Msg extends Message {}
+      class Msg extends Message { }
 
-      expect(() => dispatcher(new Map([]), {}, new Msg())).to.throw(TypeError, /Unhandled/);
+      expect(() => dispatcher(new Map([]) as any, {} as any, new Msg())).to.throw(TypeError, /Unhandled/);
     });
 
   });

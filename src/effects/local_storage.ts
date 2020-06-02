@@ -14,9 +14,9 @@ const get = (() => {
 })();
 
 export default new Map([
-  [Read, ({ key, result }, dispatch) => pipe(
+  [Read, ({ key, result }, dispatch) => (pipe(
     get, safeParse, objOf('value'), merge({ key }), Message.construct(result), dispatch
-  )(key)],
+  ) as any)(key)],
   [Write, ({ key, value }) => window.localStorage.setItem(key, safeStringify(value))],
   [Delete, ({ key }) => window.localStorage.removeItem(key)],
   [Clear, () => window.localStorage.clear()],
