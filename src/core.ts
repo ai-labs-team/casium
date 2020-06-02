@@ -94,7 +94,7 @@ const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>
  */
 const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
   merge({ name: null, update: [] }),
-  evolve({ update: toMap, name: defaultTo('UnknownContainer') })
+  evolve({ update: toMap, name: defaultTo('UnknownContainer') }) as any
 );
 
 /**
@@ -159,7 +159,9 @@ export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>)
  *  - `accepts`: Accepts a message class and returns a boolean indicating whether the container
  *    accepts messages of that type.
  */
-export const container: <M>(def: ContainerDef<M>) => Container<M> = withEnvironment(root);
+export const container: <M>(def: ContainerDef<M>) => Container<M> = (
+  withEnvironment(root) as <M>(def: ContainerDef<M>) => Container<M>
+);
 
 /**
  * Returns a copy of a container, disconnected from its effects / command dispatcher.
@@ -174,7 +176,10 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
   const parent: any = opts.relay ? { relay: always(opts.relay) } : null;
   const execContext = new ExecContext({ env, parent, container, delegate: null });
 
-  return assign(wrapView({ env, container }), pick(['dispatch', 'push', 'state'], execContext));
+  return assign(
+    wrapView({ env, container }),
+    pick(['dispatch', 'push', 'state'], execContext)
+  ) as unknown as IsolatedContainer<M>;
 };
 
 /**
@@ -187,7 +192,7 @@ export function seq<M>(...updaters: Updater<M>[]) {
   return function (model: M, msg: GenericObject = {}, relay: GenericObject = {}): UpdateResult<M> {
     const merge = ([{ }, cmds], [newModel, newCmds]) => [newModel, flatten(cmds.concat(newCmds))];
     const reduce = (prev, cur) =>
-      merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)));
+      merge(prev, mapResult(reduceUpdater(cur, prev[0], msg, relay)) as [any, any]);
 
     return updaters.reduce(reduce, [model, []]) as UpdateResult<M>;
   };
@@ -210,12 +215,12 @@ export const mapModel = <M>(mapper: ModelMapper<M>) =>
 export const relay = <M>(fn?: (r: any) => UpdateResult<M>) => pipe(nthArg(2), (fn || id));
 export const message = <M>(fn?: (m: any) => UpdateResult<M>) => pipe(nthArg(1), (fn || id));
 export const union = <M>(fn?: (u: { model: M, message?: GenericObject, relay?: GenericObject }) => UpdateResult<M>) =>
-  (model: M, message = {}, relay = {}) => (fn || id)({ model, message, relay });
+  (model: M, message = {}, relay = {}) => (fn || id as any)({ model, message, relay });
 
 const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), id);
 const consCommands = (model, msg, relay) => pipe(
   splitEvery(2),
-  map(([cmd, data]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null)
+  map(([cmd, data]: [MessageConstructor, {}]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null)
 );
 
 /**
@@ -239,5 +244,5 @@ export const commands = <M>(...args: CommandParam<M>[]): Updater<M> => {
   if (args.length % 2 !== 0) {
     throw new TypeError('commands() must be called with an equal number of command constructors & data parameters');
   }
-  return (model, msg?, relay?) => [model, consCommands(model, msg, relay)(args)];
+  return (model, msg?, relay?) => [model, consCommands(model, msg, relay)(args)] as any;
 };

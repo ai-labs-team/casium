@@ -32,7 +32,7 @@ export default class Message {
   /**
    * Checks that a value is emittable as a message constructor
    */
-  public static isEmittable = or(Message.is, both(is(Array), pipe(nth(0), Message.is)));
+  public static isEmittable = or(Message.is, both(is(Array), pipe(nth(0), Message.is) as any));
 
   public static toEmittable = ifElse(is(Array), identity, type => [type, {}]);
 
@@ -72,9 +72,9 @@ export default class Message {
     throw new Error(`Message data must be an object in message ${ctor.name} but is ${safeStringify(data)}`);
   }
 
- /**
-  * Maps an Event object to a hash that will be wrapped in a Message.
-  */
+  /**
+   * Maps an Event object to a hash that will be wrapped in a Message.
+   */
   public static mapEvent = curry((extra: object & { preventDefault?: boolean }, event: Event) => {
     const target = event.target as HTMLInputElement;
     const isDomEvent = event && (event as any).nativeEvent && is(Object, target);
