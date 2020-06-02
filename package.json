@@ -78,5 +78,8 @@
       "html",
       "lcov"
     ]
+  },
+  "dependencies": {
+    "@ailabs/fast-deep-equal": "3.2.1"
   }
 }
