@@ -8,7 +8,7 @@ import InputContainer from './input';
 
 describe('InputContainer', () => {
 
-  const Container = isolate(container({
+  const Container: any = isolate(container({
     init: () => ({ textField: 'foo' }),
     update: [],
     view: () => (<InputContainer><input name='textField' /></InputContainer>),
