@@ -100,7 +100,7 @@ export const intercept = (stateMgr: StateManager) => {
      */
     const { withStateManager } = window[INSTRUMENTATION_KEY];
     while (withStateManager.length > 0) {
-      withStateManager.pop()(stateMgr);
+      (withStateManager.pop()!)(stateMgr);
     }
   }
 

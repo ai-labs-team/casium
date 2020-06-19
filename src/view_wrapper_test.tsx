@@ -14,7 +14,7 @@ describe('ViewWrapper', () => {
   describe('componentWillMount', () => {
 
     describe('propagating prop values', () => {
-      let Container;
+      let Container: any;
 
       beforeEach(() => {
         Container = container({
@@ -71,9 +71,9 @@ describe('ViewWrapper', () => {
       let Container;
 
       beforeEach(() => {
-        const updater = (state, { foo }) => merge(state, { foo, notFoo: foo === false });
+        const updater: any = (state, { foo }) => merge(state, { foo, notFoo: foo === false });
 
-        Container = container({
+        Container = container<{ foo: boolean, notFoo: boolean }>({
           init: always({ foo: true, notFoo: false }),
           update: [
             [Activate, updater],
@@ -140,7 +140,7 @@ describe('ViewWrapper', () => {
   describe('Commands', () => {
 
     describe('ContainerA environment should cascade to ContainerB', () => {
-      let ContainerB, ContainerA;
+      let ContainerB: any, ContainerA: any;
 
       beforeEach(() => {
         class TestCommand extends Message {
@@ -149,11 +149,11 @@ describe('ViewWrapper', () => {
 
         class TestCommandResult extends Message {}
 
-        const testEffect = new Map([
-          [TestCommand, ({ result }, dispatch) => pipe(Message.construct(result), dispatch)({})]
+        const testEffect = new Map<any, any>([
+          [TestCommand, ({ result }, dispatch) => pipe<any, any, any>(Message.construct(result), dispatch)({})]
         ]);
 
-        ContainerB = container({
+        ContainerB = container<any>({
           init: state => merge(state, { bar: true }),
           delegate: PARENT,
           update: [

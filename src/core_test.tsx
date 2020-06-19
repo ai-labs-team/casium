@@ -49,7 +49,7 @@ describe('app', () => {
       const ctr = isolate(container({
         update: [
           [Msg, always([])],
-          [Msg2, always(0)],
+          [Msg2, always(0) as any],
         ],
       }));
 
@@ -118,13 +118,13 @@ describe('app', () => {
 
     describe('subscriptions', () => {
       it('is called with the new model value after init and every Updater', () => {
-        const log = [];
+        const log: any[] = [];
 
-        const ctr = isolate(container({
+        const ctr = isolate(container<any>({
           subscriptions: model => log.push(model),
 
           update: [
-            [Msg, (model, { count }) => ({ test: count })],
+            [Msg, ({}, { count }) => ({ test: count })],
           ],
         }));
 
@@ -161,7 +161,7 @@ describe('app', () => {
 
     it('correctly maps DOM events from text inputs', () => {
       class InputEvent extends Message { }
-      const log = [];
+      const log: any[] = [];
 
       const ctr = isolate(container({
         update: [
@@ -189,7 +189,7 @@ describe('app', () => {
 
     it('correctly maps DOM events from checkboxes', () => {
       class CheckboxEvent extends Message { }
-      const log = [];
+      const log: any[] = [];
 
       const ctr = isolate(container<any>({
         init: always({ checked: false }),
@@ -247,7 +247,7 @@ describe('app', () => {
 
   describe('seq', () => {
     it('maps model changes across multiple updaters', () => {
-      const updater = seq(evolve({ foo: not }), evolve({ bar: inc }));
+      const updater = seq(evolve({ foo: not }) as any, evolve({ bar: inc }) as any);
       expect(updater({ foo: false, bar: 41 })).to.deep.equal([{ foo: true, bar: 42 }, []]);
     });
 
@@ -260,7 +260,7 @@ describe('app', () => {
     });
 
     it('passes through all updater params', () => {
-      const updater = seq((state, message, relay) => mergeAll([state, message, relay]));
+      const updater = seq((state, message, relay) => mergeAll([state as any, message, relay]));
       expect(updater({ foo: true }, { bar: false }, { baz: true })).to.deep.equal([{
         foo: true, bar: false, baz: true
       }, []]);
@@ -278,7 +278,7 @@ describe('app', () => {
 
   describe('mapModel', () => {
     it('maps new model values by pairing keys to updaters', () => {
-      const updater = mapModel({ foo: pipe(prop('bar'), not) });
+      const updater = mapModel({ foo: pipe<any, any, any>(prop('bar'), not) } as any);
       expect(updater({ foo: false, bar: false })).to.deep.equal({ foo: true, bar: false });
     });
 
@@ -307,13 +307,13 @@ describe('app', () => {
   describe('Redux support', () => {
     it('attaches to a Redux store and receives updates', () => {
       const store = {
-        subscribers: [],
+        subscribers: [] as any[],
         subscribe: fn => store.subscribers.push(fn),
         state: { foo: 'bar' },
         getState: () => store.state,
         update: (newState: any) => {
           store.state = newState;
-          store.subscribers.forEach(sub => sub(newState));
+          store.subscribers.forEach((sub: any) => sub(newState));
         }
       };
 

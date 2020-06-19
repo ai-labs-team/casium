@@ -35,7 +35,7 @@ export class ProcessState {
   public context: any;
   public data: any;
   public current: any;
-  public set: (state: any) => any;
+  public set!: (state: any) => any;
 
   constructor(data: ProcessStateData) {
     Object.assign(this, data);
@@ -44,5 +44,5 @@ export class ProcessState {
 
 export default class Subscription {
 
-  public processes: Map<any, Process[]>;
+  public processes!: Map<any, Process[]>;
 }

@@ -16,7 +16,7 @@ export default new Map<MessageConstructor, (data: any, dispatch: any) => any>([
   [Back, () => history.back()],
   [Forward, () => history.forward()],
   [Timeout, ({ result, timeout, ...data }, dispatch) => setTimeout(
-    () => pipe(Message.construct(result), dispatch)({}),
+    () => (pipe(Message.construct(result), dispatch) as any)({}),
     timeout
   )],
 ]);

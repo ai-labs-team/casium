@@ -1,7 +1,7 @@
 import * as deepFreeze from 'deep-freeze-strict';
 import {
-  __, all, always, both, cond, curry, equals, evolve, filter, flip, identity,
-  ifElse, is, keys, map, merge, mergeDeepWith, not, nth, pathOr, pickAll, pipe,
+  all, always, both, cond, curry, equals, evolve, filter, flip, identity,
+  ifElse, is, keys, map, mergeDeepWith, mergeRight, not, nth, pathOr, pickAll, pipe,
   propEq, reduce, union, when, zipWith
 } from 'ramda';
 import * as React from 'react';
@@ -27,7 +27,7 @@ export const mergeDeep = mergeDeepWith(<A>(left: A, right: A) => (
  * i.e. `[FooMessage, state => merge(state, { bar: true })]` becomes
  * `[FooMessage, replace({ bar: true })]`
  */
-export const replace = flip(merge);
+export const replace = flip(mergeRight);
 
 /**
  * Returns the count of offsets that are equal between two arrays. Useful for determining
@@ -54,8 +54,8 @@ export const compareOffsets = curry((a, b) => all(equals(true), zipWith(equals, 
  *   ({ foo: "Hello", bar: "not Func" }) -> ["bar"]
  * ```
  */
-export const getValidationFailures = spec => pipe(
-  pickAll(keys(spec)),
+export const getValidationFailures = (spec: { [key: string]: (val: any) => boolean }) => pipe(
+  pickAll(keys(spec) as string[]),
   evolve(spec),
   filter(not),
   keys
@@ -84,16 +84,16 @@ export const getValidationFailures = spec => pipe(
  * <Name first="Bob" last="Loblaw" />
  * ```
  */
-export type PropMap<Input, Generated> = {
+export type PropMap<Input extends object, Generated extends object> = {
   [K in keyof Generated]: (props: Input) => Generated[K]
 };
-export function withProps<Input, Generated>(
+export function withProps<Input extends object, Generated extends object>(
   fnMap: PropMap<Input, Generated>,
   component: React.StatelessComponent<Input & Generated>
 ) {
-  return (props: Input) => component(merge(
+  return (props: Input) => component(mergeRight(
     props,
-    map(fn => fn(props), fnMap)
+    map(fn => fn(props), fnMap) as Generated
   ) as unknown as Input & Generated);
 }
 
@@ -101,16 +101,16 @@ export const cloneRecursive = (children, newProps) => React.Children.map(childre
   const mapProps = (child) => {
     const props = is(Function, newProps) ? newProps(child) : newProps;
     const hasChildren = child.props && child.props.children;
-    const mapper = hasChildren && is(Array, child.props.children) ? identity : nth(0);
+    const mapper = hasChildren && is(Array, child.props.children) ? (identity as <T>(list: readonly T[]) => T) : nth(0);
     const children = hasChildren ? mapper(cloneRecursive(child.props.children, newProps)) : null;
     return mergeDeep(props || {}, { children });
   };
   return React.isValidElement(child) ? React.cloneElement(child, mapProps(child)) : child;
 });
 
-export const clone = (children, newProps) => React.Children.map(children, (child: React.ReactElement<any>) => (
-  React.cloneElement(child, mergeDeep(React.isValidElement(child) ? newProps : {}, {
-    children: child.props.children,
+export const clone = (children, newProps) => React.Children.map(children, (child: React.ReactChild) => (
+  React.cloneElement(child as React.ReactElement<any>, mergeDeep(React.isValidElement(child) ? newProps : {}, {
+    children: ((child as React.ReactElement<any>).props as { children: any }).children,
   }))
 ));
 
@@ -160,7 +160,7 @@ export const toArray = ifElse(is(Array), identity, Array.of);
  */
 export const mergeMap = <T, U>(first: Map<T, U>, second: Map<T, U>): Map<T, U> =>
   new Map(Array.from(first).concat(Array.from(second) as [T, U][]));
-export const mergeMaps = reduce(mergeMap, new Map([]));
+export const mergeMaps: <T, U>(maps: Map<T, U>[]) => Map<T, U> = reduce(mergeMap, new Map([]));
 
 /**
  * Safely stringifies a JavaScript value to prevent error-ception.
@@ -209,7 +209,7 @@ export const reduceUpdater = (value, state, msg, relay) =>
  * Generic helper function for resolving the `name` of an Instance's Constructor
  * function
  */
-const ctorName = pathOr(__, ['constructor', 'name']);
+const ctorName = (defaultVal: string) => pathOr(defaultVal, ['constructor', 'name']);
 
 /**
  * Gets the `name` of a Message instance, or defaults to `{INIT}` for nameless

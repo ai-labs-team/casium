@@ -15,7 +15,7 @@ describe('StateManager', () => {
 
     it('does not broadcast to listeners removed mid-update', () => {
       const stateMgr = new StateManager({ foo: true });
-      let unSub, toggle = false, log = [];
+      let unSub, toggle = false, log: any[] = [];
       const a = () => { toggle && unSub(); log.push('a'); };
       const b = () => { log.push('b'); };
 

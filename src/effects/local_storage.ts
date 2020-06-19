@@ -1,9 +1,9 @@
 import { always, merge, objOf, pipe } from 'ramda';
 import { Clear, Delete, Read, Write } from '../commands/local_storage';
-import Message from '../message';
+import Message, { MessageConstructor } from '../message';
 import { safeParse, safeStringify } from '../util';
 
-const get = (() => {
+const get: any = (() => {
   try {
     return typeof window === 'undefined'
       ? always('<running outside browser context>')
@@ -13,7 +13,7 @@ const get = (() => {
   }
 })();
 
-export default new Map([
+export default new Map<MessageConstructor, any>([
   [Read, ({ key, result }, dispatch) => (pipe(
     get, safeParse, objOf('value'), merge({ key }), Message.construct(result), dispatch
   ) as any)(key)],

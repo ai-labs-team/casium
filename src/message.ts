@@ -32,7 +32,10 @@ export default class Message {
   /**
    * Checks that a value is emittable as a message constructor
    */
-  public static isEmittable = or(Message.is, both(is(Array), pipe(nth(0), Message.is) as any));
+  public static isEmittable: (em: Message | [Message, object]) => boolean = or(
+    Message.is,
+    both(is(Array), pipe(nth(0), Message.is))
+  );
 
   public static toEmittable = ifElse(is(Array), identity, type => [type, {}]);
 
@@ -75,12 +78,12 @@ export default class Message {
   /**
    * Maps an Event object to a hash that will be wrapped in a Message.
    */
-  public static mapEvent = curry((extra: object & { preventDefault?: boolean }, event: Event) => {
-    const target = event.target as HTMLInputElement;
+  public static mapEvent = curry((extra: object & { preventDefault?: boolean }, event: Event | {}) => {
+    const target = (event as Event).target as HTMLInputElement || null;
     const isDomEvent = event && (event as any).nativeEvent && is(Object, target);
     const isCheckbox = isDomEvent && target.type && target.type.toLowerCase() === 'checkbox';
     const value = isDomEvent && (isCheckbox ? target.checked : target.value);
-    const eventVal = isDomEvent ? { value, ...pickBy(not(is(Object)), event) } : event;
+    const eventVal = isDomEvent ? { value, ...pickBy(not(is(Object)), event) as object } : event;
 
     if (isDomEvent && !isCheckbox && extra.preventDefault !== false) {
       suppressEvent(event);

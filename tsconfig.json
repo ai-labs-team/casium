@@ -8,6 +8,9 @@
     "**/*_test.tsx"
   ],
   "compilerOptions": {
+    "strict": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
     "declaration": true,
     "declarationDir": "./dist/",
     "noResolve": false,
