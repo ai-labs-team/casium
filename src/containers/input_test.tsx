@@ -17,12 +17,12 @@ describe('InputContainer', () => {
   describe('InputContainer', () => {
 
     it('initially renders inputs with state data', () => {
-      const wrapper = mount(<Container />);
+      const wrapper = mount((<Container />) as any);
       expect(wrapper.find('input').prop('value')).to.equal('foo');
     });
 
     it('updates parent state with input changes', () => {
-      const wrapper = mount(<Container />);
+      const wrapper = mount((<Container />) as any);
       wrapper.find('input').simulate('change', { target: { value: 'bar' } });
       expect(wrapper.find('input').prop('value')).to.equal('bar');
     });

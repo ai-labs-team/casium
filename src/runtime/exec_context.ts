@@ -75,7 +75,7 @@ const walk = curry((cb, exec, val) => cb(exec, val) || exec.parent && walk(cb, e
  */
 const attachStore = (config, ctx) => {
   const getState = () => (config.key && prop(config.key) || identity)(config.store.getState());
-  config.store.subscribe(pipe(getState, replace(ctx.state()), ctx.push.bind(ctx)));
+  config.store.subscribe(pipe(getState, replace(ctx.state()) as any, ctx.push.bind(ctx)));
   return getState();
 };
 
@@ -98,14 +98,19 @@ const mapMessage = (handler, state, msg, relay) => {
  * Checks that a command's response messages (i.e. `result`, `error`, etc.) are handled by a container.
  */
 const checkCmdMsgs = curry(<M>(exec: ExecContext<M>, cmd: Message) => {
-  const unhandled = pipe(prop('data'), values, filter(Message.isEmittable), filter(not(exec.handles)));
+  const unhandled = pipe<any, any, any, any, any>(
+    prop('data'),
+    values,
+    filter(Message.isEmittable),
+    filter(not(exec.handles))
+  );
   const msgs = unhandled(cmd) as MessageConstructor[];
 
   if (!msgs.length) {
     return cmd;
   }
   throw new Error([
-    `A ${cmdName(cmd)} command was sent from container ${exec.container.name} `,
+    `A ${cmdName(cmd)} command was sent from container ${exec.container!.name} `,
     'with one or more result messages that are unhandled by the container (or its ancestors): ',
     msgs.map(prop('name')).join(', '),
   ].join(''));
@@ -164,15 +169,15 @@ export default class ExecContext<M> {
 
   public id: string = Math.round(Math.random() * Math.pow(2, 50)).toString();
 
-  public parent?: ExecContext<M> = null;
-  public delegate?: DelegateDef = null;
+  public parent?: ExecContext<M>;
+  public delegate?: DelegateDef;
   public path: (string | symbol)[] = [];
-  public env?: Environment.Environment = null;
-  public container?: Container<any> = null;
+  public env?: Environment.Environment;
+  public container?: Container<any>;
 
   protected errLog;
-  protected getState: (params?: object) => object = null;
-  protected stateMgr?: StateManager = null;
+  protected getState!: (params?: object) => object;
+  protected stateMgr?: StateManager;
 
   constructor({ env, container, parent, delegate }: ExecContextDef<M>) {
     const ctrEnv = Environment.merge(parent, env);
@@ -191,16 +196,18 @@ export default class ExecContext<M> {
       if (!hasInitialized) {
         hasInitialized = true;
         const { attach } = container, hasStore = attach && attach.store;
-        const initial = hasStore ? attachStore(container.attach, this) : (this.getState() || {});
+        const initial: M = (hasStore ? attachStore(container.attach, this) : (this.getState() || {})) as unknown as M;
         run(null, mapResult((container.init || identity)(initial, parent && parent.relay() || {}) || {}) as [any, any]);
       }
       return fn.call(this, ...args);
     };
 
-    const wrapInit = (props: string[]) => pipe(pick(props), map(pipe(fn => fn.bind(this), initialize)));
+    const wrapInit = (props: string[]) => (
+      pipe(pick(props) as any, map(pipe(fn => fn.bind(this), initialize))) as (...args: any[]) => any
+    );
     const isRoot: boolean = !parent || ExecContext.isPartial(parent);
-    const stateMgr: StateManager = isRoot ? intercept(ctrEnv.stateManager(container)) : null;
-    const getState = stateMgr ? stateMgr.get.bind(stateMgr) : config => parent.state(config || { path });
+    const stateMgr: StateManager | null = isRoot ? intercept(ctrEnv!.stateManager!(container)) : null;
+    const getState = stateMgr ? stateMgr.get.bind(stateMgr) : config => parent!.state!(config || { path });
 
     freeze(assign(this, {
       env: ctrEnv, path, parent, delegate, stateMgr, container, getState,
@@ -224,29 +231,34 @@ export default class ExecContext<M> {
       throw new TypeError(`Attempted to dispatch message constructor '${(msg as any).name}' — should be an instance`);
     }
     if (!this.handles(msgType)) {
-      throw new TypeError(`Unhandled message type '${msgType.name}' in container '${this.container.name}'`);
+      throw new TypeError(`Unhandled message type '${msgType.name}' in container '${this.container!.name}'`);
     }
-    return trap(logMsgError(this.env.log), this.internalDispatch.bind(this))(msg);
+    return ((trap as any)(
+      logMsgError(this.env!.log),
+      this.internalDispatch.bind(this)
+    ) as any)(msg);
   }
 
   public commands(msg, cmds) {
-    return pipe(flatten, filter(is(Object)), map(
-      trap(logCmdError(this.env.log, msg), pipe(checkCmdMsgs(this), this.commandDispatcher()))
-    ))(cmds);
+    return pipe<any, any, any, any>(
+      flatten,
+      filter(is(Object)),
+      map((trap as any)(logCmdError(this.env!.log, msg), pipe(checkCmdMsgs(this as any), this.commandDispatcher())))
+    )(cmds);
   }
 
   public commandDispatcher() {
-    return this.env.dispatcher(this);
+    return this.env!.dispatcher(this);
   }
 
   public push(val, config?: object & { path: any[] }) {
     if (!this.stateMgr && !this.delegate && this.getState() !== val) {
-      throw new Error(`'${this.container.name}' is trying to modify the state, `
+      throw new Error(`'${this.container!.name}' is trying to modify the state, `
         + 'but has no \'delegate\' specified. Either opt into parent modification by '
-        + `giving '${this.container.name}' the delegate of the PARENT Symbol, or `
-        + `not have '${this.container.name}' modify the state.`);
+        + `giving '${this.container!.name}' the delegate of the PARENT Symbol, or `
+        + `not have '${this.container!.name}' modify the state.`);
     }
-    return this.stateMgr ? this.stateMgr.set(val, config) : this.parent.push(val, config || { path: this.path });
+    return this.stateMgr ? this.stateMgr.set(val, config) : this.parent!.push(val, config || { path: this.path });
   }
 
   public state(cfg?: object): object {
@@ -258,7 +270,7 @@ export default class ExecContext<M> {
    */
   public relay() {
     const { parent, container } = this, inherited = parent && parent.relay() || {};
-    return merge(inherited, map(fn => fn(this.state(), inherited), container.relay || {}));
+    return merge(inherited, map(fn => fn(this.state(), inherited), container!.relay || {}) as any);
   }
 
   /**
@@ -280,11 +292,16 @@ export default class ExecContext<M> {
   public emit(msgType) {
     const em = Message.toEmittable(msgType),
       [type, extra] = em,
-      ctr = this.container.name,
+      ctr = this.container!.name,
       name = type && type.name || '??';
 
     if (this.handles(em)) {
-      return pipe(defaultTo({}), Message.mapEvent(extra), Message.construct(type), this.dispatch);
+      return pipe<any, any, any, any, any>(
+        defaultTo({}) as any,
+        Message.mapEvent(extra),
+        Message.construct(type),
+        this.dispatch
+      );
     }
     throw new Error(`Messages of type '${name}' are not handled by container '${ctr}' or any of its ancestors`);
   }
@@ -319,14 +336,14 @@ export default class ExecContext<M> {
   private subscriptions(model: M) {
     const { container, env } = this;
     return (
-      !container.subscriptions && [] ||
-      toArray(container.subscriptions(model, this.relay()))
-    ).filter(not(isEmpty)).reduce(groupEffects(env.handler), new Map());
+      !(container!).subscriptions && [] ||
+      toArray(container!.subscriptions!(model, this.relay()))
+    ).filter(not(isEmpty)).reduce(groupEffects(env!.handler), new Map());
   }
 
   private internalDispatch(msg: Message) {
     const { dispatch, parent, getState, relay } = this, msgType = msg.constructor as MessageConstructor;
-    const updater = this.container.update.get(msgType);
-    return updater ? (dispatch as any).run(msg, mapMessage(updater, getState(), msg, relay())) : parent.dispatch(msg);
+    const updater = this.container!.update.get(msgType);
+    return updater ? (dispatch as any).run(msg, mapMessage(updater, getState(), msg, relay())) : parent!.dispatch(msg);
   }
 }

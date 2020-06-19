@@ -2,9 +2,18 @@ import { either as or, is, keys } from 'ramda';
 import Message from '../message';
 import { moduleName } from '../util';
 
+type Defaults = {
+  method: string | null,
+  url: null,
+  data: {},
+  params: {},
+  headers: {},
+};
+
 @moduleName('HTTP')
 export class Request extends Message {
-  public static defaults = { method: null, url: null, data: {}, params: {}, headers: {} };
+  public static defaults: Defaults = { method: null, url: null, data: {}, params: {}, headers: {} };
+
   public static expects = {
     method: is(String),
     url: is(String),

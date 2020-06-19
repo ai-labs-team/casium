@@ -25,7 +25,7 @@ export default class StateManager {
    * Gets the current state, optionally with a path into the root value.
    */
   public get(opts: Config = { path: [] }) {
-    return view(lensPath(opts && opts.path || []))(this.state[0]);
+    return view(lensPath(opts && opts.path as any || []))(this.state[0]);
   }
 
   /**
@@ -33,7 +33,7 @@ export default class StateManager {
    * the root value to write into.
    */
   public set(newState: object, opts: Config = { path: [] }) {
-    this.state[0] = set(lensPath(opts.path), newState, this.state[0]);
+    this.state[0] = set(lensPath(opts.path as any), newState, this.state[0]);
     this.listeners.forEach(when(
       both(inList(this.listeners), pipe(nth(0), compareOffsets(opts.path))),
       this.broadcast

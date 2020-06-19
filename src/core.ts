@@ -1,6 +1,6 @@
 import {
   always, constructN, curry, defaultTo, evolve, flatten, identity as id,
-  ifElse, is, map, merge, nthArg, omit, pick, pipe, splitEvery
+  ifElse, is, map, mergeRight, nthArg, omit, pick, pipe, splitEvery
 } from 'ramda';
 
 import * as React from 'react';
@@ -81,7 +81,7 @@ type ViewProps<M> = Partial<M> & Delegate;
  * @return {Function} Returns the wrapped container view
  */
 const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>> => (
-  <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper, {
+  <M>(props: ViewProps<M> = {}) => React.createElement(ViewWrapper as React.ComponentClass<any, any>, {
     childProps: omit(['delegate'], props || {}),
     container,
     delegate: props.delegate || container.delegate,
@@ -93,7 +93,7 @@ const wrapView = <M>({ env, container }: ViewWrapDef<M>): React.SFC<ViewProps<M>
  * Maps default values of a container definition.
  */
 const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
-  merge({ name: null, update: [] }),
+  mergeRight({ name: null, update: [] }),
   evolve({ update: toMap, name: defaultTo('UnknownContainer') }) as any
 );
 
@@ -106,7 +106,7 @@ const mapDef: <M>(def: ContainerDefPartial<M>) => ContainerDefMapped<M> = pipe(
  */
 export const withEnvironment = curry(<M>(env: Environment, def: ContainerDef<M>): Container<M> => {
   let ctr;
-  const fns = { identity: () => merge({}, def), accepts: msgType => ctr.update.has(msgType) };
+  const fns = { identity: () => mergeRight({}, def), accepts: msgType => ctr.update.has(msgType) };
   ctr = assign(mapDef(def), fns);
   return freeze(defineProperty(assign(wrapView({ env, container: ctr }), fns), 'name', { value: ctr.name }));
 });
@@ -174,7 +174,7 @@ export const isolate = <M>(ctr: Container<M>, opts: any = {}): IsolatedContainer
 
   const container = assign(mapDef(ctr.identity()), overrides) as Container<M>;
   const parent: any = opts.relay ? { relay: always(opts.relay) } : null;
-  const execContext = new ExecContext({ env, parent, container, delegate: null });
+  const execContext = new ExecContext({ env, parent, container, delegate: undefined });
 
   return assign(
     wrapView({ env, container }),
@@ -206,10 +206,10 @@ export type ModelMapper<M> = ModelMapperFn<M> | { [key: string]: ModelMapperFn<M
  * keys to updater-signature functions that return a value. The returned values are then paired to the
  * mapper's keys and merged into the model.
  */
-export const mapModel = <M>(mapper: ModelMapper<M>) =>
+export const mapModel = <M extends object>(mapper: ModelMapper<M>) =>
   (model: M, message?: GenericObject, relay?: GenericObject): UpdateResult<M> => {
     const update = fn => fn(model, message, relay);
-    return merge(model, is(Function, mapper) ? update(mapper) : map(update, mapper));
+    return mergeRight(model, is(Function, mapper) ? update(mapper) : map(update, mapper)) as M;
   };
 
 export const relay = <M>(fn?: (r: any) => UpdateResult<M>) => pipe(nthArg(2), (fn || id));
@@ -219,9 +219,9 @@ export const union = <M>(fn?: (u: { model: M, message?: GenericObject, relay?: G
 
 const mapData = (model, msg, relay) => ifElse(is(Function), fn => fn(model, msg, relay), id);
 const consCommands = (model, msg, relay) => pipe(
-  splitEvery(2),
+  splitEvery(2) as any,
   map(([cmd, data]: [MessageConstructor, {}]) => cmd && new (cmd as any)(mapData(model, msg, relay)(data)) || null)
-);
+) as (args: CommandParam<any>[]) => any;
 
 /**
  * Helper function for updaters that only issue commands. Pass in alternating command constructors and
@@ -237,6 +237,8 @@ const consCommands = (model, msg, relay) => pipe(
  * ```
  * [FooMessage, commands(Http.Post, (model, msg) => ({ url: '/foo', data: [model.someData, msg.otherData] }))]]
  * ```
+ *
+ * @deprecated
  */
 export type CommandParam<M> = MessageConstructor | Empty | GenericObject | UpdateCommandMapper<M>;
 export type UpdateCommandMapper<M> = (model: M, message: GenericObject, relay: GenericObject) => GenericObject;

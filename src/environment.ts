@@ -36,6 +36,12 @@ export type RenderProps = {
 
 export type Renderer = (props: RenderProps) => any;
 
+const defaults = {
+  stateManager: (() => new StateManager()),
+  // tslint:disable-next-line:no-console
+  log: console.error.bind(console)
+};
+
 /**
  * Creates an execution environment for a container by providing it with a set of effects
  * handlers and an effect dispatcher.
@@ -54,17 +60,16 @@ export type Renderer = (props: RenderProps) => any;
  */
 export const create = ({
   effects,
-  dispatcher = null,
-  log = null,
-  stateManager = null,
-  displayError
+  dispatcher = coreDispatcher,
+  log = defaults.log,
+  stateManager = defaults.stateManager,
+  displayError,
 }: EnvDef): Environment => ({
-  // tslint:disable:no-console
-  dispatcher: (dispatcher || coreDispatcher)(effects),
+  dispatcher: dispatcher(effects),
   handler: handler(effects),
   identity: () => ({ effects, dispatcher, log, stateManager, displayError }),
-  log: log || console.error.bind(console),
-  stateManager: stateManager || (() => new StateManager()),
+  log,
+  stateManager,
   displayError,
 });
 

@@ -1,9 +1,9 @@
 import * as Cookies from 'js-cookie';
 import { defaultTo, pipe } from 'ramda';
 import { Delete, Read, Write } from '../commands/cookies';
-import Message from '../message';
+import Message, { MessageConstructor } from '../message';
 
-export default new Map([
+export default new Map<MessageConstructor, any>([
   [Read, ({ key, result }, dispatch) => Promise.resolve(Cookies.getJSON(key)).then(
     pipe(defaultTo({}), Message.construct(result), dispatch)
   )],

@@ -41,9 +41,9 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
 
   public static defaultProps = { delegate: null };
 
-  public execContext?: ExecContext<M> = null;
+  public execContext!: ExecContext<M>;
 
-  public unsubscribe: () => void;
+  public unsubscribe!: () => void;
 
   public getChildContext() {
     return { execContext: this.execContext };
@@ -115,7 +115,7 @@ export default class ViewWrapper<M> extends React.Component<ViewWrapperProps<M>,
 
   public render() {
     if (this.state.componentError) {
-      return this.execContext.env.displayError({ message: this.state.componentError.toString() });
+      return this.execContext.env!.displayError!({ message: this.state.componentError.toString() });
     }
     // tslint:disable-next-line:variable-name
     const Child = (this.props.container as any).view, ctx = this.execContext;

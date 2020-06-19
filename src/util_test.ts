@@ -68,7 +68,7 @@ describe('util', () => {
   describe('#withProps', () => {
     const defaultFnMap = { fun1: () => {} };
     const defaultComponent = props => props;
-    const defaultProps = {};
+    const defaultProps: any = {};
 
     it(`passes when fnMap is an object with functions & component is a function that takes 1 arg`, () => {
       expect(() => withProps(defaultFnMap, defaultComponent)(defaultProps)).to.not.throw();
@@ -79,7 +79,7 @@ describe('util', () => {
     });
 
     it('succeeds when fnMap is object with 3 functions', () => {
-      const fnMap = {
+      const fnMap: any = {
         a: () => 1,
         b: ({ one, two, four }) => (one + two + four),
         c: one => one,

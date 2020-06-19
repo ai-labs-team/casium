@@ -8,6 +8,10 @@ import http from './http';
 import localStorage from './local_storage';
 
 export default (
-  mergeMaps([http, browser, cookies, localStorage]) as
-  Map<MessageConstructor, CommandDispatcher | SubscriptionDispatcher>
+  mergeMaps([
+    http as Map<MessageConstructor, CommandDispatcher | SubscriptionDispatcher>,
+    browser as Map<MessageConstructor, CommandDispatcher | SubscriptionDispatcher>,
+    cookies as Map<MessageConstructor, CommandDispatcher | SubscriptionDispatcher>,
+    localStorage as Map<MessageConstructor, CommandDispatcher | SubscriptionDispatcher>
+  ]) as Map<MessageConstructor, CommandDispatcher | SubscriptionDispatcher>
 );
