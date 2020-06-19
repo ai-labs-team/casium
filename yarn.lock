@@ -300,11 +300,12 @@
     "@types/prop-types" "*"
     csstype "^2.2.0"
 
-"@types/react@16.4.7":
-  version "16.4.7"
-  resolved "https://registry.yarnpkg.com/@types/react/-/react-16.4.7.tgz#f33f6d759a7e1833befa15224d68942d178a5a3f"
-  integrity sha512-tHpSs7HMyjnpyfzka1G0pYh7rBNdpwGgcIDT4vfV6jUaR69yOHo/vNH2H+d9iYHo9xnX4qDe7UalPe9HiGRkLw==
+"@types/react@^16.9.38":
+  version "16.9.38"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-16.9.38.tgz#868405dace93a4095d3e054f4c4a1de7a1ac0680"
+  integrity sha512-pHAeZbjjNRa/hxyNuLrvbxhhnKyKNiLC6I5fRF2Zr/t/S6zS41MiyzH4+c+1I9vVfvuRt1VS2Lodjr4ZWnxrdA==
   dependencies:
+    "@types/prop-types" "*"
     csstype "^2.2.0"
 
 abab@^2.0.0:
@@ -4193,7 +4194,7 @@ typedoc@^0.17.7:
     highlight.js "^10.0.0"
     lodash "^4.17.15"
     lunr "^2.3.8"
-    marked "^1.1.0"
+    marked "1.0.0"
     minimatch "^3.0.0"
     progress "^2.0.3"
     shelljs "^0.8.4"
