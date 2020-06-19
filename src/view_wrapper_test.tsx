@@ -14,7 +14,7 @@ describe('ViewWrapper', () => {
   describe('componentWillMount', () => {
 
     describe('propagating prop values', () => {
-      let Container;
+      let Container: any;
 
       beforeEach(() => {
         Container = container({
@@ -140,7 +140,7 @@ describe('ViewWrapper', () => {
   describe('Commands', () => {
 
     describe('ContainerA environment should cascade to ContainerB', () => {
-      let ContainerB, ContainerA;
+      let ContainerB: any, ContainerA: any;
 
       beforeEach(() => {
         class TestCommand extends Message {
