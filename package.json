@@ -1,6 +1,6 @@
 {
   "name": "casium",
-  "version": "2.2.4",
+  "version": "2.3.0",
   "description": "Casium — An application architecture for React",
   "module": "./index.js",
   "browser": "dist/casium.umd.js",
