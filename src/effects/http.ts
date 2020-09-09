@@ -4,20 +4,8 @@ import { Request } from '../commands/http';
 import Message from '../message';
 
 export default new Map([[Request,
-  ({
-     method,
-     url,
-     data,
-     params,
-     headers,
-     result,
-     error,
-     always,
-     responseType = 'json',
-     withCredentials = true,
-   },
-   dispatch) => {
-    axios({ method, url, data, params, headers, responseType, withCredentials })
+  ({ method, url, data, params, headers, result, error, always, responseType, withCredentials = true, }, dispatch) => {
+    axios({ method, url, data, params, headers, responseType, withCredentials, })
       .then(pipe(Message.construct(result), dispatch))
       .catch(pipe(Message.construct(error), dispatch))
       .then(always && pipe(Message.construct(always), dispatch) || identity);
